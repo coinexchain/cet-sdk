@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/coinexchain/dex/modules/bankx/client/cli"
-	"github.com/coinexchain/dex/modules/bankx/client/rest"
-	"github.com/coinexchain/dex/modules/bankx/internal/keeper"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/bankx/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/keeper"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
 )
 
 var (

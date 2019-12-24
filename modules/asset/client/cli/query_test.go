@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/dex/client/cliutil"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 func TestQueryCmds(t *testing.T) {

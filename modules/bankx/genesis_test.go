@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/bankx"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
 )
 
 func TestValidate(t *testing.T) {

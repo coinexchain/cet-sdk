@@ -8,9 +8,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/client/cliutil"
-	"github.com/coinexchain/dex/modules/distributionx/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var testAddrBech32 = "coinex12kcupm2x8fw0gglgcz8850kw0k2kx0ff8sr3rn"

@@ -6,8 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 // NewHandler returns a handler for "asset" type messages.

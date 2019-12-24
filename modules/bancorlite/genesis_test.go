@@ -3,8 +3,8 @@ package bancorlite_test
 import (
 	"testing"
 
-	"github.com/coinexchain/dex/modules/bancorlite"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 
 	"github.com/stretchr/testify/require"
 )

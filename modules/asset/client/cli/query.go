@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/dex/client/cliutil"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 // get the root query command of this module

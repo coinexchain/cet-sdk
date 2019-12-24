@@ -7,9 +7,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func TestInvalidMsg(t *testing.T) {

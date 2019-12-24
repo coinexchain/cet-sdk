@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/dex/client/cliutil"
-	"github.com/coinexchain/dex/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"

@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	supply "github.com/cosmos/cosmos-sdk/x/supply/exported"
 
-	"github.com/coinexchain/dex/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset"
 )
 
 type DistributionKeeper interface {

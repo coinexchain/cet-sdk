@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/coinexchain/dex/modules/incentive/internal/keepers"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
-	"github.com/coinexchain/dex/testapp"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
 )
 
 func TestQueryParams(t *testing.T) {

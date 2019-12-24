@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/client/restutil"
+	"github.com/coinexchain/cet-sdk/client/restutil"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 )

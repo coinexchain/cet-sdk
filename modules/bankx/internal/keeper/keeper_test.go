@@ -12,13 +12,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/bankx/internal/keeper"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	"github.com/coinexchain/dex/testapp"
-	"github.com/coinexchain/dex/testutil"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/keeper"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
+	"github.com/coinexchain/cet-sdk/testutil"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var myaddr = testutil.ToAccAddress("myaddr")

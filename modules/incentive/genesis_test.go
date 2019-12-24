@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/incentive"
+	"github.com/coinexchain/cet-sdk/modules/incentive"
 )
 
 // nolint

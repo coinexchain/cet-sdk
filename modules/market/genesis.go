@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/market/internal/keepers"
-	"github.com/coinexchain/dex/modules/market/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 )
 
 type GenesisState struct {

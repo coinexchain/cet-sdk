@@ -1,8 +1,8 @@
 package bancorlite
 
 import (
-	"github.com/coinexchain/dex/modules/bancorlite/internal/keepers"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 )
 
 const (

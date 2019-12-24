@@ -3,8 +3,8 @@ package stakingx
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/incentive"
-	"github.com/coinexchain/dex/modules/stakingx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/keepers"
 )
 
 type GenesisState struct {

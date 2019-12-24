@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/bancorlite/client/cli"
-	"github.com/coinexchain/dex/modules/bancorlite/client/rest"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/keepers"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 )
 
 // app module basics object

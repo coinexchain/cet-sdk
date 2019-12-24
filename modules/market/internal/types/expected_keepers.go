@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/coinexchain/dex/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

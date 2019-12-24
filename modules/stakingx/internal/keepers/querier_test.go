@@ -10,10 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/coinexchain/dex/modules/stakingx"
-	"github.com/coinexchain/dex/modules/stakingx/internal/keepers"
-	"github.com/coinexchain/dex/modules/stakingx/internal/types"
-	"github.com/coinexchain/dex/testapp"
+	"github.com/coinexchain/cet-sdk/modules/stakingx"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
 )
 
 func TestNewQuerier(t *testing.T) {

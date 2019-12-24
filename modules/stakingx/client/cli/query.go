@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	staking_cli "github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 
-	"github.com/coinexchain/dex/modules/stakingx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/types"
 )
 
 func GetQueryCmd(cdc *codec.Codec) *cobra.Command {

@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"errors"
 
-	dex "github.com/coinexchain/dex/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/market/internal/types"
-	"github.com/coinexchain/dex/msgqueue"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
+	"github.com/coinexchain/cet-sdk/msgqueue"
 )
 
 type QueryMarketInfoAndParams interface {

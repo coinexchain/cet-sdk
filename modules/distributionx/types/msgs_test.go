@@ -10,8 +10,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/testutil"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/testutil"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var validCoins = dex.NewCetCoins(10e8)

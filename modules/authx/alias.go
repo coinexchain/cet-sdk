@@ -1,8 +1,8 @@
 package authx
 
 import (
-	"github.com/coinexchain/dex/modules/authx/internal/keepers"
-	"github.com/coinexchain/dex/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
 )
 
 const (

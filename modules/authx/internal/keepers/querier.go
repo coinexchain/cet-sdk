@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
-	"github.com/coinexchain/dex/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
 )
 
 // creates a querier for auth REST endpoints

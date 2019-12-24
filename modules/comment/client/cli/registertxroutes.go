@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/dex/modules/comment/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

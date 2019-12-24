@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/coinexchain/dex/modules/incentive/client/cli"
-	"github.com/coinexchain/dex/modules/incentive/client/rest"
-	"github.com/coinexchain/dex/modules/incentive/internal/keepers"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/incentive/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/incentive/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
 
 var (

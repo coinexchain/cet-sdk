@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/dex/client/cliutil"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func TestSendTxCmd(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
-	"github.com/coinexchain/dex/client/restutil"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 )
 
 type BancorInitReq struct {

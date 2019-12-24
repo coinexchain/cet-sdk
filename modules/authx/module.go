@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/coinexchain/dex/modules/authx/client/cli"
-	"github.com/coinexchain/dex/modules/authx/client/rest"
-	"github.com/coinexchain/dex/modules/authx/internal/keepers"
-	"github.com/coinexchain/dex/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/authx/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
 )
 
 var (

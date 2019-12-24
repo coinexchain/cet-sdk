@@ -1,7 +1,7 @@
 package types
 
 import (
-	dex "github.com/coinexchain/dex/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type OrderType = byte

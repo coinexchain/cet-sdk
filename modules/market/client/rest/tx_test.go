@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/dex/modules/market/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 )
 
 func TestCmd(t *testing.T) {

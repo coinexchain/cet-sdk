@@ -12,8 +12,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/coinexchain/dex/modules/asset/client/cli"
-	"github.com/coinexchain/dex/modules/asset/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/asset/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/asset/client/rest"
 )
 
 var (

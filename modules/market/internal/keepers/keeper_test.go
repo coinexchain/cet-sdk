@@ -4,10 +4,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/market"
-	"github.com/coinexchain/dex/testapp"
-	"github.com/coinexchain/dex/testutil"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/market"
+	"github.com/coinexchain/cet-sdk/testapp"
+	"github.com/coinexchain/cet-sdk/testutil"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 

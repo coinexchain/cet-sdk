@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/market/internal/keepers"
-	"github.com/coinexchain/dex/testapp"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
+	"github.com/coinexchain/cet-sdk/testapp"
 )
 
 func TestRemoveDeListRequestsBeforeTime(t *testing.T) {

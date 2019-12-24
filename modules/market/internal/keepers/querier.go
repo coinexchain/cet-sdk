@@ -10,7 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/market/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 )
 
 const (

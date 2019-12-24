@@ -3,7 +3,7 @@ package authx
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	dex "github.com/coinexchain/dex/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func EndBlocker(ctx sdk.Context, aux AccountXKeeper, keeper ExpectedAccountKeeper, tk ExpectedTokenKeeper) {

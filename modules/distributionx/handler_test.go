@@ -3,8 +3,8 @@ package distributionx_test
 import (
 	"testing"
 
-	"github.com/coinexchain/dex/modules/distributionx"
-	"github.com/coinexchain/dex/testapp"
+	"github.com/coinexchain/cet-sdk/modules/distributionx"
+	"github.com/coinexchain/cet-sdk/testapp"
 
 	"github.com/stretchr/testify/require"
 
@@ -12,9 +12,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 
-	"github.com/coinexchain/dex/modules/bankx"
-	types2 "github.com/coinexchain/dex/modules/distributionx/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	types2 "github.com/coinexchain/cet-sdk/modules/distributionx/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var validCoins = dex.NewCetCoins(10e8)

@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/authx"
 )
 
 type ExpectedAccountXKeeper interface {

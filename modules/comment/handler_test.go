@@ -15,8 +15,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/coinexchain/dex/modules/comment/internal/keepers"
-	"github.com/coinexchain/dex/modules/comment/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
 )
 
 var logStrList = make([]string, 0, 100)

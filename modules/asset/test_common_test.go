@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/coinexchain/dex/testapp"
+	"github.com/coinexchain/cet-sdk/testapp"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,9 +13,9 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func TestMain(m *testing.M) {

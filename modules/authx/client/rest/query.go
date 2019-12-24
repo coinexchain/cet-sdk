@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 
-	"github.com/coinexchain/dex/client/restutil"
+	"github.com/coinexchain/cet-sdk/client/restutil"
 
 	"github.com/gorilla/mux"
 
@@ -15,7 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
-	"github.com/coinexchain/dex/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
 )
 
 // register REST routes

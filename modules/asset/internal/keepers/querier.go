@@ -8,7 +8,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 // NewQuerier - creates a querier for asset REST endpoints

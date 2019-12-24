@@ -3,8 +3,8 @@ package distributionx
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/distributionx/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func NewHandler(k Keeper) sdk.Handler {

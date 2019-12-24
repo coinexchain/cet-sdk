@@ -11,11 +11,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/coinexchain/dex/modules/stakingx"
-	"github.com/coinexchain/dex/modules/stakingx/internal/keepers"
-	"github.com/coinexchain/dex/testapp"
-	"github.com/coinexchain/dex/testutil"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/stakingx"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/testapp"
+	"github.com/coinexchain/cet-sdk/testutil"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func setUpInput() (keepers.MockKeeper, sdk.Context, auth.AccountKeeper) {

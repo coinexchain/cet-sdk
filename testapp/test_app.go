@@ -10,37 +10,53 @@ import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	dist "github.com/cosmos/cosmos-sdk/x/distribution"
+	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	"github.com/cosmos/cosmos-sdk/x/genaccounts"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	dexapp "github.com/coinexchain/dex/app"
-	"github.com/coinexchain/dex/modules/alias"
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/bancorlite"
-	"github.com/coinexchain/dex/modules/bankx"
-	"github.com/coinexchain/dex/modules/comment"
-	"github.com/coinexchain/dex/modules/distributionx"
-	"github.com/coinexchain/dex/modules/incentive"
-	"github.com/coinexchain/dex/modules/market"
-	"github.com/coinexchain/dex/modules/stakingx"
-	"github.com/coinexchain/dex/modules/supplyx"
-	"github.com/coinexchain/dex/msgqueue"
+	"github.com/coinexchain/cet-sdk/modules/alias"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	"github.com/coinexchain/cet-sdk/modules/comment"
+	"github.com/coinexchain/cet-sdk/modules/distributionx"
+	"github.com/coinexchain/cet-sdk/modules/incentive"
+	"github.com/coinexchain/cet-sdk/modules/market"
+	"github.com/coinexchain/cet-sdk/modules/stakingx"
+	"github.com/coinexchain/cet-sdk/modules/supplyx"
+	"github.com/coinexchain/cet-sdk/msgqueue"
+	"github.com/coinexchain/cet-sdk/types"
+)
+
+var (
+		maccPerms = map[string][]string{
+		auth.FeeCollectorName:     nil,
+		dist.ModuleName:          nil,
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		gov.ModuleName:            {supply.Burner},
+		authx.ModuleName:          nil,
+		asset.ModuleName:          {supply.Burner, supply.Minter},
+	}
 )
 
 // Fake App for unit tests
 type TestApp struct {
 	Cdc          *codec.Codec
-	Cms          types.MultiStore
+	Cms          store.MultiStore
 	keyMain      *sdk.KVStoreKey
 	keyAccount   *sdk.KVStoreKey
 	keyAccountX  *sdk.KVStoreKey
@@ -85,11 +101,50 @@ type TestApp struct {
 }
 
 func NewTestApp() *TestApp {
-	Cdc := dexapp.MakeCodec()
+	Cdc := makeCodec()
 	app := newTestApp(Cdc)
 	app.initKeepers(0)
 	app.mountStores()
 	return app
+}
+
+func makeCodec() *codec.Codec {
+	modules := []module.AppModuleBasic{
+		// modules added additionally
+		alias.AppModuleBasic{},
+		asset.AppModuleBasic{},
+		bancorlite.AppModuleBasic{},
+		comment.AppModuleBasic{},
+		incentive.AppModuleBasic{},
+		market.AppModuleBasic{},
+
+		//modules wraps those of cosmos
+		authx.AppModuleBasic{}, //before `bank` to override `/bank/balances/{address}`
+		bankx.AppModuleBasic{},
+		distributionx.AppModuleBasic{},
+		stakingx.AppModuleBasic{}, //before `staking` to override `cetcli q staking pool` command
+
+		//modules of cosmos
+		auth.AppModuleBasic{},
+		crisis.AppModuleBasic{},
+		gov.NewAppModuleBasic(paramsclient.ProposalHandler, distrclient.ProposalHandler),
+		slashing.AppModuleBasic{},
+		staking.AppModuleBasic{},
+		bank.AppModuleBasic{},
+		dist.AppModuleBasic{},
+		genaccounts.AppModuleBasic{},
+		genutil.AppModuleBasic{},
+		params.AppModuleBasic{},
+		supply.AppModuleBasic{},
+	}
+
+	ModuleBasics := types.NewOrderedBasicManager(modules)
+	var cdc = codec.New()
+	ModuleBasics.RegisterCodec(cdc)
+	sdk.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
+	codec.RegisterEvidences(cdc)
+	return cdc
 }
 
 func newTestApp(Cdc *codec.Codec) *TestApp {
@@ -134,7 +189,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 	)
 
 	app.SupplyKeeper = supply.NewKeeper(app.Cdc, app.keySupply, app.AccountKeeper,
-		app.BankKeeper, dexapp.MaccPerms)
+		app.BankKeeper, maccPerms)
 
 	var StakingKeeper staking.Keeper
 
@@ -290,7 +345,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 
 func (app *TestApp) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
-	for acc := range dexapp.MaccPerms {
+	for acc := range maccPerms {
 		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
 	}
 	return modAccAddrs

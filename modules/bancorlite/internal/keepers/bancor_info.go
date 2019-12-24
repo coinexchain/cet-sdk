@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	dex "github.com/coinexchain/dex/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type BancorInfo struct {

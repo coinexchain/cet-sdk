@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/authx"
 )
 
 func TestOriginalAnteHandlerError(t *testing.T) {

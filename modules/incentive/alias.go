@@ -1,8 +1,8 @@
 package incentive
 
 import (
-	"github.com/coinexchain/dex/modules/incentive/internal/keepers"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
 
 type (

@@ -14,10 +14,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/mock"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/bankx"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	dexsim "github.com/coinexchain/dex/simulation"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	dexsim "github.com/coinexchain/cet-sdk/simulation"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 // SendTx tests and runs a single msg send where both

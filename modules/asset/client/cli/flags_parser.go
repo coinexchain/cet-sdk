@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 func checkFlags(flags []string, help string) error {

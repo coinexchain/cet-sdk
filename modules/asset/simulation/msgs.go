@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	simulation2 "github.com/coinexchain/dex/simulation"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	simulation2 "github.com/coinexchain/cet-sdk/simulation"
 )
 
 func SimulateMsgIssueToken(k asset.Keeper) simulation.Operation {

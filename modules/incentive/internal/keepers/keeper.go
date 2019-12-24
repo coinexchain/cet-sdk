@@ -6,7 +6,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
 
 var (

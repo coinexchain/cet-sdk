@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 
-	"github.com/coinexchain/dex/modules/bankx"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
 )
 
 type Keeper struct {

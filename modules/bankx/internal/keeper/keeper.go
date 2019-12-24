@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	"github.com/coinexchain/dex/msgqueue"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/msgqueue"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type Keeper struct {

@@ -3,7 +3,7 @@ package types
 import (
 	"strings"
 
-	dex "github.com/coinexchain/dex/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func IsOnlyForCoinEx(alias string) bool {

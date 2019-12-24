@@ -16,7 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/coinexchain/dex/modules/stakingx"
+	"github.com/coinexchain/cet-sdk/modules/stakingx"
 )
 
 func TestDefaultParams(t *testing.T) {

@@ -9,8 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	"github.com/coinexchain/dex/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx"
 )
 
 func TestTokenKeeper_IssueToken(t *testing.T) {

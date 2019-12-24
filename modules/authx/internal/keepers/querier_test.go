@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/authx/internal/keepers"
-	"github.com/coinexchain/dex/modules/authx/internal/types"
-	"github.com/coinexchain/dex/testapp"
-	"github.com/coinexchain/dex/testutil"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
+	"github.com/coinexchain/cet-sdk/testutil"
 )
 
 func Test_queryParams(t *testing.T) {

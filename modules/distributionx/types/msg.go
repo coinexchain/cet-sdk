@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/types"
 )
 
 // RouterKey is the name of the bankx module

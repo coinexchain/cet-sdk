@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/asset"
 )
 
 func TestGenesis(t *testing.T) {

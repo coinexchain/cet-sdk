@@ -1,8 +1,8 @@
 package bankx
 
 import (
-	"github.com/coinexchain/dex/modules/bankx/internal/keeper"
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/keeper"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
 )
 
 const (

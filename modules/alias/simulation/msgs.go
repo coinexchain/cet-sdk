@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/alias"
-	"github.com/coinexchain/dex/modules/alias/internal/keepers"
-	"github.com/coinexchain/dex/modules/alias/internal/types"
-	simulationx "github.com/coinexchain/dex/simulation"
+	"github.com/coinexchain/cet-sdk/modules/alias"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
+	simulationx "github.com/coinexchain/cet-sdk/simulation"
 )
 
 // TODO

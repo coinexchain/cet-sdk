@@ -17,9 +17,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/dex/modules/alias/internal/keepers"
-	"github.com/coinexchain/dex/modules/alias/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var logStr string

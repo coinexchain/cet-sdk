@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/dex/modules/alias/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
 )
 
 func GetQueryCmd(cdc *codec.Codec) *cobra.Command {

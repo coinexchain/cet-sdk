@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/asset/internal/keepers"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 func Test_queryParams(t *testing.T) {

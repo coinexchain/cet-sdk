@@ -1,7 +1,7 @@
 package distributionx
 
 import (
-	"github.com/coinexchain/dex/modules/distributionx/types"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/types"
 )
 
 const (

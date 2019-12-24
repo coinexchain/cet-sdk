@@ -12,7 +12,7 @@ import (
 	sdkstore "github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/comment/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
 )
 
 func newContextAndKeeper(chainid string) (sdk.Context, *Keeper) {

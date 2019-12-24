@@ -12,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 // -----------------------------------------------------------------------------

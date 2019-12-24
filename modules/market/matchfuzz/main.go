@@ -12,8 +12,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/market"
-	"github.com/coinexchain/dex/modules/market/match"
+	"github.com/coinexchain/cet-sdk/modules/market"
+	"github.com/coinexchain/cet-sdk/modules/market/match"
 )
 
 var LastPrice sdk.Dec

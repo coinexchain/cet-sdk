@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	asset "github.com/coinexchain/dex/modules/asset"
+	asset "github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/coinexchain/shorthanzi"
 )
 

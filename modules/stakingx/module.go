@@ -14,9 +14,9 @@ import (
 	staking_cli "github.com/cosmos/cosmos-sdk/x/staking/client/cli"
 	staking_types "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	stakingx_cli "github.com/coinexchain/dex/modules/stakingx/client/cli"
-	stakingx_rest "github.com/coinexchain/dex/modules/stakingx/client/rest"
-	"github.com/coinexchain/dex/modules/stakingx/internal/keepers"
+	stakingx_cli "github.com/coinexchain/cet-sdk/modules/stakingx/client/cli"
+	stakingx_rest "github.com/coinexchain/cet-sdk/modules/stakingx/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/keepers"
 )
 
 var (

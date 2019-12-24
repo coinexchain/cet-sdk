@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/stakingx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/types"
 )
 
 // Query endpoints supported by the slashing querier

@@ -14,15 +14,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/bancorlite"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/keepers"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
-	"github.com/coinexchain/dex/modules/bankx"
-	"github.com/coinexchain/dex/modules/market"
-	"github.com/coinexchain/dex/testapp"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	"github.com/coinexchain/cet-sdk/modules/market"
+	"github.com/coinexchain/cet-sdk/testapp"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type testInput struct {

@@ -9,8 +9,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func TestCmd(t *testing.T) {

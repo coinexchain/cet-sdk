@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/dex/modules/stakingx"
+	"github.com/coinexchain/cet-sdk/modules/stakingx"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

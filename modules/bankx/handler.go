@@ -6,9 +6,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
-	"github.com/coinexchain/dex/modules/bankx/internal/types"
-	"github.com/coinexchain/dex/msgqueue"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	"github.com/coinexchain/cet-sdk/msgqueue"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func NewHandler(k Keeper) sdk.Handler {

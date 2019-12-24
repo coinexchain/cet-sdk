@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/dex/client/restutil"
+	"github.com/coinexchain/cet-sdk/client/restutil"
 )
 
 // sendRequestHandlerFn - http request handler to send coins to a address.

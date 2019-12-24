@@ -20,12 +20,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/cosmos/cosmos-sdk/x/supply/exported"
 
-	"github.com/coinexchain/dex/modules/asset/internal/keepers"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
-	"github.com/coinexchain/dex/modules/authx"
-	"github.com/coinexchain/dex/modules/bankx"
-	"github.com/coinexchain/dex/msgqueue"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/bankx"
+	"github.com/coinexchain/cet-sdk/msgqueue"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func TestMain(m *testing.M) {

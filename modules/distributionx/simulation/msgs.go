@@ -13,9 +13,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/distributionx"
-	dexsim "github.com/coinexchain/dex/simulation"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/distributionx"
+	dexsim "github.com/coinexchain/cet-sdk/simulation"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 func SimulateMsgDonateToCommunityPool(ak auth.AccountKeeper, dxk distributionx.Keeper) simulation.Operation {

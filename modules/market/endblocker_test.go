@@ -17,11 +17,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/market/internal/keepers"
-	"github.com/coinexchain/dex/modules/market/internal/types"
-	"github.com/coinexchain/dex/msgqueue"
-	types2 "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
+	"github.com/coinexchain/cet-sdk/msgqueue"
+	types2 "github.com/coinexchain/cet-sdk/types"
 )
 
 var msgCdc = types.ModuleCdc

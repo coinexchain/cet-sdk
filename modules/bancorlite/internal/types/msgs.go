@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/market"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/market"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 // /////////////////////////////////////////////////////////

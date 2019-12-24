@@ -1,8 +1,8 @@
 package stakingx
 
 import (
-	"github.com/coinexchain/dex/modules/stakingx/internal/keepers"
-	"github.com/coinexchain/dex/modules/stakingx/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/types"
 )
 
 type (

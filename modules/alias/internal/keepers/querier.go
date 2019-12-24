@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/alias/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
 )
 
 const (

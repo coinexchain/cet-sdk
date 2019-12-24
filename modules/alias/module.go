@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/alias/client/cli"
-	"github.com/coinexchain/dex/modules/alias/client/rest"
-	"github.com/coinexchain/dex/modules/alias/internal/keepers"
-	"github.com/coinexchain/dex/modules/alias/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/alias/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/alias/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
 )
 
 // app module basics object

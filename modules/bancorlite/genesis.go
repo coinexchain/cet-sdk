@@ -6,9 +6,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/bancorlite/internal/keepers"
-	"github.com/coinexchain/dex/modules/bancorlite/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type GenesisState struct {

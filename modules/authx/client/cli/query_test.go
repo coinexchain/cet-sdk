@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/dex/client/cliutil"
+	"github.com/coinexchain/cet-sdk/client/cliutil"
 )
 
 var ResultParam *auth.QueryAccountParams

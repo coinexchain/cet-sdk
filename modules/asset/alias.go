@@ -1,8 +1,8 @@
 package asset
 
 import (
-	"github.com/coinexchain/dex/modules/asset/internal/keepers"
-	"github.com/coinexchain/dex/modules/asset/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
 )
 
 const (

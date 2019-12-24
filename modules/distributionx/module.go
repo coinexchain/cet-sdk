@@ -12,9 +12,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
-	"github.com/coinexchain/dex/modules/distributionx/client/cli"
-	"github.com/coinexchain/dex/modules/distributionx/client/rest"
-	"github.com/coinexchain/dex/modules/distributionx/types"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/client/rest"
+	"github.com/coinexchain/cet-sdk/modules/distributionx/types"
 )
 
 var (

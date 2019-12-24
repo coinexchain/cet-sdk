@@ -13,10 +13,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
-	"github.com/coinexchain/dex/modules/incentive"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
-	"github.com/coinexchain/dex/testapp"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/incentive"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type TestInput struct {

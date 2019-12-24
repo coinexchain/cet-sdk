@@ -1,8 +1,8 @@
 package comment
 
 import (
-	"github.com/coinexchain/dex/modules/comment/internal/keepers"
-	"github.com/coinexchain/dex/modules/comment/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
 )
 
 const (

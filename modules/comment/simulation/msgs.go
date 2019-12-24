@@ -10,11 +10,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/comment"
-	"github.com/coinexchain/dex/modules/comment/internal/keepers"
-	"github.com/coinexchain/dex/modules/comment/internal/types"
-	simulationx "github.com/coinexchain/dex/simulation"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/comment"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
+	simulationx "github.com/coinexchain/cet-sdk/simulation"
 )
 
 // TODO

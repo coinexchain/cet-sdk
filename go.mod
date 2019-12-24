@@ -1,4 +1,4 @@
-module github.com/coinexchain/dex
+module github.com/coinexchain/cet-sdk
 
 go 1.13
 

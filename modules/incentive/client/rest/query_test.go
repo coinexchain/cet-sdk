@@ -10,9 +10,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/dex/client/restutil"
-	"github.com/coinexchain/dex/modules/incentive/internal/keepers"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
 
 func TestQueryParamsHandlerFn(t *testing.T) {

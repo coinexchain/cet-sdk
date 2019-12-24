@@ -11,8 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/dex/client/restutil"
-	"github.com/coinexchain/dex/modules/alias/internal/keepers"
+	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cet-sdk/modules/alias/internal/keepers"
 )
 
 var ResultParam *keepers.QueryAliasInfoParam

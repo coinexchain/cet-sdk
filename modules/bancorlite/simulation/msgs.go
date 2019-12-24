@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
-	"github.com/coinexchain/dex/modules/asset"
-	"github.com/coinexchain/dex/modules/bancorlite"
-	dexsim "github.com/coinexchain/dex/simulation"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite"
+	dexsim "github.com/coinexchain/cet-sdk/simulation"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var symbolPrefix = "bl" // bancor_lite

@@ -3,8 +3,8 @@ package incentive
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/dex/modules/incentive/internal/keepers"
-	"github.com/coinexchain/dex/modules/incentive/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
 
 // InitGenesis - Init store state from genesis data

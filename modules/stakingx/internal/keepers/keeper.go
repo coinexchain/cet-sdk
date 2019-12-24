@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"github.com/coinexchain/dex/modules/stakingx/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/stakingx/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var (

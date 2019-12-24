@@ -1,9 +1,9 @@
 package market
 
 import (
-	"github.com/coinexchain/dex/modules/market/internal/keepers"
-	"github.com/coinexchain/dex/modules/market/internal/types"
-	dex "github.com/coinexchain/dex/types"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 const (
