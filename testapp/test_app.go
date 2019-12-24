@@ -42,9 +42,9 @@ import (
 )
 
 var (
-		maccPerms = map[string][]string{
+	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
-		dist.ModuleName:          nil,
+		dist.ModuleName:           nil,
 		staking.BondedPoolName:    {supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
 		gov.ModuleName:            {supply.Burner},
