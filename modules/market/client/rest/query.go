@@ -10,10 +10,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 	dex "github.com/coinexchain/cet-sdk/types"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
 func queryMarketHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {

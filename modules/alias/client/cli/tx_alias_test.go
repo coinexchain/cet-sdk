@@ -8,8 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	types "github.com/coinexchain/cet-sdk/modules/alias/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 var ResultMsg *types.MsgAliasUpdate

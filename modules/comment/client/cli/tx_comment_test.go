@@ -10,8 +10,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/comment/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 var ResultMsg *types.MsgCommentToken

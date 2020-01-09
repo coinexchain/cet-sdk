@@ -12,8 +12,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/bankx/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 const (

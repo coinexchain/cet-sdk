@@ -8,8 +8,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
 	"github.com/coinexchain/cet-sdk/modules/alias/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
 type AliasUpdateReq struct {

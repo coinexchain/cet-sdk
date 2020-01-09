@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/asset/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 var issueTokenFlags = []string{

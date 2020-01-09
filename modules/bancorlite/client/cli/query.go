@@ -7,10 +7,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 	dex "github.com/coinexchain/cet-sdk/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 func QueryParamsCmd(cdc *codec.Codec) *cobra.Command {

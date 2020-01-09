@@ -11,9 +11,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 // GetQueryCmd returns the cli query commands for this module

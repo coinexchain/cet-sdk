@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 
 	"github.com/gorilla/mux"
 

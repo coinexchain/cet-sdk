@@ -9,8 +9,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 const (

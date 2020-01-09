@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
 func TestTx(t *testing.T) {

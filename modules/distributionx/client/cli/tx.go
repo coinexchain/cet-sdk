@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/distributionx/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 // DonateTxCmd will create a DonateToCommunityPool tx and sign it with the given key.

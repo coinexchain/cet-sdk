@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/zstd v1.4.0 // indirect
 	github.com/Shopify/sarama v1.23.1
 	github.com/coinexchain/codon v0.0.0-20191012070227-3ee72dde596c
+	github.com/coinexchain/cosmos-utils v0.0.0-20200109031554-f15ba3b1d6a7
 	github.com/coinexchain/randsrc v0.0.0-20191012073615-acfab7318ec6
 	github.com/coinexchain/shorthanzi v0.1.0
 	github.com/cosmos/cosmos-sdk v0.37.4

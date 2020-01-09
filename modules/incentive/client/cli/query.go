@@ -8,9 +8,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 // GetQueryCmd returns the cli query commands for this module

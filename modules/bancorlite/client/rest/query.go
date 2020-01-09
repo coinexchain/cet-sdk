@@ -11,10 +11,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 	"github.com/coinexchain/cet-sdk/modules/market"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {

@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/cet-sdk/client/cliutil"
 	"github.com/coinexchain/cet-sdk/modules/alias/internal/keepers"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 var ResultParam *keepers.QueryAliasInfoParam

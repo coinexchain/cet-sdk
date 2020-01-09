@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/cet-sdk/client/restutil"
+	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
 var ResultParam *auth.QueryAccountParams
