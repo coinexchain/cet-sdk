@@ -30,7 +30,7 @@ func InitGenesis(ctx sdk.Context, keeper AccountXKeeper, data GenesisState) {
 	keeper.SetParams(ctx, data.Params)
 
 	for _, accx := range data.AccountXs {
-		accountX := types.NewAccountX(accx.Address, accx.MemoRequired, accx.LockedCoins, accx.FrozenCoins)
+		accountX := types.NewAccountX(accx.Address, accx.MemoRequired, accx.LockedCoins, accx.FrozenCoins, accx.Referee, accx.RefereeChangeTime)
 		keeper.SetAccountX(ctx, accountX)
 	}
 }
@@ -50,11 +50,10 @@ func ExportGenesis(ctx sdk.Context, keeper AccountXKeeper) GenesisState {
 // ValidateGenesis performs basic validation of asset genesis data returning an
 // error for any failed validation criteria.
 func (data GenesisState) ValidateGenesis() error {
-	limit := data.Params.MinGasPriceLimit
-	if limit.IsNegative() {
-		return types.ErrInvalidMinGasPriceLimit(limit)
+	err := data.Params.ValidateGenesis()
+	if err != nil {
+		return err
 	}
-
 	addrMap := make(map[string]bool, len(data.AccountXs))
 	for _, accx := range data.AccountXs {
 		addrStr := accx.Address.String()

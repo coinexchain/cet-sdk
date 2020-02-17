@@ -2,6 +2,8 @@ package types
 
 import (
 	"bytes"
+	"fmt"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -21,19 +23,26 @@ const (
 	// activated account send to other activated addr,  costs 33903 gas
 	// consider it takes 50000 to do transfer/send tx
 	// so, min_gas_price = 100000000sato.CET * 0.01 / 50000 = 20 sato.CET
-	DefaultMinGasPriceLimit = "20.0"
+	DefaultMinGasPriceLimit         = "20.0"
+	DefaultRefereeChangeMinInterval = time.Second * 24 * 60 * 60
+	DefaultRebateRatio              = 1000
+	RebateRatioBase                 = 10000
 )
 
 // Parameter keys
 var (
-	KeyMinGasPriceLimit = []byte("MinGasPriceLimit")
+	KeyMinGasPriceLimit         = []byte("MinGasPriceLimit")
+	KeyRefereeChangeMinInterval = []byte("RefereeChangeMinInterval")
+	KeyRebateRatio              = []byte("RebateRatio")
 )
 
 var _ params.ParamSet = (*Params)(nil)
 
 // Params defines the parameters for the authx module.
 type Params struct {
-	MinGasPriceLimit sdk.Dec `json:"min_gas_price_limit"`
+	MinGasPriceLimit         sdk.Dec `json:"min_gas_price_limit"`
+	RefereeChangeMinInterval int64   `json:"referee_change_min_interval"`
+	RebateRatio              int64   `json:"rebate_ratio"`
 }
 
 // ParamKeyTable for authx module
@@ -44,13 +53,17 @@ func ParamKeyTable() params.KeyTable {
 // DefaultParams returns a default set of parameters.
 func DefaultParams() Params {
 	return Params{
-		MinGasPriceLimit: sdk.MustNewDecFromStr(DefaultMinGasPriceLimit),
+		MinGasPriceLimit:         sdk.MustNewDecFromStr(DefaultMinGasPriceLimit),
+		RefereeChangeMinInterval: int64(DefaultRefereeChangeMinInterval),
+		RebateRatio:              DefaultRebateRatio,
 	}
 }
 
-func NewParams(minGasPriceLimit sdk.Dec) Params {
+func NewParams(minGasPriceLimit sdk.Dec, refreeChangeMinInterval int64, rebateRatio int64) Params {
 	return Params{
-		MinGasPriceLimit: minGasPriceLimit,
+		MinGasPriceLimit:         minGasPriceLimit,
+		RefereeChangeMinInterval: refreeChangeMinInterval,
+		RebateRatio:              rebateRatio,
 	}
 }
 
@@ -59,6 +72,8 @@ func NewParams(minGasPriceLimit sdk.Dec) Params {
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{Key: KeyMinGasPriceLimit, Value: &p.MinGasPriceLimit},
+		{Key: KeyRefereeChangeMinInterval, Value: &p.RefereeChangeMinInterval},
+		{Key: KeyRebateRatio, Value: &p.RebateRatio},
 	}
 }
 
@@ -72,4 +87,17 @@ func (p Params) Equal(p2 Params) bool {
 // String implements the stringer interface.
 func (p Params) String() string {
 	return string(ModuleCdc.MustMarshalBinaryLengthPrefixed(&p))
+}
+
+func (p *Params) ValidateGenesis() error {
+	if p.MinGasPriceLimit.IsNegative() {
+		return fmt.Errorf("%s must be positive , is %d", KeyMinGasPriceLimit, p.MinGasPriceLimit)
+	}
+	if p.RefereeChangeMinInterval <= 0 {
+		return fmt.Errorf("%s must be positive, is %d", KeyRefereeChangeMinInterval, p.RefereeChangeMinInterval)
+	}
+	if p.RebateRatio <= 0 || p.RebateRatio > 10000 {
+		return fmt.Errorf("RebateRatio must be in range of 1 to 10000, is %d", p.RebateRatio)
+	}
+	return nil
 }

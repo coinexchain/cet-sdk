@@ -10,20 +10,24 @@ import (
 )
 
 type AccountX struct {
-	Address      sdk.AccAddress `json:"address"`
-	MemoRequired bool           `json:"memo_required"` // if memo is required for receiving coins
-	LockedCoins  LockedCoins    `json:"locked_coins"`
-	FrozenCoins  sdk.Coins      `json:"frozen_coins"`
+	Address           sdk.AccAddress `json:"address"`
+	MemoRequired      bool           `json:"memo_required"` // if memo is required for receiving coins
+	LockedCoins       LockedCoins    `json:"locked_coins"`
+	FrozenCoins       sdk.Coins      `json:"frozen_coins"`
+	Referee           sdk.AccAddress `json:"referee"`
+	RefereeChangeTime int64          `json:"referee_change_time"`
 }
 
 type AccountXs []AccountX
 
-func NewAccountX(address sdk.AccAddress, memoRequired bool, lockedCoins LockedCoins, frozenCoins sdk.Coins) AccountX {
+func NewAccountX(address sdk.AccAddress, memoRequired bool, lockedCoins LockedCoins, frozenCoins sdk.Coins, referee sdk.AccAddress, refereeChangeTime int64) AccountX {
 	return AccountX{
-		Address:      address,
-		MemoRequired: memoRequired,
-		LockedCoins:  lockedCoins,
-		FrozenCoins:  frozenCoins,
+		Address:           address,
+		MemoRequired:      memoRequired,
+		LockedCoins:       lockedCoins,
+		FrozenCoins:       frozenCoins,
+		Referee:           referee,
+		RefereeChangeTime: refereeChangeTime,
 	}
 }
 
@@ -87,9 +91,20 @@ func (acc AccountX) String() string {
 	return fmt.Sprintf(`
   LockedCoins:   %s
   FrozenCoins:   %s
-  MemoRequired:  %t`,
-		acc.LockedCoins, acc.FrozenCoins, acc.MemoRequired,
+   MemoRequired:  %t
+  Referee: %s
+  RefereeChangeTime: %d`,
+		acc.LockedCoins, acc.FrozenCoins, acc.MemoRequired, acc.Referee, acc.RefereeChangeTime,
 	)
+}
+
+func (acc *AccountX) UpdateRefereeAddr(referee sdk.AccAddress, time int64, refereeChangeMinInterval int64) sdk.Error {
+	if time-acc.RefereeChangeTime < refereeChangeMinInterval {
+		return ErrRefereeChangeTooFast()
+	}
+	acc.Referee = referee
+	acc.RefereeChangeTime = time
+	return nil
 }
 
 func NewAccountXWithAddress(addr sdk.AccAddress) AccountX {
@@ -109,14 +124,16 @@ func (accAll AccountAll) String() string {
 }
 
 type AccountMix struct {
-	Address       sdk.AccAddress `json:"address"`
-	Coins         sdk.Coins      `json:"coins"`
-	LockedCoins   LockedCoins    `json:"locked_coins"`
-	FrozenCoins   sdk.Coins      `json:"frozen_coins"`
-	PubKey        crypto.PubKey  `json:"public_key"`
-	AccountNumber uint64         `json:"account_number"`
-	Sequence      uint64         `json:"sequence"`
-	MemoRequired  bool           `json:"memo_required"` // if memo is required for receiving coins
+	Address           sdk.AccAddress `json:"address"`
+	Coins             sdk.Coins      `json:"coins"`
+	LockedCoins       LockedCoins    `json:"locked_coins"`
+	FrozenCoins       sdk.Coins      `json:"frozen_coins"`
+	PubKey            crypto.PubKey  `json:"public_key"`
+	AccountNumber     uint64         `json:"account_number"`
+	Sequence          uint64         `json:"sequence"`
+	MemoRequired      bool           `json:"memo_required"` // if memo is required for receiving coins
+	Referee           sdk.AccAddress `json:"referee"`
+	RefereeChangeTime int64          `json:"referee_change_time"`
 }
 
 func NewAccountMix(acc auth.Account, x AccountX) AccountMix {
@@ -128,5 +145,8 @@ func NewAccountMix(acc auth.Account, x AccountX) AccountMix {
 		acc.GetPubKey(),
 		acc.GetAccountNumber(),
 		acc.GetSequence(),
-		x.IsMemoRequired()}
+		x.IsMemoRequired(),
+		x.Referee,
+		x.RefereeChangeTime,
+	}
 }

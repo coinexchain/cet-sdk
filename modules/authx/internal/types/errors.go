@@ -10,6 +10,7 @@ const (
 	// 201 ～ 299
 	CodeInvalidMinGasPriceLimit sdk.CodeType = 201
 	CodeGasPriceTooLow          sdk.CodeType = 202
+	CodeRefereeChangeTooFast    sdk.CodeType = 203
 )
 
 func ErrInvalidMinGasPriceLimit(limit sdk.Dec) sdk.Error {
@@ -20,4 +21,7 @@ func ErrInvalidMinGasPriceLimit(limit sdk.Dec) sdk.Error {
 func ErrGasPriceTooLow(required, actual sdk.Dec) sdk.Error {
 	return sdk.NewError(CodeSpaceAuthX, CodeGasPriceTooLow,
 		"gas price too low: %s < %s", actual, required)
+}
+func ErrRefereeChangeTooFast() sdk.Error {
+	return sdk.NewError(CodeSpaceAuthX, CodeRefereeChangeTooFast, "")
 }

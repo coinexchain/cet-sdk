@@ -30,7 +30,7 @@ fi
 
 linter_targets=$(glide novendor)
 
-test -z "$(golangci-lint  run -j 4 --disable-all \
+test -z "$(golangci-lint  run -j 4 --disable-all --timeout=5m \
 --enable=gofmt \
 --enable=golint \
 --enable=gosimple \
