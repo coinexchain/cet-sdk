@@ -125,7 +125,7 @@ func (axk AccountXKeeper) RemoveFromUnlockedCoinsQueueByKey(ctx sdk.Context, key
 	store := ctx.KVStore(axk.key)
 	store.Delete(key)
 }
-func (axk AccountXKeeper) GetReferee(ctx sdk.Context, addr sdk.AccAddress) sdk.AccAddress {
+func (axk AccountXKeeper) GetRefereeAddr(ctx sdk.Context, addr sdk.AccAddress) sdk.AccAddress {
 	accx, exist := axk.GetAccountX(ctx, addr)
 	if !exist {
 		return sdk.AccAddress{}
@@ -133,11 +133,11 @@ func (axk AccountXKeeper) GetReferee(ctx sdk.Context, addr sdk.AccAddress) sdk.A
 	return accx.Referee
 }
 
-func (axk AccountXKeeper) GetRebateRatio(ctx sdk.Context, addr sdk.AccAddress) int64 {
+func (axk AccountXKeeper) GetRebateRatio(ctx sdk.Context) int64 {
 	return axk.GetParams(ctx).RebateRatio
 }
 
-func (axk AccountXKeeper) GetRebateRatioBase(ctx sdk.Context, addr sdk.AccAddress) int64 {
+func (axk AccountXKeeper) GetRebateRatioBase(ctx sdk.Context) int64 {
 	return types.RebateRatioBase
 }
 

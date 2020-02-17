@@ -37,7 +37,7 @@ func NewKeeper(key sdk.StoreKey, axkVal types.ExpectedAssetStatusKeeper,
 	bnkVal types.ExpectedBankxKeeper, cdcVal *codec.Codec,
 	msgKeeperVal msgqueue.MsgSender,
 	paramstore params.Subspace,
-	ak auth.AccountKeeper) Keeper {
+	ak auth.AccountKeeper, authx types.ExpectedAuthXKeeper) Keeper {
 
 	return Keeper{
 		paramSubspace: paramstore.WithKeyTable(types.ParamKeyTable()),
@@ -49,6 +49,7 @@ func NewKeeper(key sdk.StoreKey, axkVal types.ExpectedAssetStatusKeeper,
 		gmk:           NewGlobalMarketInfoKeeper(key, cdcVal),
 		msgProducer:   msgKeeperVal,
 		ak:            ak,
+		authX:         authx,
 	}
 }
 

@@ -3,8 +3,10 @@ package market
 import (
 	"bytes"
 	"fmt"
-	"github.com/coinexchain/cet-sdk/modules/asset"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/coinexchain/cet-sdk/modules/asset"
 )
 
 type mockFeeColletKeeper struct {

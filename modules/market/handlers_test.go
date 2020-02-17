@@ -108,7 +108,7 @@ func initAddress() {
 	forbidAddr, _ = simpleAddr("00003")
 }
 
-func prepareAssetKeeper(t *testing.T, keys storeKeys, cdc *codec.Codec, ctx sdk.Context, addrForbid, tokenForbid bool) (types.ExpectedAssetStatusKeeper, auth.AccountKeeper) {
+func prepareAssetKeeper(t *testing.T, keys storeKeys, cdc *codec.Codec, ctx sdk.Context, addrForbid, tokenForbid bool) (types.ExpectedAssetStatusKeeper, auth.AccountKeeper, authx.AccountXKeeper) {
 	asset.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
@@ -214,7 +214,7 @@ func prepareAssetKeeper(t *testing.T, keys storeKeys, cdc *codec.Codec, ctx sdk.
 		tk.ForbidAddress(ctx, msgForbidAddr.Symbol, msgForbidAddr.OwnerAddr, msgForbidAddr.Addresses)
 	}
 
-	return tk, ak
+	return tk, ak, axk
 }
 
 func prepareBankxKeeper(keys storeKeys, cdc *codec.Codec, ctx sdk.Context) types.ExpectedBankxKeeper {
@@ -274,12 +274,12 @@ func prepareMockInput(t *testing.T, addrForbid, tokenForbid bool) testInput {
 	ms.LoadLatestVersion()
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
-	ak, akp := prepareAssetKeeper(t, keys, cdc, ctx, addrForbid, tokenForbid)
+	ak, akp, axk := prepareAssetKeeper(t, keys, cdc, ctx, addrForbid, tokenForbid)
 	bk := prepareBankxKeeper(keys, cdc, ctx)
 	paramsKeeper := params.NewKeeper(cdc, keys.keyParams, keys.tkeyParams, params.DefaultCodespace)
 	// akp := auth.NewAccountKeeper(cdc, keys.authCapKey, paramsKeeper.Subspace(auth.StoreKey), auth.ProtoBaseAccount)
 	mk := keepers.NewKeeper(keys.marketKey, ak, bk, cdc,
-		msgqueue.NewProducer(nil), paramsKeeper.Subspace(types.StoreKey), akp)
+		msgqueue.NewProducer(nil), paramsKeeper.Subspace(types.StoreKey), akp, axk)
 	types.RegisterCodec(cdc)
 
 	// akp := auth.NewAccountKeeper(cdc, keys.authCapKey, paramsKeeper.Subspace(auth.StoreKey), auth.ProtoBaseAccount)

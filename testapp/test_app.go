@@ -316,6 +316,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.MsgQueProducer,
 		app.ParamsKeeper.Subspace(market.StoreKey),
 		app.AccountKeeper,
+		app.AccountXKeeper,
 	)
 	// register the staking hooks
 	// NOTE: The StakingKeeper above is passed by reference, so that it can be
