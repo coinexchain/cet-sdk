@@ -121,7 +121,21 @@ type ParamOfCommissionMsg struct {
 
 func CalCommission(ctx sdk.Context, keeper keepers.QueryMarketInfoAndParams, msg ParamOfCommissionMsg) (int64, sdk.Error) {
 	marketParams := keeper.GetParams(ctx)
-	volume := keeper.GetMarketVolume(ctx, msg.stock, msg.money, msg.amountOfStock, msg.amountOfMoney)
+	volume := sdk.ZeroDec()
+	if msg.stock == dex.CET {
+		volume = msg.amountOfStock
+	} else if msg.money == dex.CET {
+		volume = msg.amountOfMoney
+	} else if marketInfo, err := keeper.GetMarketInfo(ctx, GetSymbol(dex.CET, msg.money)); err == nil {
+		volume = msg.amountOfMoney.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := keeper.GetMarketInfo(ctx, GetSymbol(dex.CET, msg.stock)); err == nil {
+		volume = msg.amountOfStock.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := keeper.GetMarketInfo(ctx, GetSymbol(msg.money, dex.CET)); err == nil {
+		volume = msg.amountOfMoney.Mul(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := keeper.GetMarketInfo(ctx, GetSymbol(msg.stock, dex.CET)); err == nil {
+		volume = msg.amountOfStock.Mul(marketInfo.LastExecutedPrice)
+	}
+
 	rate := sdk.NewDec(marketParams.MarketFeeRate).QuoInt64(int64(math.Pow10(types.DefaultMarketFeeRatePrecision)))
 	commission := volume.Mul(rate).Ceil().RoundInt64()
 	if commission > types.MaxOrderAmount {
@@ -337,9 +351,11 @@ func handleMsgCancelOrder(ctx sdk.Context, msg types.MsgCancelOrder, keeper keep
 		return err.Result()
 	}
 	marketParams := keeper.GetParams(ctx)
-	order := keepers.NewGlobalOrderKeeper(keeper.GetMarketKey(), types.ModuleCdc).QueryOrder(ctx, msg.OrderID)
+	bankxKeeper := keeper.GetBankxKeeper()
+	glk := keepers.NewGlobalOrderKeeper(keeper.GetMarketKey(), types.ModuleCdc)
+	order := glk.QueryOrder(ctx, msg.OrderID)
 	ork := keepers.NewOrderKeeper(keeper.GetMarketKey(), order.TradingPair, types.ModuleCdc)
-	removeOrder(ctx, ork, keeper.GetBankxKeeper(), keeper, order, marketParams.FeeForZeroDeal, marketParams.GTEOrderLifetime)
+	removeOrder(ctx, ork, bankxKeeper, keeper, order, &marketParams)
 
 	// send msg to kafka
 	msgInfo := types.CancelOrderInfo{

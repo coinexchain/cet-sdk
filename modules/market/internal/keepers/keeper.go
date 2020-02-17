@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 
-	dex "github.com/coinexchain/cet-sdk/types"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -18,7 +16,7 @@ import (
 
 type QueryMarketInfoAndParams interface {
 	GetParams(ctx sdk.Context) types.Params
-	GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec
+	GetMarketInfo(ctx sdk.Context, symbol string) (types.MarketInfo, error)
 }
 
 type Keeper struct {
@@ -31,6 +29,7 @@ type Keeper struct {
 	gmk           GlobalMarketInfoKeeper
 	msgProducer   msgqueue.MsgSender
 	ak            auth.AccountKeeper
+	authX         types.ExpectedAuthXKeeper
 }
 
 func NewKeeper(key sdk.StoreKey, axkVal types.ExpectedAssetStatusKeeper,
@@ -84,6 +83,22 @@ func (k Keeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) 
 	return k.bnk.FreezeCoins(ctx, acc, amt)
 }
 
+func (k Keeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return k.bnk.SubtractCoins(ctx, addr, amt)
+}
+
+func (k Keeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
+	return k.bnk.DeductInt64CetFee(ctx, addr, amt)
+}
+
+func (k Keeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return k.bnk.SendCoins(ctx, from, to, amt)
+}
+
+func (k Keeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return k.bnk.UnFreezeCoins(ctx, acc, amt)
+}
+
 func (k Keeper) IsTokenIssuer(ctx sdk.Context, denom string, addr sdk.AccAddress) bool {
 	return k.axk.IsTokenIssuer(ctx, denom, addr)
 }
@@ -103,6 +118,7 @@ func (k Keeper) IsForbiddenByTokenIssuer(ctx sdk.Context, denom string, addr sdk
 func (k Keeper) IsTokenForbidden(ctx sdk.Context, symbol string) bool {
 	return k.axk.IsTokenForbidden(ctx, symbol)
 }
+
 func (k Keeper) GetOrderCleanTime(ctx sdk.Context) int64 {
 	return k.ock.GetUnixTime(ctx)
 }
@@ -125,6 +141,18 @@ func (k Keeper) GetAssetKeeper() types.ExpectedAssetStatusKeeper {
 
 func (k Keeper) GetMarketKey() sdk.StoreKey {
 	return k.marketKey
+}
+
+func (k Keeper) GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress {
+	return k.authX.GetRefereeAddr(ctx, accAddr)
+}
+
+func (k Keeper) GetRebateRatio(ctx sdk.Context) int64 {
+	return k.authX.GetRebateRatio(ctx)
+}
+
+func (k Keeper) GetRebateRatioBase(ctx sdk.Context) int64 {
+	return k.authX.GetRebateRatioBase(ctx)
 }
 
 // -----------------------------------------------------------------------------
@@ -194,24 +222,6 @@ func (k *Keeper) GetMarketLastExePrice(ctx sdk.Context, symbol string) (sdk.Dec,
 		return sdk.ZeroDec(), err
 	}
 	return mi.LastExecutedPrice, err
-}
-
-func (k Keeper) GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec {
-	volume := sdk.ZeroDec()
-	if stock == dex.CET {
-		volume = stockVolume
-	} else if money == dex.CET {
-		volume = moneyVolume
-	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, money)); err == nil {
-		volume = moneyVolume.Quo(marketInfo.LastExecutedPrice)
-	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, stock)); err == nil {
-		volume = stockVolume.Quo(marketInfo.LastExecutedPrice)
-	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(money, dex.CET)); err == nil {
-		volume = moneyVolume.Mul(marketInfo.LastExecutedPrice)
-	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(stock, dex.CET)); err == nil {
-		volume = stockVolume.Mul(marketInfo.LastExecutedPrice)
-	}
-	return volume
 }
 
 func (k *Keeper) IsMarketExist(ctx sdk.Context, symbol string) bool {
