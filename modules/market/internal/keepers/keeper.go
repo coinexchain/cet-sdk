@@ -12,11 +12,12 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type QueryMarketInfoAndParams interface {
 	GetParams(ctx sdk.Context) types.Params
-	GetMarketInfo(ctx sdk.Context, symbol string) (types.MarketInfo, error)
+	GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec
 }
 
 type Keeper struct {
@@ -222,6 +223,24 @@ func (k *Keeper) GetMarketLastExePrice(ctx sdk.Context, symbol string) (sdk.Dec,
 		return sdk.ZeroDec(), err
 	}
 	return mi.LastExecutedPrice, err
+}
+
+func (k Keeper) GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec {
+	volume := sdk.ZeroDec()
+	if stock == dex.CET {
+		volume = stockVolume
+	} else if money == dex.CET {
+		volume = moneyVolume
+	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, money)); err == nil {
+		volume = moneyVolume.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, stock)); err == nil {
+		volume = stockVolume.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(money, dex.CET)); err == nil {
+		volume = moneyVolume.Mul(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(stock, dex.CET)); err == nil {
+		volume = stockVolume.Mul(marketInfo.LastExecutedPrice)
+	}
+	return volume
 }
 
 func (k *Keeper) IsMarketExist(ctx sdk.Context, symbol string) bool {
