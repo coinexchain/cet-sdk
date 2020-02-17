@@ -274,17 +274,13 @@ func prepareMockInput(t *testing.T, addrForbid, tokenForbid bool) testInput {
 	ms.LoadLatestVersion()
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
-	ak, akp, axk := prepareAssetKeeper(t, keys, cdc, ctx, addrForbid, tokenForbid)
+	ak, akp, _ := prepareAssetKeeper(t, keys, cdc, ctx, addrForbid, tokenForbid)
 	bk := prepareBankxKeeper(keys, cdc, ctx)
 	paramsKeeper := params.NewKeeper(cdc, keys.keyParams, keys.tkeyParams, params.DefaultCodespace)
-	// akp := auth.NewAccountKeeper(cdc, keys.authCapKey, paramsKeeper.Subspace(auth.StoreKey), auth.ProtoBaseAccount)
 	mk := keepers.NewKeeper(keys.marketKey, ak, bk, cdc,
-		msgqueue.NewProducer(nil), paramsKeeper.Subspace(types.StoreKey), akp, axk)
+		msgqueue.NewProducer(nil), paramsKeeper.Subspace(types.StoreKey), akp, &mockKeeper{})
 	types.RegisterCodec(cdc)
 
-	// akp := auth.NewAccountKeeper(cdc, keys.authCapKey, paramsKeeper.Subspace(auth.StoreKey), auth.ProtoBaseAccount)
-	// subspace := paramsKeeper.Subspace(StoreKey)
-	// keeper := NewKeeper(keys.marketKey, ak, bk, mockFeeKeeper{}, msgCdc, msgqueue.NewProducer(), subspace)
 	parameters := types.DefaultParams()
 	mk.SetParams(ctx, parameters)
 

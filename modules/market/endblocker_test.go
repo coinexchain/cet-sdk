@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coinexchain/cet-sdk/modules/authx"
-
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -22,7 +20,7 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
-	types2 "github.com/coinexchain/cet-sdk/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var msgCdc = types.ModuleCdc
@@ -79,38 +77,9 @@ func sameTO(a, order *types.Order) bool {
 	return res
 }
 
-type mocBankxKeeper struct {
-	records []string
-}
-
-func (k *mocBankxKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	return nil
-}
-func (k *mocBankxKeeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
-	return nil
-}
-func (k *mocBankxKeeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool {
-	return true
-}
-func (k *mocBankxKeeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	k.records = append(k.records, fmt.Sprintf("send %s %s from %s to %s",
-		amt[0].Amount.String(), amt[0].Denom, from.String(), to.String()))
-	return nil
-}
-func (k *mocBankxKeeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	k.records = append(k.records, fmt.Sprintf("freeze %s %s at %s",
-		amt[0].Amount.String(), amt[0].Denom, string(acc)))
-	return nil
-}
-func (k *mocBankxKeeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	k.records = append(k.records, fmt.Sprintf("unfreeze %s %s at %s",
-		amt[0].Amount.String(), amt[0].Denom, acc.String()))
-	return nil
-}
-
 func TestUnfreezeCoinsForOrder(t *testing.T) {
 	bxKeeper := &mocBankxKeeper{records: make([]string, 0, 10)}
-	mockFeeK := &mockFeeColletKeeper{}
+	mockFeeK := &mockKeeper{}
 	order := newTO("00001", 1, 11051, 50, types.BUY, types.GTE, 10, 3)
 	order.Freeze = 30
 	order.FrozenCommission = 10
@@ -143,7 +112,7 @@ func TestRemoveOrders(t *testing.T) {
 	bnk := &mocBankxKeeper{}
 	ctx, keys := newContextAndMarketKey(unitTestChainID)
 	subspace := params.NewKeeper(msgCdc, keys.keyParams, keys.tkeyParams, params.DefaultCodespace).Subspace(types.StoreKey)
-	keeper := keepers.NewKeeper(keys.marketKey, axk, bnk, msgCdc, msgqueue.NewProducer(nil), subspace, auth.AccountKeeper{}, authx.AccountXKeeper{})
+	keeper := keepers.NewKeeper(keys.marketKey, axk, bnk, msgCdc, msgqueue.NewProducer(nil), subspace, auth.AccountKeeper{}, &mockKeeper{})
 	keeper.SetOrderCleanTime(ctx, time.Now().Unix())
 	ctx = ctx.WithBlockTime(time.Unix(time.Now().Unix()+int64(25*60*60), 0))
 	parameters := types.Params{}
@@ -208,7 +177,7 @@ func TestDelist(t *testing.T) {
 	bnk := &mocBankxKeeper{}
 	ctx, keys := newContextAndMarketKey(unitTestChainID)
 	subspace := params.NewKeeper(msgCdc, keys.keyParams, keys.tkeyParams, params.DefaultCodespace).Subspace(types.StoreKey)
-	keeper := keepers.NewKeeper(keys.marketKey, axk, bnk, msgCdc, msgqueue.NewProducer(nil), subspace, auth.AccountKeeper{}, authx.AccountXKeeper{})
+	keeper := keepers.NewKeeper(keys.marketKey, axk, bnk, msgCdc, msgqueue.NewProducer(nil), subspace, auth.AccountKeeper{}, &mockKeeper{})
 	delistKeeper := keepers.NewDelistKeeper(keys.marketKey)
 	delistKeeper.AddDelistRequest(ctx, ctx.BlockHeight(), "btc/usdt")
 	// currDay := ctx.BlockHeader().Time.Unix()
@@ -532,11 +501,11 @@ func TestEndBlocker(t *testing.T) {
 	input.ctx = input.ctx.WithChainID(IntegrationNetSubString + "01")
 	input.ctx = input.ctx.WithBlockTime(time.Unix(1, 0))
 	input.mk.SetOrderCleanTime(input.ctx, 1)
-	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, types2.CET), types.ModuleCdc)
+	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, dex.CET), types.ModuleCdc)
 
 	mkInfo := MarketInfo{
 		Stock: stock,
-		Money: types2.CET,
+		Money: dex.CET,
 	}
 	input.mk.SetMarket(input.ctx, mkInfo)
 
@@ -689,11 +658,11 @@ func TestLeastAbsImbalance(t *testing.T) {
 	input.ctx = input.ctx.WithChainID(IntegrationNetSubString + "01")
 	input.ctx = input.ctx.WithBlockTime(time.Unix(1, 0))
 	input.mk.SetOrderCleanTime(input.ctx, 1)
-	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, types2.CET), types.ModuleCdc)
+	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, dex.CET), types.ModuleCdc)
 
 	mkInfo := MarketInfo{
 		Stock: stock,
-		Money: types2.CET,
+		Money: dex.CET,
 	}
 	input.mk.SetMarket(input.ctx, mkInfo)
 
@@ -769,14 +738,14 @@ func TestLowestPriceMatch(t *testing.T) {
 	input.ctx = input.ctx.WithChainID(IntegrationNetSubString + "01")
 	input.ctx = input.ctx.WithBlockTime(time.Unix(1, 0))
 	input.mk.SetOrderCleanTime(input.ctx, 1)
-	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, types2.CET), types.ModuleCdc)
+	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, dex.CET), types.ModuleCdc)
 	param := types.Params{
 		MaxExecutedPriceChangeRatio: 5,
 	}
 	input.mk.SetParams(input.ctx, param)
 	mkInfo := MarketInfo{
 		Stock:             stock,
-		Money:             types2.CET,
+		Money:             dex.CET,
 		LastExecutedPrice: sdk.NewDec(80),
 	}
 	input.mk.SetMarket(input.ctx, mkInfo)
@@ -898,10 +867,10 @@ func TestClosestLastTradePrice(t *testing.T) {
 	input.ctx = input.ctx.WithChainID(IntegrationNetSubString + "01")
 	input.ctx = input.ctx.WithBlockTime(time.Unix(1, 0))
 	input.mk.SetOrderCleanTime(input.ctx, 1)
-	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, types2.CET), types.ModuleCdc)
+	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, dex.CET), types.ModuleCdc)
 	mkInfo := MarketInfo{
 		Stock:             stock,
-		Money:             types2.CET,
+		Money:             dex.CET,
 		LastExecutedPrice: sdk.NewDec(99),
 	}
 	input.mk.SetMarket(input.ctx, mkInfo)
@@ -977,7 +946,7 @@ func TestCalFrozenFeatureFee(t *testing.T) {
 
 	mkInfo := MarketInfo{
 		Stock:             stock,
-		Money:             types2.CET,
+		Money:             dex.CET,
 		LastExecutedPrice: sdk.NewDec(99),
 	}
 	input.mk.SetMarket(input.ctx, mkInfo)
@@ -987,15 +956,15 @@ func TestCalFrozenFeatureFee(t *testing.T) {
 	sellAccount := input.akp.NewAccountWithAddress(input.ctx, seller)
 	buyAccount := input.akp.NewAccountWithAddress(input.ctx, buyer)
 	err := sellAccount.SetCoins(sdk.NewCoins(sdk.NewCoin(stock, sdk.NewInt(10000)),
-		sdk.NewCoin(types2.CET, sdk.NewInt(10000))))
+		sdk.NewCoin(dex.CET, sdk.NewInt(10000))))
 	require.Nil(t, err)
 	err = buyAccount.SetCoins(sdk.NewCoins(sdk.NewCoin(stock, sdk.NewInt(10000)),
-		sdk.NewCoin(types2.CET, sdk.NewInt(10000))))
+		sdk.NewCoin(dex.CET, sdk.NewInt(10000))))
 	require.Nil(t, err)
 	input.akp.SetAccount(input.ctx, sellAccount)
 	input.akp.SetAccount(input.ctx, buyAccount)
 
-	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, types2.CET), types.ModuleCdc)
+	orderKeeper := keepers.NewOrderKeeper(input.mk.GetMarketKey(), GetSymbol(stock, dex.CET), types.ModuleCdc)
 	sellOrder := Order{
 		Sender:           seller,
 		Sequence:         1,
@@ -1033,8 +1002,8 @@ func TestCalFrozenFeatureFee(t *testing.T) {
 	buyAccount = input.akp.GetAccount(input.ctx, buyer)
 	require.EqualValues(t, sellAccount.GetCoins().AmountOf(stock).Int64(), 9975)
 	require.EqualValues(t, buyAccount.GetCoins().AmountOf(stock).Int64(), 10025)
-	require.EqualValues(t, sellAccount.GetCoins().AmountOf(types2.CET).Int64(), 12400)
-	require.EqualValues(t, buyAccount.GetCoins().AmountOf(types2.CET).Int64(), 7400)
+	require.EqualValues(t, sellAccount.GetCoins().AmountOf(dex.CET).Int64(), 12400)
+	require.EqualValues(t, buyAccount.GetCoins().AmountOf(dex.CET).Int64(), 7400)
 
 	input.ctx = input.ctx.WithBlockHeight(types.DefaultGTEOrderLifetime + 100)
 	sellOrder.Height = 1
@@ -1049,7 +1018,7 @@ func TestCalFrozenFeatureFee(t *testing.T) {
 	buyAccount = input.akp.GetAccount(input.ctx, buyer)
 	require.EqualValues(t, sellAccount.GetCoins().AmountOf(stock).Int64(), 9950)
 	require.EqualValues(t, buyAccount.GetCoins().AmountOf(stock).Int64(), 10050)
-	require.EqualValues(t, sellAccount.GetCoins().AmountOf(types2.CET).Int64(), 14700)
-	require.EqualValues(t, buyAccount.GetCoins().AmountOf(types2.CET).Int64(), 4700)
+	require.EqualValues(t, sellAccount.GetCoins().AmountOf(dex.CET).Int64(), 14700)
+	require.EqualValues(t, buyAccount.GetCoins().AmountOf(dex.CET).Int64(), 4700)
 
 }

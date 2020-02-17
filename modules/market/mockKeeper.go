@@ -9,47 +9,42 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/asset"
 )
 
-type mockFeeColletKeeper struct {
+type mockKeeper struct {
 	records []string
 }
 
-func (k *mockFeeColletKeeper) GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress {
+func (k *mockKeeper) GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress {
+	addr, err := sdk.AccAddressFromHex("0123456789012345678901234567890123400012")
+	if err != nil {
+		panic("generate address failed")
+	}
+	return addr
+}
+func (k *mockKeeper) GetRebateRatio(ctx sdk.Context) int64 {
+	return 100
+}
+func (k *mockKeeper) GetRebateRatioBase(ctx sdk.Context) int64 {
+	return 10000
+}
+func (k *mockKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) sdk.Error {
 	panic("implement me")
 }
-
-func (k *mockFeeColletKeeper) GetRebateRatio(ctx sdk.Context) int64 {
+func (k *mockKeeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
 	panic("implement me")
 }
-
-func (k *mockFeeColletKeeper) GetRebateRatioBase(ctx sdk.Context) int64 {
+func (k *mockKeeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool {
 	panic("implement me")
 }
-
-func (k *mockFeeColletKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) sdk.Error {
+func (k *mockKeeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return nil
+}
+func (k *mockKeeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
 	panic("implement me")
 }
-
-func (k *mockFeeColletKeeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
+func (k *mockKeeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
 	panic("implement me")
 }
-
-func (k *mockFeeColletKeeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool {
-	panic("implement me")
-}
-
-func (k *mockFeeColletKeeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	panic("implement me")
-}
-
-func (k *mockFeeColletKeeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	panic("implement me")
-}
-
-func (k *mockFeeColletKeeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
-	panic("implement me")
-}
-
-func (k *mockFeeColletKeeper) SubtractFeeAndCollectFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
+func (k *mockKeeper) SubtractFeeAndCollectFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
 	fee := fmt.Sprintf("addr : %s, fee : %d", addr, amt)
 	k.records = append(k.records, fee)
 	return nil
@@ -84,5 +79,34 @@ func (k *mocAssertStatusKeeper) IsForbiddenByTokenIssuer(ctx sdk.Context, denom 
 	return false
 }
 func (k *mocAssertStatusKeeper) GetToken(ctx sdk.Context, symbol string) asset.Token {
+	return nil
+}
+
+type mocBankxKeeper struct {
+	records []string
+}
+
+func (k *mocBankxKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return nil
+}
+func (k *mocBankxKeeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
+	return nil
+}
+func (k *mocBankxKeeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool {
+	return true
+}
+func (k *mocBankxKeeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	k.records = append(k.records, fmt.Sprintf("send %s %s from %s to %s",
+		amt[0].Amount.String(), amt[0].Denom, from.String(), to.String()))
+	return nil
+}
+func (k *mocBankxKeeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	k.records = append(k.records, fmt.Sprintf("freeze %s %s at %s",
+		amt[0].Amount.String(), amt[0].Denom, string(acc)))
+	return nil
+}
+func (k *mocBankxKeeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	k.records = append(k.records, fmt.Sprintf("unfreeze %s %s at %s",
+		amt[0].Amount.String(), amt[0].Denom, acc.String()))
 	return nil
 }
