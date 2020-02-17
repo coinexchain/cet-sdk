@@ -102,14 +102,6 @@ type storeKeys struct {
 	keySupply   *sdk.KVStoreKey
 }
 
-var bancorExist bool
-
-type mockBancorKeeper struct{}
-
-func (mbk mockBancorKeeper) IsBancorExist(ctx sdk.Context, stock string) bool {
-	return bancorExist
-}
-
 func initAddress() {
 	haveCetAddress, _ = simpleAddr("00001")
 	notHaveCetAddress, _ = simpleAddr("00002")
@@ -1376,31 +1368,6 @@ func TestCheckMsgCancelTradingPair(t *testing.T) {
 
 	// Token forbidden when money = cet
 	msg.TradingPair = GetSymbol(stock, dex.CET)
-	err = checkMsgCancelTradingPair(input.mk, msg, input.ctx)
-	require.Nil(t, err)
-
-	// Bancor doesn't exist when money = cet
-	err = checkMsgCancelTradingPair(input.mk, msg, input.ctx)
-	require.Nil(t, err)
-
-	// Bancor exist when money = cet
-	bancorExist = true
-	err = checkMsgCancelTradingPair(input.mk, msg, input.ctx)
-	require.Nil(t, nil)
-
-	// Bancor exist when money != cet
-	err = input.mk.SetMarket(input.ctx, MarketInfo{
-		Stock: stock,
-		Money: money,
-	})
-	require.Nil(t, err)
-
-	msg.TradingPair = GetSymbol(stock, money)
-	err = checkMsgCancelTradingPair(input.mk, msg, input.ctx)
-	require.Nil(t, err)
-
-	// Bancor doesn't exist when money != cet
-	bancorExist = false
 	err = checkMsgCancelTradingPair(input.mk, msg, input.ctx)
 	require.Nil(t, err)
 }

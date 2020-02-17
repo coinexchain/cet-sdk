@@ -17,7 +17,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
-	"github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/market/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
@@ -107,48 +106,6 @@ func (k *mocBankxKeeper) UnFreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt 
 	return nil
 }
 
-type mocAssertStatusKeeper struct {
-	forbiddenDenomList       []string
-	globalForbiddenDenomList []string
-	forbiddenAddrList        []sdk.AccAddress
-}
-
-func (k *mocAssertStatusKeeper) IsTokenForbidden(ctx sdk.Context, denom string) bool {
-	for _, d := range k.globalForbiddenDenomList {
-		if denom == d {
-			return true
-		}
-	}
-	return false
-}
-func (k *mocAssertStatusKeeper) IsTokenExists(ctx sdk.Context, denom string) bool {
-	return true
-}
-func (k *mocAssertStatusKeeper) IsTokenIssuer(ctx sdk.Context, denom string, addr sdk.AccAddress) bool {
-	return false
-}
-func (k *mocAssertStatusKeeper) IsForbiddenByTokenIssuer(ctx sdk.Context, denom string, addr sdk.AccAddress) bool {
-	for i := 0; i < len(k.forbiddenDenomList); i++ {
-		if denom == k.forbiddenDenomList[i] && bytes.Equal(addr, k.forbiddenAddrList[i]) {
-			return true
-		}
-	}
-	return false
-}
-func (k *mocAssertStatusKeeper) GetToken(ctx sdk.Context, symbol string) asset.Token {
-	return nil
-}
-
-type mockFeeColletKeeper struct {
-	records []string
-}
-
-func (k *mockFeeColletKeeper) SubtractFeeAndCollectFee(ctx sdk.Context, addr sdk.AccAddress, amt int64) sdk.Error {
-	fee := fmt.Sprintf("addr : %s, fee : %d", addr, amt)
-	k.records = append(k.records, fee)
-	return nil
-}
-
 func TestUnfreezeCoinsForOrder(t *testing.T) {
 	bxKeeper := &mocBankxKeeper{records: make([]string, 0, 10)}
 	mockFeeK := &mockFeeColletKeeper{}
@@ -159,7 +116,10 @@ func TestUnfreezeCoinsForOrder(t *testing.T) {
 	order.DealStock = 20
 	ctx, _ := newContextAndMarketKey(unitTestChainID)
 	ctx = ctx.WithBlockHeight(18)
-	unfreezeCoinsForOrder(ctx, bxKeeper, order, 0, mockFeeK, 10)
+	params := types.Params{
+		GTEOrderLifetime: 10,
+	}
+	unfreezeCoinsForOrder(ctx, bxKeeper, order, mockFeeK, &params)
 	refouts := []string{
 		"unfreeze 30 usdt at cosmos1qy352eufqy352eufqy352eufqy35qqqptw34ca",
 		"unfreeze 10 cet at cosmos1qy352eufqy352eufqy352eufqy35qqqptw34ca",
