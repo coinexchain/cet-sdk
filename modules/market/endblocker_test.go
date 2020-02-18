@@ -1022,3 +1022,36 @@ func TestCalFrozenFeatureFee(t *testing.T) {
 	require.EqualValues(t, buyAccount.GetCoins().AmountOf(dex.CET).Int64(), 4700)
 
 }
+
+func TestChargeFee(t *testing.T) {
+	keeper := &mockKeeper{}
+	ctx := sdk.Context{}
+	from, _ := simpleAddr("00001")
+	to := keeper.GetRefereeAddr(ctx, from)
+
+	// 1%
+	chargeFee(ctx, 10, from, keeper)
+	require.EqualValues(t, fmt.Sprintf("addr : %s, fee : %d", from, 10), keeper.records[0])
+	keeper.cleanRecord()
+
+	chargeFee(ctx, 100, from, keeper)
+	require.EqualValues(t, fmt.Sprintf("send 1 cet from %s to %s", from.String(), to.String()), keeper.records[0])
+	require.EqualValues(t, fmt.Sprintf("addr : %s, fee : %d", from, 99), keeper.records[1])
+	keeper.cleanRecord()
+
+	chargeFee(ctx, 111, from, keeper)
+	require.EqualValues(t, fmt.Sprintf("send 1 cet from %s to %s", from.String(), to.String()), keeper.records[0])
+	require.EqualValues(t, fmt.Sprintf("addr : %s, fee : %d", from, 110), keeper.records[1])
+	keeper.cleanRecord()
+
+	chargeFee(ctx, 9999, from, keeper)
+	require.EqualValues(t, fmt.Sprintf("send 99 cet from %s to %s", from.String(), to.String()), keeper.records[0])
+	require.EqualValues(t, fmt.Sprintf("addr : %s, fee : %d", from, 9900), keeper.records[1])
+	keeper.cleanRecord()
+
+	chargeFee(ctx, 10000, from, keeper)
+	require.EqualValues(t, fmt.Sprintf("send 100 cet from %s to %s", from.String(), to.String()), keeper.records[0])
+	require.EqualValues(t, fmt.Sprintf("addr : %s, fee : %d", from, 9900), keeper.records[1])
+	keeper.cleanRecord()
+
+}

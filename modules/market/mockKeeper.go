@@ -36,6 +36,8 @@ func (k *mockKeeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coin
 	panic("implement me")
 }
 func (k *mockKeeper) SendCoins(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	k.records = append(k.records, fmt.Sprintf("send %s %s from %s to %s",
+		amt[0].Amount.String(), amt[0].Denom, from.String(), to.String()))
 	return nil
 }
 func (k *mockKeeper) FreezeCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) sdk.Error {
@@ -48,6 +50,9 @@ func (k *mockKeeper) SubtractFeeAndCollectFee(ctx sdk.Context, addr sdk.AccAddre
 	fee := fmt.Sprintf("addr : %s, fee : %d", addr, amt)
 	k.records = append(k.records, fee)
 	return nil
+}
+func (k *mockKeeper) cleanRecord() {
+	k.records = make([]string, 0, 2)
 }
 
 type mocAssertStatusKeeper struct {
