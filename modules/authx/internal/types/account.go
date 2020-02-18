@@ -98,13 +98,11 @@ func (acc AccountX) String() string {
 	)
 }
 
-func (acc *AccountX) UpdateRefereeAddr(referee sdk.AccAddress, time int64, refereeChangeMinInterval int64) sdk.Error {
-	if time-acc.RefereeChangeTime < refereeChangeMinInterval {
-		return ErrRefereeChangeTooFast()
-	}
+func (acc *AccountX) UpdateRefereeAddr(referee sdk.AccAddress, time int64) {
+
 	acc.Referee = referee
 	acc.RefereeChangeTime = time
-	return nil
+
 }
 
 func NewAccountXWithAddress(addr sdk.AccAddress) AccountX {
