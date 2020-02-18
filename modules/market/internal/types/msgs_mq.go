@@ -66,12 +66,14 @@ type CancelOrderInfo struct {
 	DelReason string `json:"del_reason"`
 
 	// Fields of amount
-	UsedCommission int64 `json:"used_commission"`
-	UsedFeatureFee int64 `json:"used_feature_fee"`
-	LeftStock      int64 `json:"left_stock"`
-	RemainAmount   int64 `json:"remain_amount"`
-	DealStock      int64 `json:"deal_stock"`
-	DealMoney      int64 `json:"deal_money"`
+	UsedCommission    int64  `json:"used_commission"`
+	UsedFeatureFee    int64  `json:"used_feature_fee"`
+	RebateAmount      int64  `json:"rebate_amount"`
+	RebateRefereeAddr string `json:"rebate_referee_addr"`
+	LeftStock         int64  `json:"left_stock"`
+	RemainAmount      int64  `json:"remain_amount"`
+	DealStock         int64  `json:"deal_stock"`
+	DealMoney         int64  `json:"deal_money"`
 }
 
 type ModifyPricePrecisionInfo struct {

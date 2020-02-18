@@ -85,12 +85,6 @@ func handleMsgCreateTradingPair(ctx sdk.Context, msg types.MsgCreateTradingPair,
 	}
 }
 
-func fillMsgQueue(ctx sdk.Context, keeper keepers.Keeper, key string, msg interface{}) {
-	if keeper.IsSubScribed(types.Topic) {
-		msgqueue.FillMsgs(ctx, key, msg)
-	}
-}
-
 func checkMsgCreateTradingPair(ctx sdk.Context, msg types.MsgCreateTradingPair, keeper keepers.Keeper) sdk.Error {
 	if _, err := keeper.GetMarketInfo(ctx, msg.GetSymbol()); err == nil {
 		return types.ErrRepeatTradingPair()
@@ -179,22 +173,24 @@ func handleFeeForCreateOrder(ctx sdk.Context, keeper keepers.Keeper, amount int6
 }
 
 func sendCreateOrderMsg(ctx sdk.Context, keeper keepers.Keeper, order types.Order, featureFee int64) {
-	// send msg to kafka
-	msgInfo := types.CreateOrderInfo{
-		OrderID:          order.OrderID(),
-		Sender:           order.Sender.String(),
-		TradingPair:      order.TradingPair,
-		OrderType:        order.OrderType,
-		Price:            order.Price,
-		Quantity:         order.Quantity,
-		Side:             order.Side,
-		TimeInForce:      order.TimeInForce,
-		Height:           order.Height,
-		FrozenCommission: order.FrozenCommission,
-		FrozenFeatureFee: order.FrozenFeatureFee,
-		Freeze:           order.Freeze,
+	if keeper.IsSubScribed(types.Topic) {
+		// send msg to kafka
+		createOrderInfo := types.CreateOrderInfo{
+			OrderID:          order.OrderID(),
+			Sender:           order.Sender.String(),
+			TradingPair:      order.TradingPair,
+			OrderType:        order.OrderType,
+			Price:            order.Price,
+			Quantity:         order.Quantity,
+			Side:             order.Side,
+			TimeInForce:      order.TimeInForce,
+			Height:           order.Height,
+			FrozenCommission: order.FrozenCommission,
+			FrozenFeatureFee: order.FrozenFeatureFee,
+			Freeze:           order.Freeze,
+		}
+		msgqueue.FillMsgs(ctx, types.CreateOrderInfoKey, createOrderInfo)
 	}
-	fillMsgQueue(ctx, keeper, types.CreateOrderInfoKey, msgInfo)
 }
 
 func getDenomAndOrderAmount(msg types.MsgCreateOrder) (string, int64, sdk.Error) {
@@ -344,20 +340,7 @@ func handleMsgCancelOrder(ctx sdk.Context, msg types.MsgCancelOrder, keeper keep
 	removeOrder(ctx, ork, bankxKeeper, keeper, order, &marketParams)
 
 	// send msg to kafka
-	msgInfo := types.CancelOrderInfo{
-		OrderID:        msg.OrderID,
-		TradingPair:    order.TradingPair,
-		Height:         ctx.BlockHeight(),
-		Side:           order.Side,
-		Price:          order.Price,
-		DelReason:      types.CancelOrderByManual,
-		UsedCommission: order.CalActualOrderCommissionInt64(marketParams.FeeForZeroDeal),
-		LeftStock:      order.LeftStock,
-		RemainAmount:   order.Freeze,
-		DealStock:      order.DealStock,
-		DealMoney:      order.DealMoney,
-	}
-	fillMsgQueue(ctx, keeper, types.CancelOrderInfoKey, msgInfo)
+	sendCancelOrderMsg(ctx, order, &marketParams, keeper)
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			EventTypeKeyCancelOrder,
@@ -374,6 +357,13 @@ func handleMsgCancelOrder(ctx sdk.Context, msg types.MsgCancelOrder, keeper keep
 	})
 	return sdk.Result{
 		Events: ctx.EventManager().Events(),
+	}
+}
+
+func sendCancelOrderMsg(ctx sdk.Context, order *types.Order, params *Params, keeper keepers.Keeper) {
+	if keeper.IsSubScribed(types.Topic) {
+		cancelOrderInfo := packageCancelOrderMsgWithDelReason(ctx, order, types.CancelOrderByManual, params, keeper)
+		msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, cancelOrderInfo)
 	}
 }
 

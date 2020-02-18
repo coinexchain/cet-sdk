@@ -301,7 +301,7 @@ func TestDelist(t *testing.T) {
 func TestRemoveExpiredMarket(t *testing.T) {
 	input := prepareMockInput(t, false, false)
 	haveCetAddress, _ := simpleAddr("00001")
-	param := types.Params{
+	param := &types.Params{
 		FeeForZeroDeal: 10,
 	}
 
@@ -360,7 +360,7 @@ func TestRemoveExpiredMarket(t *testing.T) {
 func TestRemoveExpiredOrder(t *testing.T) {
 	input := prepareMockInput(t, false, false)
 	haveCetAddress, _ := simpleAddr("00001")
-	param := types.Params{
+	param := &types.Params{
 		FeeForZeroDeal:   10,
 		GTEOrderLifetime: 10,
 	}

@@ -204,10 +204,8 @@ func chargeFee(ctx sdk.Context, fee int64, userAddr sdk.AccAddress, keeper types
 	)
 	refereeAddr = keeper.GetRefereeAddr(ctx, userAddr)
 	if refereeAddr != nil {
-		ratio := keeper.GetRebateRatio(ctx)
-		ratioBase := keeper.GetRebateRatioBase(ctx)
-		rebateAmount = sdk.NewInt(fee).MulRaw(ratio).QuoRaw(ratioBase).Int64()
-		fee = fee - rebateAmount
+		rebateAmount = calRebateAmount(ctx, fee, keeper)
+		fee -= rebateAmount
 	}
 	if rebateAmount > 0 {
 		if err := keeper.SendCoins(ctx, userAddr, refereeAddr, dex.NewCetCoins(rebateAmount)); err != nil {
@@ -218,6 +216,13 @@ func chargeFee(ctx sdk.Context, fee int64, userAddr sdk.AccAddress, keeper types
 		//should not reach this clause in production
 		ctx.Logger().Debug("unfreezeCoinsForOrder: %s", err.Error())
 	}
+}
+
+func calRebateAmount(ctx sdk.Context, fee int64, keeper types.ExpectedAuthXKeeper) int64 {
+	ratio := keeper.GetRebateRatio(ctx)
+	ratioBase := keeper.GetRebateRatioBase(ctx)
+	rebateAmount := sdk.NewInt(fee).MulRaw(ratio).QuoRaw(ratioBase).Int64()
+	return rebateAmount
 }
 
 // Iterate the candidate orders for matching, and remove the orders whose sender is forbidden by the money owner or the stock owner.
@@ -284,7 +289,7 @@ func runMatch(ctx sdk.Context, midPrice sdk.Dec, ratio int64, symbol string, kee
 	return ordersForUpdate, infoForDeal.lastPrice
 }
 
-func removeExpiredOrder(ctx sdk.Context, keeper keepers.Keeper, marketInfoList []types.MarketInfo, marketParams types.Params) {
+func removeExpiredOrder(ctx sdk.Context, keeper keepers.Keeper, marketInfoList []types.MarketInfo, marketParams *types.Params) {
 	currHeight := ctx.BlockHeight()
 	bankxKeeper := keeper.GetBankxKeeper()
 	for _, mi := range marketInfoList {
@@ -295,29 +300,17 @@ func removeExpiredOrder(ctx sdk.Context, keeper keepers.Keeper, marketInfoList [
 			if order.Height+order.ExistBlocks > currHeight {
 				continue
 			}
-			removeOrder(ctx, orderKeeper, bankxKeeper, keeper, order, &marketParams)
+			removeOrder(ctx, orderKeeper, bankxKeeper, keeper, order, marketParams)
 			if keeper.IsSubScribed(types.Topic) {
-				msgInfo := types.CancelOrderInfo{
-					OrderID:        order.OrderID(),
-					TradingPair:    order.TradingPair,
-					Height:         ctx.BlockHeight(),
-					Side:           order.Side,
-					Price:          order.Price,
-					DelReason:      types.CancelOrderByGteTimeOut,
-					UsedCommission: order.CalActualOrderCommissionInt64(marketParams.FeeForZeroDeal),
-					UsedFeatureFee: order.CalActualOrderFeatureFeeInt64(ctx, marketParams.GTEOrderLifetime),
-					LeftStock:      order.LeftStock,
-					RemainAmount:   order.Freeze,
-					DealStock:      order.DealStock,
-					DealMoney:      order.DealMoney,
-				}
-				msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, msgInfo)
+				cancelOrderInfo := packageCancelOrderMsgWithDelReason(ctx, order,
+					types.CancelOrderByGteTimeOut, marketParams, keeper)
+				msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, cancelOrderInfo)
 			}
 		}
 	}
 }
 
-func removeExpiredMarket(ctx sdk.Context, keeper keepers.Keeper, marketParams types.Params) {
+func removeExpiredMarket(ctx sdk.Context, keeper keepers.Keeper, marketParams *types.Params) {
 	currHeight := ctx.BlockHeight()
 	currTime := ctx.BlockHeader().Time.UnixNano()
 
@@ -329,23 +322,11 @@ func removeExpiredMarket(ctx sdk.Context, keeper keepers.Keeper, marketParams ty
 		orderKeeper := keepers.NewOrderKeeper(keeper.GetMarketKey(), symbol, types.ModuleCdc)
 		oldOrders := orderKeeper.GetOlderThan(ctx, currHeight+1)
 		for _, ord := range oldOrders {
-			removeOrder(ctx, orderKeeper, bankxKeeper, keeper, ord, &marketParams)
+			removeOrder(ctx, orderKeeper, bankxKeeper, keeper, ord, marketParams)
 			if keeper.IsSubScribed(types.Topic) {
-				msgInfo := types.CancelOrderInfo{
-					OrderID:        ord.OrderID(),
-					TradingPair:    ord.TradingPair,
-					Height:         ctx.BlockHeight(),
-					Side:           ord.Side,
-					Price:          ord.Price,
-					DelReason:      types.CancelOrderByGteTimeOut,
-					UsedCommission: ord.CalActualOrderCommissionInt64(marketParams.FeeForZeroDeal),
-					UsedFeatureFee: ord.CalActualOrderFeatureFeeInt64(ctx, marketParams.GTEOrderLifetime),
-					LeftStock:      ord.LeftStock,
-					RemainAmount:   ord.Freeze,
-					DealStock:      ord.DealStock,
-					DealMoney:      ord.DealMoney,
-				}
-				msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, msgInfo)
+				cancelOrderInfo := packageCancelOrderMsgWithDelReason(ctx, ord,
+					types.CancelOrderByGteTimeOut, marketParams, keeper)
+				msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, cancelOrderInfo)
 			}
 		}
 		keeper.RemoveMarket(ctx, symbol)
@@ -375,8 +356,8 @@ func EndBlocker(ctx sdk.Context, keeper keepers.Keeper) /*sdk.Tags*/ {
 	if needRemove {
 		marketInfoList := keeper.GetAllMarketInfos(ctx)
 		keeper.SetOrderCleanTime(ctx, currTime)
-		removeExpiredOrder(ctx, keeper, marketInfoList, marketParams)
-		removeExpiredMarket(ctx, keeper, marketParams)
+		removeExpiredOrder(ctx, keeper, marketInfoList, &marketParams)
+		removeExpiredMarket(ctx, keeper, &marketParams)
 		return //nil
 	}
 
@@ -419,10 +400,11 @@ func EndBlocker(ctx sdk.Context, keeper keepers.Keeper) /*sdk.Tags*/ {
 		for _, order := range ordersForUpdateList[idx] {
 			orderKeeper.Update(ctx, order)
 			if order.TimeInForce == types.IOC || order.LeftStock == 0 || notEnoughMoney(order) {
-				if keeper.IsSubScribed(types.Topic) {
-					sendOrderMsg(ctx, order, ctx.BlockHeight(), marketParams.FeeForZeroDeal, marketParams.GTEOrderLifetime)
-				}
 				removeOrder(ctx, orderKeeper, bankxKeeper, keeper, order, &marketParams)
+				if keeper.IsSubScribed(types.Topic) {
+					cancelOrderInfo := packageCancelOrderMsg(ctx, order, &marketParams, keeper)
+					msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, cancelOrderInfo)
+				}
 			}
 		}
 		// if some orders dealt, update last executed price of this market
@@ -433,29 +415,51 @@ func EndBlocker(ctx sdk.Context, keeper keepers.Keeper) /*sdk.Tags*/ {
 	}
 }
 
-func sendOrderMsg(ctx sdk.Context, order *types.Order, height int64, feeForZeroDeal int64, freeTimeBlocks int64) {
+func packageCancelOrderMsg(ctx sdk.Context, order *types.Order,
+	marketParams *Params, keeper types.ExpectedAuthXKeeper) types.CancelOrderInfo {
+	return packageCancelOrderMsgWithDelReason(ctx, order, "", marketParams, keeper)
+}
+
+func packageCancelOrderMsgWithDelReason(ctx sdk.Context, order *types.Order, delReason string,
+	marketParams *Params, keeper types.ExpectedAuthXKeeper) types.CancelOrderInfo {
+	currentHeight := ctx.BlockHeight()
 	msgInfo := types.CancelOrderInfo{
 		OrderID:        order.OrderID(),
 		TradingPair:    order.TradingPair,
 		Side:           order.Side,
-		Height:         height,
+		Height:         currentHeight,
 		Price:          order.Price,
-		UsedCommission: order.CalActualOrderCommissionInt64(feeForZeroDeal),
-		UsedFeatureFee: order.CalActualOrderFeatureFeeInt64(ctx, freeTimeBlocks),
+		UsedCommission: order.CalActualOrderCommissionInt64(marketParams.FeeForZeroDeal),
+		UsedFeatureFee: order.CalActualOrderFeatureFeeInt64(ctx, marketParams.GTEOrderLifetime),
 		LeftStock:      order.LeftStock,
 		RemainAmount:   order.Freeze,
 		DealStock:      order.DealStock,
 		DealMoney:      order.DealMoney,
 	}
-	if order.TimeInForce == types.IOC {
-		msgInfo.DelReason = types.CancelOrderByIocType
-	} else if order.LeftStock == 0 {
-		msgInfo.DelReason = types.CancelOrderByAllFilled
-	} else if notEnoughMoney(order) {
-		msgInfo.DelReason = types.CancelOrderByNoEnoughMoney
-	} else {
-		msgInfo.DelReason = types.CancelOrderByNotKnow
-	}
+	msgInfo.RebateRefereeAddr = keeper.GetRefereeAddr(ctx, order.Sender).String()
+	msgInfo.RebateAmount = getRebateAmountInOrder(ctx, msgInfo.UsedCommission, msgInfo.UsedFeatureFee)
+	msgInfo.DelReason = getCancelOrderReason(order, delReason)
+	return msgInfo
+}
 
-	msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, msgInfo)
+func getRebateAmountInOrder(ctx sdk.Context, commission, featureFee int64) int64 {
+	rebateCommission := calRebateAmount(ctx, commission, nil)
+	rebateFeatureFee := calRebateAmount(ctx, featureFee, nil)
+	return rebateCommission + rebateFeatureFee
+}
+
+func getCancelOrderReason(order *types.Order, delReason string) string {
+	if len(delReason) != 0 {
+		return delReason
+	}
+	if order.TimeInForce == types.IOC {
+		return types.CancelOrderByIocType
+	}
+	if order.LeftStock == 0 {
+		return types.CancelOrderByAllFilled
+	}
+	if notEnoughMoney(order) {
+		return types.CancelOrderByNoEnoughMoney
+	}
+	return types.CancelOrderByNotKnow
 }
