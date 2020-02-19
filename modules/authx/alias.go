@@ -35,6 +35,7 @@ type (
 	AccountX              = types.AccountX
 	LockedCoin            = types.LockedCoin
 	LockedCoins           = types.LockedCoins
+	MsgSetReferee         = types.MsgSetReferee
 	AccountXKeeper        = keepers.AccountXKeeper
 	ExpectedAccountKeeper = keepers.ExpectedAccountKeeper
 	ExpectedTokenKeeper   = keepers.ExpectedTokenKeeper
