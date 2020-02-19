@@ -13,4 +13,5 @@ func init() {
 // RegisterCodec registers concrete types on the codec
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(AccountX{}, "authx/AccountX", nil)
+	cdc.RegisterConcrete(MsgSetReferee{}, "authx/MsgSetReferee", nil)
 }
