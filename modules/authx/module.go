@@ -59,7 +59,7 @@ func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Ro
 
 // get the root tx command of this module
 func (amb AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	return nil
+	return cli.SetRefereeCmd(cdc)
 }
 
 // get the root query command of this module
