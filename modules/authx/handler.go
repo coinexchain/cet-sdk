@@ -36,6 +36,7 @@ func handleMsgSetReferee(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedA
 	}
 
 	senderAccx.UpdateRefereeAddr(msg.Referee, ctx.BlockTime().UnixNano())
+	k.SetAccountX(ctx, senderAccx)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(sdk.EventTypeMessage,

@@ -11,8 +11,9 @@ const (
 	ModuleName      = types.ModuleName
 	QueryAccountMix = types.QueryAccountMix
 
-	CodeSpaceAuthX     = types.CodeSpaceAuthX
-	CodeGasPriceTooLow = types.CodeGasPriceTooLow
+	CodeSpaceAuthX           = types.CodeSpaceAuthX
+	CodeGasPriceTooLow       = types.CodeGasPriceTooLow
+	CodeRefereeChangeTooFast = types.CodeRefereeChangeTooFast
 
 	DefaultParamspace       = types.DefaultParamspace
 	DefaultMinGasPriceLimit = types.DefaultMinGasPriceLimit
@@ -21,6 +22,7 @@ const (
 var (
 	ErrInvalidMinGasPriceLimit = types.ErrInvalidMinGasPriceLimit
 	ErrGasPriceTooLow          = types.ErrGasPriceTooLow
+	ErrRefereeChangeTooFast    = types.ErrRefereeChangeTooFast
 	NewLockedCoin              = types.NewLockedCoin
 	NewSupervisedLockedCoin    = types.NewSupervisedLockedCoin
 	NewParams                  = types.NewParams
