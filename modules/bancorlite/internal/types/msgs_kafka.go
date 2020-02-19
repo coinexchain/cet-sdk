@@ -31,14 +31,16 @@ type MsgBancorInfoForKafka struct {
 }
 
 type MsgBancorTradeInfoForKafka struct {
-	Sender      sdk.AccAddress `json:"sender"`
-	Stock       string         `json:"stock"`
-	Money       string         `json:"money"`
-	Amount      int64          `json:"amount"`
-	Side        byte           `json:"side"`
-	MoneyLimit  int64          `json:"money_limit"`
-	TxPrice     sdk.Dec        `json:"transaction_price"`
-	BlockHeight int64          `json:"block_height"`
+	Sender            sdk.AccAddress `json:"sender"`
+	Stock             string         `json:"stock"`
+	Money             string         `json:"money"`
+	Amount            int64          `json:"amount"`
+	Side              byte           `json:"side"`
+	MoneyLimit        int64          `json:"money_limit"`
+	TxPrice           sdk.Dec        `json:"transaction_price"`
+	RebateAmount      int64          `json:"rebate_amount"`
+	RebateRefereeAddr sdk.AccAddress `json:"rebate_referee_addr"`
+	BlockHeight       int64          `json:"block_height"`
 }
 
 type MsgBancorCancelForKafka struct {

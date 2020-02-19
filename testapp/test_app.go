@@ -306,6 +306,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.BankxKeeper,
 		app.AssetKeeper,
 		&app.MarketKeeper,
+		app.AccountXKeeper,
 		app.MsgQueProducer)
 
 	app.MarketKeeper = market.NewBaseKeeper(

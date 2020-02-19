@@ -145,7 +145,11 @@ func (k Keeper) GetMarketKey() sdk.StoreKey {
 }
 
 func (k Keeper) GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress {
-	return k.authX.GetRefereeAddr(ctx, accAddr)
+	acc := k.authX.GetRefereeAddr(ctx, accAddr)
+	if len(acc) == 0 {
+		return nil
+	}
+	return acc
 }
 
 func (k Keeper) GetRebateRatio(ctx sdk.Context) int64 {

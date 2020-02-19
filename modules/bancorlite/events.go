@@ -17,6 +17,8 @@ var (
 	AttributeCoinsFromPool  = "bancor_coins_from_pool"
 	AttributeCoinsToPool    = "bancor_coins_to_pool"
 	AttributeTradeSide      = "bancor_trade_side"
+	AttributeRebateReferee  = "rebate_referee"
+	AttributeRebateAmount   = "rebate_amount"
 
 	KafkaBancorTrade  = "bancor_trade"
 	KafkaBancorCreate = "bancor_create"

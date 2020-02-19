@@ -198,9 +198,18 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 	}
 
 	commission := getTradeFee(ctx, k, msg, diff)
-
-	if err := k.DeductFee(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(dex.CET, commission))); err != nil {
-		return err.Result()
+	rebateAcc, rebate, balance, exist := k.GetRebate(ctx, msg.Sender, commission)
+	if exist {
+		if err := k.DeductFee(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(dex.CET, balance))); err != nil {
+			return err.Result()
+		}
+		if err := k.SendCoins(ctx, msg.Sender, rebateAcc, sdk.NewCoins(sdk.NewCoin(dex.CET, rebate))); err != nil {
+			return err.Result()
+		}
+	} else {
+		if err := k.DeductFee(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(dex.CET, commission))); err != nil {
+			return err.Result()
+		}
 	}
 
 	if err := swapStockAndMoney(ctx, k, msg.Sender, bi.Owner, coinsFromPool, coinsToPool); err != nil {
@@ -217,14 +226,16 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 	}
 
 	m := types.MsgBancorTradeInfoForKafka{
-		Sender:      msg.Sender,
-		Stock:       msg.Stock,
-		Money:       msg.Money,
-		Amount:      msg.Amount,
-		Side:        byte(side),
-		MoneyLimit:  msg.MoneyLimit,
-		TxPrice:     sdk.NewDecFromInt(diff).QuoInt64(msg.Amount),
-		BlockHeight: ctx.BlockHeight(),
+		Sender:            msg.Sender,
+		Stock:             msg.Stock,
+		Money:             msg.Money,
+		Amount:            msg.Amount,
+		Side:              byte(side),
+		MoneyLimit:        msg.MoneyLimit,
+		TxPrice:           sdk.NewDecFromInt(diff).QuoInt64(msg.Amount),
+		RebateAmount:      rebate.Int64(),
+		RebateRefereeAddr: rebateAcc,
+		BlockHeight:       ctx.BlockHeight(),
 	}
 	fillMsgQueue(ctx, k, KafkaBancorTrade, m)
 	fillMsgQueue(ctx, k, KafkaBancorInfo, biNew)
@@ -239,6 +250,8 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 			sdk.NewAttribute(AttributeTradeSide, sideStr),
 			sdk.NewAttribute(AttributeCoinsFromPool, coinsFromPool.String()),
 			sdk.NewAttribute(AttributeCoinsToPool, coinsToPool.String()),
+			sdk.NewAttribute(AttributeRebateReferee, rebateAcc.String()),
+			sdk.NewAttribute(AttributeRebateAmount, rebate.String()),
 		),
 		sdk.NewEvent(
 			sdk.EventTypeMessage,

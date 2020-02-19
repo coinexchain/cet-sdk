@@ -81,21 +81,24 @@ func (keeper *BancorInfoKeeper) Iterate(ctx sdk.Context, biProc func(bi *BancorI
 type Keeper struct {
 	bik         *BancorInfoKeeper
 	bxk         types.ExpectedBankxKeeper
-	axk         types.ExpectedAssetStatusKeeper
+	ask         types.ExpectedAssetStatusKeeper
 	mk          types.ExpectedMarketKeeper
+	axk         types.ExpectedAuthXKeeper
 	msgProducer msgqueue.MsgSender
 }
 
 func NewKeeper(bik *BancorInfoKeeper,
 	bxk types.ExpectedBankxKeeper,
-	axk types.ExpectedAssetStatusKeeper,
+	ask types.ExpectedAssetStatusKeeper,
 	mk types.ExpectedMarketKeeper,
+	axk types.ExpectedAuthXKeeper,
 	mq msgqueue.MsgSender) Keeper {
 	return Keeper{
 		bik:         bik,
 		bxk:         bxk,
-		axk:         axk,
+		ask:         ask,
 		mk:          mk,
+		axk:         axk,
 		msgProducer: mq,
 	}
 }
@@ -154,13 +157,13 @@ func (keeper *Keeper) DeductInt64CetFee(ctx sdk.Context, addr sdk.AccAddress, am
 }
 
 func (keeper *Keeper) IsTokenExists(ctx sdk.Context, denom string) bool {
-	return keeper.axk.IsTokenExists(ctx, denom)
+	return keeper.ask.IsTokenExists(ctx, denom)
 }
 func (keeper *Keeper) IsTokenIssuer(ctx sdk.Context, denom string, addr sdk.AccAddress) bool {
-	return keeper.axk.IsTokenIssuer(ctx, denom, addr)
+	return keeper.ask.IsTokenIssuer(ctx, denom, addr)
 }
 func (keeper *Keeper) IsForbiddenByTokenIssuer(ctx sdk.Context, denom string, addr sdk.AccAddress) bool {
-	return keeper.axk.IsForbiddenByTokenIssuer(ctx, denom, addr)
+	return keeper.ask.IsForbiddenByTokenIssuer(ctx, denom, addr)
 }
 
 func (keeper *Keeper) GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec {
@@ -172,6 +175,35 @@ func (keeper *Keeper) IsMarketExist(ctx sdk.Context, symbol string) bool {
 }
 func (keeper *Keeper) GetMarketFeeMin(ctx sdk.Context) int64 {
 	return keeper.mk.GetMarketFeeMin(ctx)
+}
+
+func (keeper *Keeper) GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress {
+	acc := keeper.axk.GetRefereeAddr(ctx, accAddr)
+	if len(acc) == 0 {
+		return nil
+	}
+	return acc
+}
+
+func (keeper *Keeper) GetRebateRatio(ctx sdk.Context) int64 {
+	return keeper.axk.GetRebateRatio(ctx)
+}
+
+func (keeper *Keeper) GetRebateRatioBase(ctx sdk.Context) int64 {
+	return keeper.axk.GetRebateRatioBase(ctx)
+}
+
+func (keeper *Keeper) GetRebate(ctx sdk.Context, address sdk.AccAddress, total sdk.Int) (acc sdk.AccAddress, rebate, balance sdk.Int, exist bool) {
+	acc = keeper.axk.GetRefereeAddr(ctx, address)
+	if len(acc) == 0 {
+		return acc, sdk.ZeroInt(), sdk.ZeroInt(), false
+	}
+	ratio := keeper.GetRebateRatio(ctx)
+	base := keeper.GetRebateRatioBase(ctx)
+	rebate = total.MulRaw(ratio).QuoRaw(base)
+	balance = total.Sub(rebate)
+	exist = true
+	return
 }
 
 func (keeper *Keeper) IsSubscribed(topic string) bool {

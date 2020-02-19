@@ -26,3 +26,9 @@ type ExpectedMarketKeeper interface {
 	GetMarketFeeMin(ctx sdk.Context) int64
 	GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec
 }
+
+type ExpectedAuthXKeeper interface {
+	GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress
+	GetRebateRatio(ctx sdk.Context) int64
+	GetRebateRatioBase(ctx sdk.Context) int64
+}
