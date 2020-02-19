@@ -94,7 +94,7 @@ func (AppModule) Name() string {
 func (AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
 // module message route name
-func (AppModule) Route() string { return "" }
+func (AppModule) Route() string { return ModuleName }
 
 // module handler
 func (am AppModule) NewHandler() sdk.Handler {
