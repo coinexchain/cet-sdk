@@ -233,6 +233,7 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 		Side:              byte(side),
 		MoneyLimit:        msg.MoneyLimit,
 		TxPrice:           sdk.NewDecFromInt(diff).QuoInt64(msg.Amount),
+		UsedCommission:    balance.Int64(),
 		RebateAmount:      rebate.Int64(),
 		RebateRefereeAddr: rebateAcc,
 		BlockHeight:       ctx.BlockHeight(),
