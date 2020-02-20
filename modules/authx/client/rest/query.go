@@ -22,7 +22,7 @@ import (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
 	r.HandleFunc("/auth/accounts/{address}", QueryAccountRequestHandlerFn(cliCtx, cdc)).Methods("GET")
 	r.HandleFunc("/auth/parameters", QueryParamsHandlerFn(cliCtx)).Methods("GET")
-	r.HandleFunc("auth/accounts/{address}/setReferee", setRefereeHandleFn(cdc, cliCtx)).Methods("POST")
+	r.HandleFunc("/auth/accounts/{address}/setReferee", setRefereeHandleFn(cdc, cliCtx)).Methods("POST")
 }
 
 // query accountREST Handler
