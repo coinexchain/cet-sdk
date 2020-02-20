@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coinexchain/cet-sdk/modules/authx"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
@@ -273,4 +275,17 @@ func TestBancorInfoKeeper(t *testing.T) {
 	require.Nil(t, keeper.Load(ctx, bi[0].GetSymbol()))
 	require.False(t, keeper.IsBancorExist(ctx, bch))
 	require.True(t, keeper.IsBancorExist(ctx, abc))
+}
+
+func TestKeeper_GetRebate(t *testing.T) {
+	app := testapp.NewTestApp()
+	referee := sdk.AccAddress("referee")
+	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	app.AccountXKeeper.SetParams(ctx, authx.DefaultParams())
+	app.AccountXKeeper.SetAccountX(ctx, authx.NewAccountX(owner, false, nil, nil, referee, 0))
+	acc, rebate, balance, exist := app.BancorKeeper.GetRebate(ctx, owner, sdk.NewInt(100000))
+	require.Equal(t, acc, referee)
+	require.Equal(t, rebate.Int64(), int64(10000))
+	require.Equal(t, balance.Int64(), int64(90000))
+	require.Equal(t, exist, true)
 }
