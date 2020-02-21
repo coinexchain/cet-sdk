@@ -30,6 +30,9 @@ func (msg MsgSetReferee) ValidateBasic() sdk.Error {
 	if msg.Sender.Empty() || msg.Referee.Empty() {
 		return sdk.ErrInvalidAddress("missing address")
 	}
+	if msg.Sender.Equals(msg.Referee) {
+		return ErrRefereeCanNotBeYouself(msg.Referee.String())
+	}
 	return nil
 }
 

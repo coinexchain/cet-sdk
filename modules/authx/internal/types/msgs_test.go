@@ -39,6 +39,11 @@ func TestMsgSetReferee_ValidateBasic(t *testing.T) {
 			msg:  NewMsgSetReferee(sender, noneAddr),
 			want: sdk.ErrInvalidAddress("missing address"),
 		},
+		{
+			name: "referee the same to sender",
+			msg:  NewMsgSetReferee(sender, sender),
+			want: ErrRefereeCanNotBeYouself(sender.String()),
+		},
 	}
 
 	for _, tt := range tests {

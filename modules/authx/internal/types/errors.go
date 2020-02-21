@@ -12,6 +12,7 @@ const (
 	CodeGasPriceTooLow          sdk.CodeType = 202
 	CodeRefereeChangeTooFast    sdk.CodeType = 203
 	CodeRefereeMemoRequired     sdk.CodeType = 204
+	CodeRefereeCanNotBeYourself sdk.CodeType = 205
 )
 
 func ErrInvalidMinGasPriceLimit(limit sdk.Dec) sdk.Error {
@@ -28,4 +29,7 @@ func ErrRefereeChangeTooFast() sdk.Error {
 }
 func ErrRefereeMemoRequired(referee string) sdk.Error {
 	return sdk.NewError(CodeSpaceAuthX, CodeRefereeMemoRequired, "referee %s must not be memo required", referee)
+}
+func ErrRefereeCanNotBeYouself(referee string) sdk.Error {
+	return sdk.NewError(CodeSpaceAuthX, CodeRefereeCanNotBeYourself, "referee %s can not be yourself", referee)
 }
