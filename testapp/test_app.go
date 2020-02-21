@@ -249,6 +249,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.ParamsKeeper.Subspace(authx.DefaultParamspace),
 		app.SupplyKeeper,
 		app.AccountKeeper,
+		app.BankKeeper,
 		eventTypeMsgQueue,
 	)
 

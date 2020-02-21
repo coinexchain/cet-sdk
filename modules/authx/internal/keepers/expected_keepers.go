@@ -24,3 +24,6 @@ type ExpectedAccountKeeper interface {
 type ExpectedTokenKeeper interface {
 	UpdateTokenSendLock(ctx sdk.Context, symbol string, amount sdk.Int, lock bool) sdk.Error
 }
+type ExpectedBankKeeper interface {
+	BlacklistedAddr(addr sdk.AccAddress) bool
+}

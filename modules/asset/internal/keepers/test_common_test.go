@@ -77,7 +77,7 @@ func createTestInput() testInput {
 		supply.NewModuleAddress(authx.ModuleName).String(): true,
 	})
 	sk := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
-	axk := authx.NewKeeper(cdc, keyAuthx, pk.Subspace(authx.DefaultParamspace), sk, ak, "")
+	axk := authx.NewKeeper(cdc, keyAuthx, pk.Subspace(authx.DefaultParamspace), sk, ak, bk, "")
 	ask := keepers.NewBaseTokenKeeper(cdc, keyAsset)
 	bkx := bankx.NewKeeper(pk.Subspace(bankx.DefaultParamspace), axk, bk, ak, ask, sk, msgqueue.NewProducer(nil))
 	tk := keepers.NewBaseKeeper(cdc, keyAsset, pk.Subspace(types.DefaultParamspace), bkx, sk)

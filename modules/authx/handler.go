@@ -68,6 +68,10 @@ func preCheckAddr(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedAccountK
 	if RefereeAccx.MemoRequired {
 		return types.ErrRefereeMemoRequired(msg.Referee.String())
 	}
+
+	if k.BlacklistedAddr(msg.Referee) {
+		return sdk.ErrInvalidAddress("referee can not be module address")
+	}
 	return nil
 }
 func preCheckTime(timeNow int64, refereeChangeTime int64, refereeChangeMinInterval int64) sdk.Error {

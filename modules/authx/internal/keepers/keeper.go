@@ -33,10 +33,12 @@ type AccountXKeeper struct {
 
 	ak ExpectedAccountKeeper
 
+	bk ExpectedBankKeeper
+
 	EventTypeMsgQueue string
 }
 
-func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace, keeper SupplyKeeper, ak ExpectedAccountKeeper, eventTypeMsgQueue string) AccountXKeeper {
+func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace, keeper SupplyKeeper, ak ExpectedAccountKeeper, bk ExpectedBankKeeper, eventTypeMsgQueue string) AccountXKeeper {
 	// ensure authx module account is set
 	if addr := keeper.GetModuleAddress(types.ModuleName); addr == nil {
 		panic(fmt.Sprintf("%s module account has not been set", types.ModuleName))
@@ -48,6 +50,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace
 		paramSubspace:     paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		supplyKeeper:      keeper,
 		ak:                ak,
+		bk:                bk,
 		EventTypeMsgQueue: eventTypeMsgQueue,
 	}
 }
@@ -198,4 +201,8 @@ func PrefixUnlockedTimeQueueTime(unlockedTime int64) []byte {
 		PrefixUnlockedCoinsQueue,
 		sdk.FormatTimeBytes(time.Unix(unlockedTime, 0)),
 	}, KeyDelimiter)
+}
+
+func (axk AccountXKeeper) BlacklistedAddr(addr sdk.AccAddress) bool {
+	return axk.bk.BlacklistedAddr(addr)
 }
