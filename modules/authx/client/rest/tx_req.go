@@ -3,12 +3,11 @@ package rest
 import (
 	"net/http"
 
+	"github.com/coinexchain/cosmos-utils/client/restutil"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 
 	"github.com/coinexchain/cet-sdk/modules/authx/internal/types"
-	"github.com/coinexchain/cosmos-utils/client/restutil"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type setRefereeReq struct {

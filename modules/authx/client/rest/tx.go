@@ -1,11 +1,10 @@
 package rest
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
