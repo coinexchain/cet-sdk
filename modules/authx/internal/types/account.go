@@ -89,27 +89,24 @@ func (acc *AccountX) GetAllUnlockedCoinsAtTheTime(time int64) LockedCoins {
 
 func (acc AccountX) String() string {
 	return fmt.Sprintf(`
-  LockedCoins:   %s
-  FrozenCoins:   %s
-   MemoRequired:  %t
-  Referee: %s
+  LockedCoins:       %s
+  FrozenCoins:       %s
+  MemoRequired:      %t
+  Referee:           %s
   RefereeChangeTime: %d`,
 		acc.LockedCoins, acc.FrozenCoins, acc.MemoRequired, acc.Referee, acc.RefereeChangeTime,
 	)
 }
 
 func (acc *AccountX) UpdateRefereeAddr(referee sdk.AccAddress, time int64) {
-
 	acc.Referee = referee
 	acc.RefereeChangeTime = time
-
 }
 
 func NewAccountXWithAddress(addr sdk.AccAddress) AccountX {
-	acc := AccountX{
+	return AccountX{
 		Address: addr,
 	}
-	return acc
 }
 
 type AccountAll struct {

@@ -31,6 +31,7 @@ func Test_HandleMsg(t *testing.T) {
 	res := handler(input.ctx, msg)
 	require.True(t, res.IsOK())
 }
+
 func Test_HandleMsg_AccNotExist(t *testing.T) {
 	input := setupTestInput()
 	input.axk.SetParams(input.ctx, authx.DefaultParams())
@@ -41,6 +42,7 @@ func Test_HandleMsg_AccNotExist(t *testing.T) {
 	res := handler(input.ctx, msg)
 	require.Equal(t, sdk.CodeUnknownAddress, res.Code)
 }
+
 func Test_HandleMsg_RefereeMemoRequired(t *testing.T) {
 
 	input := setupTestInput()
@@ -62,6 +64,7 @@ func Test_HandleMsg_RefereeMemoRequired(t *testing.T) {
 	res := handler(input.ctx, msg)
 	require.Equal(t, types.CodeRefereeMemoRequired, res.Code)
 }
+
 func Test_HandleMsg_RefereeChangeTooFast(t *testing.T) {
 	input := setupTestInput()
 	input.axk.SetParams(input.ctx, authx.DefaultParams())

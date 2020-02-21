@@ -7,17 +7,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coinexchain/cet-sdk/modules/authx"
-
 	"github.com/stretchr/testify/require"
 
-	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/coinexchain/cet-sdk/modules/authx"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 	"github.com/coinexchain/cet-sdk/testapp"
 )
 

@@ -30,7 +30,9 @@ func InitGenesis(ctx sdk.Context, keeper AccountXKeeper, data GenesisState) {
 	keeper.SetParams(ctx, data.Params)
 
 	for _, accx := range data.AccountXs {
-		accountX := types.NewAccountX(accx.Address, accx.MemoRequired, accx.LockedCoins, accx.FrozenCoins, accx.Referee, accx.RefereeChangeTime)
+		accountX := types.NewAccountX(accx.Address, accx.MemoRequired,
+			accx.LockedCoins, accx.FrozenCoins,
+			accx.Referee, accx.RefereeChangeTime)
 		keeper.SetAccountX(ctx, accountX)
 	}
 }

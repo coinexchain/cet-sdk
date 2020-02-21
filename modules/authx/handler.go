@@ -22,8 +22,8 @@ func NewHandler(k keepers.AccountXKeeper, ak ExpectedAccountKeeper) sdk.Handler 
 		}
 	}
 }
-func handleMsgSetReferee(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedAccountKeeper, msg types.MsgSetReferee) sdk.Result {
 
+func handleMsgSetReferee(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedAccountKeeper, msg types.MsgSetReferee) sdk.Result {
 	if err := preCheckAddr(ctx, k, ak, msg); err != nil {
 		return err.Result()
 	}

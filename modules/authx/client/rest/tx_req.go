@@ -22,7 +22,6 @@ func (req *setRefereeReq) GetBaseReq() *rest.BaseReq {
 	return &req.BaseReq
 }
 func (req *setRefereeReq) GetMsg(r *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
-
 	referee, err := sdk.AccAddressFromBech32(req.Referee)
 	if err != nil {
 		return nil, err
