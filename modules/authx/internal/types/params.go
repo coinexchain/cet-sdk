@@ -41,8 +41,8 @@ var _ params.ParamSet = (*Params)(nil)
 // Params defines the parameters for the authx module.
 type Params struct {
 	MinGasPriceLimit         sdk.Dec `json:"min_gas_price_limit"`
-	RefereeChangeMinInterval int64   `json:"referee_change_min_interval"`
-	RebateRatio              int64   `json:"rebate_ratio"`
+	RefereeChangeMinInterval int64   `json:"referee_change_min_interval"` // DEX2
+	RebateRatio              int64   `json:"rebate_ratio"`                // DEX2
 }
 
 // ParamKeyTable for authx module

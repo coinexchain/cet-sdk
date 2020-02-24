@@ -17,10 +17,10 @@ type Order struct {
 	Side             byte           `json:"side"`
 	TimeInForce      int64          `json:"time_in_force"`
 	Height           int64          `json:"height"`
-	FrozenCommission int64          `json:"frozen_commission"`
+	FrozenCommission int64          `json:"frozen_commission"` // DEX2
 	ExistBlocks      int64          `json:"exist_blocks"`
-	FrozenFeatureFee int64          `json:"frozen_feature_fee"`
-	FrozenFee        int64          `json:"frozen_fee,omitempty"`
+	FrozenFeatureFee int64          `json:"frozen_feature_fee"`   // DEX2
+	FrozenFee        int64          `json:"frozen_fee,omitempty"` // DEX2: -> frozen_commission
 
 	// These fields will change when order was filled/canceled.
 	LeftStock int64 `json:"left_stock"`

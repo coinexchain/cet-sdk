@@ -19,8 +19,8 @@ type BancorInfo struct {
 	MaxSupply          sdk.Int        `json:"max_supply"`
 	StockPrecision     byte           `json:"stock_precision"`
 	MaxPrice           sdk.Dec        `json:"max_price"`
-	MaxMoney           sdk.Int        `json:"max_money"`
-	AR                 int64          `json:"ar"`
+	MaxMoney           sdk.Int        `json:"max_money"` // DEX2
+	AR                 int64          `json:"ar"`        // DEX2
 	Price              sdk.Dec        `json:"price"`
 	StockInPool        sdk.Int        `json:"stock_in_pool"`
 	MoneyInPool        sdk.Int        `json:"money_in_pool"`

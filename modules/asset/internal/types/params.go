@@ -23,10 +23,10 @@ const (
 var (
 	KeyIssueTokenFee      = []byte("IssueTokenFee")
 	KeyIssueRareTokenFee  = []byte("IssueRareTokenFee")
-	KeyIssue3CharTokenFee = []byte("Issue3CharTokenFee")
-	KeyIssue4CharTokenFee = []byte("Issue4CharTokenFee")
-	KeyIssue5CharTokenFee = []byte("Issue5CharTokenFee")
-	KeyIssue6CharTokenFee = []byte("Issue6CharTokenFee")
+	KeyIssue3CharTokenFee = []byte("Issue3CharTokenFee") // DEX2
+	KeyIssue4CharTokenFee = []byte("Issue4CharTokenFee") // DEX2
+	KeyIssue5CharTokenFee = []byte("Issue5CharTokenFee") // DEX2
+	KeyIssue6CharTokenFee = []byte("Issue6CharTokenFee") // DEX2
 )
 
 var _ params.ParamSet = (*Params)(nil)
