@@ -115,6 +115,13 @@ func (keeper Keeper) IsBancorExist(ctx sdk.Context, stock string) bool {
 	return false
 }
 
+func (keeper *Keeper) GetAllBancorInfos(ctx sdk.Context) (list []*BancorInfo) {
+	keeper.Iterate(ctx, func(bi *BancorInfo) {
+		list = append(list, bi)
+	})
+	return
+}
+
 func (keeper *Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	keeper.bik.SetParams(ctx, params)
 }

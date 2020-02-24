@@ -1,17 +1,16 @@
 package keepers
 
 import (
-	abci "github.com/tendermint/tendermint/abci/types"
-
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
 	QueryBancorInfo = "bancor-info"
 	QueryParameters = "parameters"
+	QueryBancors    = "bancor-list"
 )
 
 // creates a querier for asset REST endpoints
@@ -22,6 +21,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryParameters(ctx, keeper)
 		case QueryBancorInfo:
 			return queryBancorInfo(ctx, req, keeper)
+		case QueryBancors:
+			return queryBancorList(ctx, req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("query symbol : " + path[0])
 		}
@@ -44,7 +45,21 @@ func queryBancorInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]b
 	}
 	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, biD)
 	if err != nil {
-		return nil, sdk.NewError(types.CodeSpaceBancorlite, types.CodeMarshalFailed, "could not marshal result to JSON")
+		return nil, types.ErrMarshalFailed()
+	}
+	return bz, nil
+}
+
+func queryBancorList(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
+	infos := k.GetAllBancorInfos(ctx)
+	infoList := make([]BancorInfoDisplay, len(infos))
+
+	for i, info := range infos {
+		infoList[i] = NewBancorInfoDisplay(info)
+	}
+	bz, err := codec.MarshalJSONIndent(k.bik.codec, infoList)
+	if err != nil {
+		return nil, types.ErrMarshalFailed()
 	}
 	return bz, nil
 }

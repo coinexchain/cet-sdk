@@ -42,3 +42,19 @@ Example :
 		},
 	}
 }
+
+func QueryBancorListCmd(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "infos",
+		Short: "query all bancor infos in blockchain",
+		Long: `query all bancor infos in blockchain.
+
+Example :
+	cetcli query bancorlite infos \
+	--trust-node=true --chain-id=coinexdex`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			query := fmt.Sprintf("custom/%s/%s", types.StoreKey, keepers.QueryBancors)
+			return cliutil.CliQuery(cdc, query, nil)
+		},
+	}
+}

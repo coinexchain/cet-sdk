@@ -20,6 +20,7 @@ import (
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
 	r.HandleFunc("/bancorlite/pools/{symbol}", queryBancorInfoHandlerFn(cdc, cliCtx)).Methods("GET")
 	r.HandleFunc("/bancorlite/parameters", queryParamsHandlerFn(cliCtx)).Methods("GET")
+	r.HandleFunc("/bancorlite/infos", queryBancorsHandlerFn(cdc, cliCtx)).Methods("GET")
 }
 
 // format: barcorlite/pools/btc-cet
@@ -41,5 +42,12 @@ func queryParamsHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		route := fmt.Sprintf("custom/%s/%s", types.StoreKey, keepers.QueryParameters)
 		restutil.RestQuery(nil, cliCtx, w, r, route, nil, nil)
+	}
+}
+
+func queryBancorsHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		query := fmt.Sprintf("custom/%s/%s", types.StoreKey, keepers.QueryBancors)
+		restutil.RestQuery(cdc, cliCtx, w, r, query, nil, nil)
 	}
 }

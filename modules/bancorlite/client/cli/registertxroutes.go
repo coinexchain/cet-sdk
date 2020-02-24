@@ -18,6 +18,7 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 	bancorliteQueryCmd.AddCommand(client.GetCommands(
 		QueryParamsCmd(cdc),
 		QueryBancorInfoCmd(cdc),
+		QueryBancorListCmd(cdc),
 	)...)
 	return bancorliteQueryCmd
 }

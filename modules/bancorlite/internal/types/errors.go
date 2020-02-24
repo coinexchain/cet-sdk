@@ -151,3 +151,7 @@ func ErrNegativeMaxMoney() sdk.Error {
 func ErrMaxMoneyTooBIg() sdk.Error {
 	return sdk.NewError(CodeSpaceBancorlite, CodeMaxMoneyTooBig, "max money is too big")
 }
+
+func ErrMarshalFailed() sdk.Error {
+	return sdk.NewError(CodeSpaceBancorlite, CodeMarshalFailed, "could not marshal result to JSON")
+}
