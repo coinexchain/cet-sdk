@@ -79,7 +79,7 @@ func handleMsgBancorInit(ctx sdk.Context, k Keeper, msg types.MsgBancorInit) sdk
 	}
 	k.Save(ctx, bi)
 
-	fillMsgQueue(ctx, k, KafkaBancorInfo, *bi)
+	fillMsgQueue(ctx, k, KafkaBancorCreate, *bi)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
