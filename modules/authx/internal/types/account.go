@@ -14,8 +14,8 @@ type AccountX struct {
 	MemoRequired      bool           `json:"memo_required"` // if memo is required for receiving coins
 	LockedCoins       LockedCoins    `json:"locked_coins"`
 	FrozenCoins       sdk.Coins      `json:"frozen_coins"`
-	Referee           sdk.AccAddress `json:"referee"`             // DEX2
-	RefereeChangeTime int64          `json:"referee_change_time"` // DEX2
+	Referee           sdk.AccAddress `json:"referee,omitempty"`             // DEX2
+	RefereeChangeTime int64          `json:"referee_change_time,omitempty"` // DEX2
 }
 
 type AccountXs []AccountX
