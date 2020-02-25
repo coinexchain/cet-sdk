@@ -1,10 +1,11 @@
 package keepers
 
 import (
-	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 )
 
 const (
