@@ -31,7 +31,7 @@ func handleMsgSetReferee(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedA
 	senderAccx := k.GetOrCreateAccountX(ctx, msg.Sender)
 	refereeMinChangeInterval := k.GetParams(ctx).RefereeChangeMinInterval
 
-	if err := preCheckTime(ctx.BlockTime().UnixNano(), senderAccx.RefereeChangeTime, refereeMinChangeInterval); err != nil {
+	if err := preCheckTime(ctx.BlockTime().UnixNano(), senderAccx.RefereeChangeTime, refereeMinChangeInterval, msg.Referee); err != nil {
 		return err.Result()
 	}
 
@@ -74,10 +74,10 @@ func preCheckAddr(ctx sdk.Context, k keepers.AccountXKeeper, ak ExpectedAccountK
 	}
 	return nil
 }
-func preCheckTime(timeNow int64, refereeChangeTime int64, refereeChangeMinInterval int64) sdk.Error {
+func preCheckTime(timeNow int64, refereeChangeTime int64, refereeChangeMinInterval int64, referee sdk.AccAddress) sdk.Error {
 
 	if timeNow-refereeChangeTime < refereeChangeMinInterval {
-		return types.ErrRefereeChangeTooFast()
+		return types.ErrRefereeChangeTooFast(referee.String())
 	}
 	return nil
 }

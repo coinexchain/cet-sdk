@@ -24,8 +24,8 @@ func ErrGasPriceTooLow(required, actual sdk.Dec) sdk.Error {
 	return sdk.NewError(CodeSpaceAuthX, CodeGasPriceTooLow,
 		"gas price too low: %s < %s", actual, required)
 }
-func ErrRefereeChangeTooFast() sdk.Error {
-	return sdk.NewError(CodeSpaceAuthX, CodeRefereeChangeTooFast, "")
+func ErrRefereeChangeTooFast(referee string) sdk.Error {
+	return sdk.NewError(CodeSpaceAuthX, CodeRefereeChangeTooFast, "refere %s change too fast", referee)
 }
 func ErrRefereeMemoRequired(referee string) sdk.Error {
 	return sdk.NewError(CodeSpaceAuthX, CodeRefereeMemoRequired, "referee %s must not be memo required", referee)
