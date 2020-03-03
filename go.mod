@@ -16,13 +16,12 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.4.0
-	github.com/stumble/gorocksdb v0.0.3 // indirect
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 )
 
-replace github.com/cosmos/cosmos-sdk => github.com/coinexchain/cosmos-sdk v0.0.0-20200219081148-0e706bb67e2f
+replace github.com/cosmos/cosmos-sdk => github.com/coinexchain/cosmos-sdk v0.37.700
 
-replace github.com/tendermint/tendermint => github.com/coinexchain/tendermint v0.0.0-20191108024645-d56dafa4d3cd
+replace github.com/tendermint/tendermint => github.com/coinexchain/tendermint v0.32.900
