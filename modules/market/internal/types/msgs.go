@@ -14,9 +14,11 @@ import (
 // RouterKey is the name of the market module
 const (
 	// msg keys for Kafka
-	CreateOrderInfoKey = "create_order_info"
-	FillOrderInfoKey   = "fill_order_info"
-	CancelOrderInfoKey = "del_order_info"
+	CreateMarketInfoKey = "create_market_info"
+	CancelMarketInfoKey = "cancel_market_info"
+	CreateOrderInfoKey  = "create_order_info"
+	FillOrderInfoKey    = "fill_order_info"
+	CancelOrderInfoKey  = "del_order_info"
 )
 
 // cancel order of reasons
