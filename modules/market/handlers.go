@@ -135,9 +135,13 @@ func CalCommission(ctx sdk.Context, keeper keepers.QueryMarketInfoAndParams, msg
 }
 
 func calOrderCommission(ctx sdk.Context, keeper keepers.Keeper, msg types.MsgCreateOrder) (int64, sdk.Error) {
+	moneyAmount, err := calculateAmount(msg.Price, msg.Quantity, msg.PricePrecision)
+	if err != nil {
+		return 0, types.ErrInvalidOrderAmount(err.Error())
+	}
 	stock, money := SplitSymbol(msg.TradingPair)
 	commissionMsg := ParamOfCommissionMsg{
-		amountOfMoney: sdk.NewDec(msg.Quantity).MulInt64(msg.Price),
+		amountOfMoney: moneyAmount,
 		amountOfStock: sdk.NewDec(msg.Quantity),
 		stock:         stock,
 		money:         money,
