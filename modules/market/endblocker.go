@@ -437,14 +437,14 @@ func packageCancelOrderMsgWithDelReason(ctx sdk.Context, order *types.Order, del
 		DealMoney:      order.DealMoney,
 	}
 	msgInfo.RebateRefereeAddr = keeper.GetRefereeAddr(ctx, order.Sender).String()
-	msgInfo.RebateAmount = getRebateAmountInOrder(ctx, msgInfo.UsedCommission, msgInfo.UsedFeatureFee)
+	msgInfo.RebateAmount = getRebateAmountInOrder(ctx, keeper, msgInfo.UsedCommission, msgInfo.UsedFeatureFee)
 	msgInfo.DelReason = getCancelOrderReason(order, delReason)
 	return msgInfo
 }
 
-func getRebateAmountInOrder(ctx sdk.Context, commission, featureFee int64) int64 {
-	rebateCommission := calRebateAmount(ctx, commission, nil)
-	rebateFeatureFee := calRebateAmount(ctx, featureFee, nil)
+func getRebateAmountInOrder(ctx sdk.Context, keeper types.ExpectedAuthXKeeper, commission, featureFee int64) int64 {
+	rebateCommission := calRebateAmount(ctx, commission, keeper)
+	rebateFeatureFee := calRebateAmount(ctx, featureFee, keeper)
 	return rebateCommission + rebateFeatureFee
 }
 
