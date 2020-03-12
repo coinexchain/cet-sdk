@@ -933,17 +933,18 @@ func TestCalOrderCommission(t *testing.T) {
 
 	// Stock is CET, commission = quantity * rate
 	orderInfo := MsgCreateOrder{
-		Price:       1,
-		Quantity:    10000,
-		TradingPair: GetSymbol(dex.CET, money),
+		Price:          1,
+		Quantity:       10000,
+		PricePrecision: 4,
+		TradingPair:    GetSymbol(dex.CET, money),
 	}
 
-	// commission < MarketFeeMin
+	// cet/money; commission < MarketFeeMin
 	cal, err := calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
-	// commission > MarketFeeMin
+	// cet/money; commission > MarketFeeMin
 	orderInfo.Quantity = 30000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
@@ -956,10 +957,17 @@ func TestCalOrderCommission(t *testing.T) {
 	// commission < MarketFeeMin
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
+
+	// commission < MarketFeeMin
+	orderInfo.Price = 3
+	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
+	require.Nil(t, err)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
 	// commission > MarketFeeMin
-	orderInfo.Price = 3
+	orderInfo.Price = 3000
+	orderInfo.Quantity = 100000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
 	require.EqualValues(t, 30, cal)
@@ -973,22 +981,26 @@ func TestCalOrderCommission(t *testing.T) {
 		OrderPrecision:    3,
 	}
 
+	// cet/money
 	mkInfo.Stock = dex.CET
 	mkInfo.LastExecutedPrice = sdk.NewDec(2)
 	err = input.mk.SetMarket(input.ctx, mkInfo)
 	require.Nil(t, err)
 
+	// cet/stock
 	mkInfo.Money = stock
 	mkInfo.LastExecutedPrice = sdk.NewDec(3)
 	err = input.mk.SetMarket(input.ctx, mkInfo)
 	require.Nil(t, err)
 
+	// money/cet
 	mkInfo.Stock = money
 	mkInfo.Money = dex.CET
 	mkInfo.LastExecutedPrice = sdk.NewDec(4)
 	err = input.mk.SetMarket(input.ctx, mkInfo)
 	require.Nil(t, err)
 
+	// stock/cet
 	mkInfo.Stock = stock
 	mkInfo.LastExecutedPrice = sdk.NewDec(5)
 	err = input.mk.SetMarket(input.ctx, mkInfo)
@@ -999,13 +1011,13 @@ func TestCalOrderCommission(t *testing.T) {
 	orderInfo.Quantity = 10000
 	orderInfo.Price = 2
 
-	// commission < MarketFeeMin; 10000*2/2*0.1% < 21
+	// commission < MarketFeeMin; 10000*2/2/price_precision*0.1% < 21
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
-	// commission > MarketFeeMin; 40000 * 2 / 2 * 0.1% > 21
-	orderInfo.Quantity = 40000
+	// commission > MarketFeeMin; 40000 * 2 / 2 /4 * 0.1% > 21
+	orderInfo.Quantity = 400000000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
 	require.EqualValues(t, 40, cal)
@@ -1014,14 +1026,14 @@ func TestCalOrderCommission(t *testing.T) {
 	err = input.mk.RemoveMarket(input.ctx, GetSymbol(dex.CET, money))
 	require.Nil(t, err)
 
-	// When CET/stock exist, and cet/stock lastPrice = 3; commission = quantity / lastPrice
-	// commission < MarketFeeMin; 30000 * / 3 * 0.1% < 21
+	// When CET/stock exist, and cet/stock lastPrice = 3; commission = quantity / lastPrice * 0.1%
+	// commission < MarketFeeMin; 30000 / 3 * 0.1% < 21
 	orderInfo.Quantity = 30000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
-	// commission > MarketFeeMin; 90000 * / 3 * 0.1% < 21
+	// commission > MarketFeeMin; 90000 / 3 * 0.1% < 21
 	orderInfo.Quantity = 90000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
@@ -1031,15 +1043,15 @@ func TestCalOrderCommission(t *testing.T) {
 	err = input.mk.RemoveMarket(input.ctx, GetSymbol(dex.CET, stock))
 	require.Nil(t, err)
 
-	// When money/cet exist, and money/cet lastPrice = 4; commission = quantity * price * lastPrice
-	// commission < MarketFeeMin; 2000 * 2 * 4 * 0.1% < 21
-	orderInfo.Quantity = 2000
+	// When money/cet exist, and money/cet lastPrice = 4; commission = quantity * price / price_precision * lastPrice * 0.1%
+	// commission < MarketFeeMin; 2000 * 2 / 4 * 4 * 0.1% < 21
+	orderInfo.Quantity = 20000000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
 	require.EqualValues(t, 21, cal)
 
-	// commission < MarketFeeMin; 10000 * 2 * 4 * 0.1% > 21
-	orderInfo.Quantity = 10000
+	// commission < MarketFeeMin; 10000 * 2 / 4 * 4 * 0.1% > 21
+	orderInfo.Quantity = 100000000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
 	require.EqualValues(t, 80, cal)
@@ -1053,9 +1065,9 @@ func TestCalOrderCommission(t *testing.T) {
 	orderInfo.Quantity = 2000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
-	// commission > MarketFeeMin; 2000 * 5 * 0.1% < 21
+	// commission > MarketFeeMin; 1000 * 5 * 0.1% > 21
 	orderInfo.Quantity = 10000
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
@@ -1070,13 +1082,13 @@ func TestCalOrderCommission(t *testing.T) {
 	orderInfo.Price = 49
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 
 	orderInfo.Quantity = 1
 	orderInfo.Price = 1
 	cal, err = calOrderCommission(input.ctx, input.mk, orderInfo)
 	require.Nil(t, err)
-	require.EqualValues(t, 21, cal)
+	require.EqualValues(t, param.MarketFeeMin, cal)
 }
 
 func TestCheckMsgCreateOrder(t *testing.T) {
