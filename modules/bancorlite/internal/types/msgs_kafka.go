@@ -39,8 +39,8 @@ type MsgBancorTradeInfoForKafka struct {
 	MoneyLimit        int64          `json:"money_limit"`
 	TxPrice           sdk.Dec        `json:"transaction_price"`
 	UsedCommission    int64          `json:"used_commission"`
-	RebateAmount      int64          `json:"rebate_commission"`
-	RebateRefereeAddr sdk.AccAddress `json:"referee"`
+	RebateAmount      int64          `json:"rebate_amount"`
+	RebateRefereeAddr sdk.AccAddress `json:"rebate_referee_addr"`
 	BlockHeight       int64          `json:"block_height"`
 }
 
