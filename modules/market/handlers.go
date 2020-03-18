@@ -64,7 +64,7 @@ func handleMsgCreateTradingPair(ctx sdk.Context, msg types.MsgCreateTradingPair,
 		return err.Result()
 	}
 
-	sendCreateMarketMsg(ctx, keeper, info)
+	sendCreateMarketMsg(ctx, keeper, &msg)
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
 			EventTypeKeyCreateTradingPair,
@@ -107,7 +107,7 @@ func checkMsgCreateTradingPair(ctx sdk.Context, msg types.MsgCreateTradingPair, 
 	return nil
 }
 
-func sendCreateMarketMsg(ctx sdk.Context, keeper keepers.Keeper, market types.MarketInfo) {
+func sendCreateMarketMsg(ctx sdk.Context, keeper keepers.Keeper, market *types.MsgCreateTradingPair) {
 	if keeper.IsSubScribed(types.Topic) {
 		msgqueue.FillMsgs(ctx, types.CreateMarketInfoKey, market)
 	}
