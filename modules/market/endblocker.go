@@ -437,7 +437,9 @@ func packageCancelOrderMsgWithDelReason(ctx sdk.Context, order *types.Order, del
 		DealMoney:      order.DealMoney,
 	}
 	msgInfo.RebateRefereeAddr = keeper.GetRefereeAddr(ctx, order.Sender).String()
-	msgInfo.RebateAmount = getRebateAmountInOrder(ctx, keeper, msgInfo.UsedCommission, msgInfo.UsedFeatureFee)
+	if len(msgInfo.RebateRefereeAddr) != 0 {
+		msgInfo.RebateAmount = getRebateAmountInOrder(ctx, keeper, msgInfo.UsedCommission, msgInfo.UsedFeatureFee)
+	}
 	msgInfo.DelReason = getCancelOrderReason(order, delReason)
 	return msgInfo
 }
