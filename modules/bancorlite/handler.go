@@ -78,8 +78,8 @@ func handleMsgBancorInit(ctx sdk.Context, k Keeper, msg types.MsgBancorInit) sdk
 		EarliestCancelTime: msg.EarliestCancelTime,
 	}
 	k.Save(ctx, bi)
-
-	fillMsgQueue(ctx, k, KafkaBancorCreate, *bi)
+	info := keepers.NewBancorInfoDisplay(bi)
+	fillMsgQueue(ctx, k, KafkaBancorCreate, info)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
@@ -238,8 +238,9 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 		RebateRefereeAddr: rebateAcc,
 		BlockHeight:       ctx.BlockHeight(),
 	}
+	info := keepers.NewBancorInfoDisplay(&biNew)
 	fillMsgQueue(ctx, k, KafkaBancorTrade, m)
-	fillMsgQueue(ctx, k, KafkaBancorInfo, biNew)
+	fillMsgQueue(ctx, k, KafkaBancorInfo, info)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(
