@@ -117,6 +117,7 @@ func (bi *BancorInfo) IsConsistent() bool {
 }
 
 type BancorInfoDisplay struct {
+	Owner              string `json:"owner"`
 	Stock              string `json:"stock"`
 	Money              string `json:"money"`
 	InitPrice          string `json:"init_price"`
@@ -133,6 +134,7 @@ type BancorInfoDisplay struct {
 
 func NewBancorInfoDisplay(bi *BancorInfo) BancorInfoDisplay {
 	return BancorInfoDisplay{
+		Owner:              bi.Owner.String(),
 		Stock:              bi.Stock,
 		Money:              bi.Money,
 		InitPrice:          bi.InitPrice.String(),
