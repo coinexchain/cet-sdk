@@ -2,8 +2,6 @@ package keepers
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/coinexchain/cet-sdk/modules/bancorlite/internal/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -146,6 +144,6 @@ func NewBancorInfoDisplay(bi *BancorInfo) BancorInfoDisplay {
 		CurrentPrice:       bi.Price.String(),
 		StockInPool:        bi.StockInPool.String(),
 		MoneyInPool:        bi.MoneyInPool.String(),
-		EarliestCancelTime: time.Unix(bi.EarliestCancelTime, 0).Format(time.RFC3339),
+		EarliestCancelTime: fmt.Sprintf("%d", bi.EarliestCancelTime),
 	}
 }
