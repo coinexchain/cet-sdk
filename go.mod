@@ -24,4 +24,4 @@ require (
 
 replace github.com/cosmos/cosmos-sdk => github.com/coinexchain/cosmos-sdk v0.37.703
 
-replace github.com/tendermint/tendermint => github.com/coinexchain/tendermint v0.32.901
+replace github.com/tendermint/tendermint => github.com/coinexchain/tendermint v0.32.902
