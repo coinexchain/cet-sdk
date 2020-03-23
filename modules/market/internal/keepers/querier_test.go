@@ -130,8 +130,6 @@ func TestQueryOrdersInMarket(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resBytes)
 
-	//println(string(resBytes))
-
 	// return data
 	var res []types.Order
 	testApp.Cdc.MustUnmarshalJSON(resBytes, &res)

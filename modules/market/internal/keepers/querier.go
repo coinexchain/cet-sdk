@@ -126,6 +126,54 @@ func queryMarketList(ctx sdk.Context, req abci.RequestQuery, mk Keeper) ([]byte,
 	return bz, nil
 }
 
+type ResOrder struct {
+	OrderID          string
+	Sender           sdk.AccAddress `json:"sender"`
+	Sequence         uint64         `json:"sequence"`
+	Identify         byte           `json:"identify"`
+	TradingPair      string         `json:"trading_pair"`
+	OrderType        byte           `json:"order_type"`
+	Price            sdk.Dec        `json:"price"`
+	Quantity         int64          `json:"quantity"`
+	Side             byte           `json:"side"`
+	TimeInForce      int64          `json:"time_in_force"`
+	Height           int64          `json:"height"`
+	FrozenCommission int64          `json:"frozen_commission"` // DEX2
+	ExistBlocks      int64          `json:"exist_blocks"`
+	FrozenFeatureFee int64          `json:"frozen_feature_fee"`   // DEX2
+	FrozenFee        int64          `json:"frozen_fee,omitempty"` // DEX2: -> frozen_commission
+
+	// These fields will change when order was filled/canceled.
+	LeftStock int64 `json:"left_stock"`
+	Freeze    int64 `json:"freeze"`
+	DealStock int64 `json:"deal_stock"`
+	DealMoney int64 `json:"deal_money"`
+}
+
+func convertResOrderFromOrder(order *types.Order) *ResOrder {
+	return &ResOrder{
+		OrderID:          order.OrderID(),
+		Sender:           order.Sender,
+		Sequence:         order.Sequence,
+		Identify:         order.Identify,
+		TradingPair:      order.TradingPair,
+		OrderType:        order.OrderType,
+		Price:            order.Price,
+		Quantity:         order.Quantity,
+		Side:             order.Side,
+		TimeInForce:      order.TimeInForce,
+		Height:           order.Height,
+		FrozenCommission: order.FrozenCommission,
+		ExistBlocks:      order.ExistBlocks,
+		FrozenFeatureFee: order.FrozenFeatureFee,
+		FrozenFee:        order.FrozenFee,
+		LeftStock:        order.LeftStock,
+		Freeze:           order.Freeze,
+		DealStock:        order.DealStock,
+		DealMoney:        order.DealMoney,
+	}
+}
+
 func queryOrdersInMarket(ctx sdk.Context, req abci.RequestQuery, mk Keeper) ([]byte, sdk.Error) {
 	var param QueryMarketParam
 	if err := mk.cdc.UnmarshalJSON(req.Data, &param); err != nil {
@@ -134,11 +182,14 @@ func queryOrdersInMarket(ctx sdk.Context, req abci.RequestQuery, mk Keeper) ([]b
 
 	k := NewOrderKeeper(mk.marketKey, param.TradingPair, mk.cdc)
 	orders := k.GetOlderThan(ctx, math.MaxInt64)
-	bz, err := codec.MarshalJSONIndent(mk.cdc, orders)
+	rs := make([]*ResOrder, len(orders))
+	for i, or := range orders {
+		rs[i] = convertResOrderFromOrder(or)
+	}
+	bz, err := codec.MarshalJSONIndent(mk.cdc, rs)
 	if err != nil {
 		return nil, types.ErrFailedMarshal()
 	}
-
 	return bz, nil
 }
 
