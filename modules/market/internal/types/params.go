@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DefaultCreateMarketFee             = 1e12 // 10000 * 10 ^8
+	DefaultCreateMarketFee             = 1e10 // 100 * 10 ^8
 	DefaultGTEOrderLifetime            = 100000
 	DefaultGTEOrderFeatureFeeByBlocks  = 10
 	DefaultMaxExecutedPriceChangeRatio = 25
