@@ -11,12 +11,12 @@ import (
 const (
 	MaxTokenAmount = 5e76 // 57896044618658097711785492504343953926634992332820282019728792003956564819967
 
-	DefaultIssue2CharTokenFee = 100000e8 // 100000 * 10^8
-	DefaultIssue3CharTokenFee = 10000e8  //  10000 * 10^8
-	DefaultIssue4CharTokenFee = 5000e8   //   5000 * 10^8
-	DefaultIssue5CharTokenFee = 2000e8   //   2000 * 10^8
-	DefaultIssue6CharTokenFee = 1000e8   //   1000 * 10^8
-	DefaultIssueLongTokenFee  = 500e8    //    500 * 10^8
+	DefaultIssue2CharTokenFee = 10000e8 // 10000 * 10^8
+	DefaultIssue3CharTokenFee = 1000e8  //  1000 * 10^8
+	DefaultIssue4CharTokenFee = 500e8   //   500 * 10^8
+	DefaultIssue5CharTokenFee = 200e8   //   200 * 10^8
+	DefaultIssue6CharTokenFee = 100e8   //   100 * 10^8
+	DefaultIssueLongTokenFee  = 50e8    //    50 * 10^8
 )
 
 // Parameter keys
