@@ -127,7 +127,7 @@ func queryMarketList(ctx sdk.Context, req abci.RequestQuery, mk Keeper) ([]byte,
 }
 
 type ResOrder struct {
-	OrderID          string
+	OrderID          string         `json:"order_id"`
 	Sender           sdk.AccAddress `json:"sender"`
 	Sequence         uint64         `json:"sequence"`
 	Identify         byte           `json:"identify"`
