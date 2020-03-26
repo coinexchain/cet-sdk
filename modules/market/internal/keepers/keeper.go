@@ -236,8 +236,14 @@ func (k Keeper) GetMarketVolume(ctx sdk.Context, stock, money string, stockVolum
 	} else if money == dex.CET {
 		volume = moneyVolume
 	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, money)); err == nil {
+		if marketInfo.LastExecutedPrice.IsZero() {
+			return volume
+		}
 		volume = moneyVolume.Quo(marketInfo.LastExecutedPrice)
 	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, stock)); err == nil {
+		if marketInfo.LastExecutedPrice.IsZero() {
+			return volume
+		}
 		volume = stockVolume.Quo(marketInfo.LastExecutedPrice)
 	} else if marketInfo, err := k.GetMarketInfo(ctx, dex.GetSymbol(money, dex.CET)); err == nil {
 		volume = moneyVolume.Mul(marketInfo.LastExecutedPrice)
