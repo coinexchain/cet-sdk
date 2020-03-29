@@ -10,7 +10,7 @@ import (
 
 func TestParams_Equal(t *testing.T) {
 	param := DefaultParams()
-	param2 := NewParams(sdk.MustNewDecFromStr("20.0"), 24*60*60*1000000000, 1000)
+	param2 := NewParams(sdk.MustNewDecFromStr("20.0"), 7*24*60*60*1000000000, 2000)
 	b := param.Equal(param2)
 	require.Equal(t, true, b)
 }

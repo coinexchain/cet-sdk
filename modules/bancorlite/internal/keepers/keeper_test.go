@@ -284,7 +284,7 @@ func TestKeeper_GetRebate(t *testing.T) {
 	app.AccountXKeeper.SetAccountX(ctx, authx.NewAccountX(owner, false, nil, nil, referee, 0))
 	acc, rebate, balance, exist := app.BancorKeeper.GetRebate(ctx, owner, sdk.NewInt(100000))
 	require.Equal(t, acc, referee)
-	require.Equal(t, rebate.Int64(), int64(10000))
-	require.Equal(t, balance.Int64(), int64(90000))
+	require.Equal(t, int64(20000), rebate.Int64())
+	require.Equal(t, int64(80000), balance.Int64())
 	require.Equal(t, exist, true)
 }
