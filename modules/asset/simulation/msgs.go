@@ -385,16 +385,9 @@ func SimulateMsgModifyTokenInfo(k asset.Keeper) simulation.Operation {
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accounts []simulation.Account) (
 		operationMsg simulation.OperationMsg, futureOps []simulation.FutureOperation, err error) {
 
-		_, symbol, owner := getOrGenSymbolOwner(r, accounts, ctx, k)
+		token, symbol, owner := getOrGenSymbolOwner(r, accounts, ctx, k)
 
-		url := fmt.Sprintf("www.%s.org", symbol)
-		describe := fmt.Sprintf("simulation modify info %s", symbol)
-		identity := types.TestIdentityString
-		msg := asset.NewMsgModifyTokenInfo(symbol, url, describe, identity, owner,
-			types.DoNotModifyTokenInfo, types.DoNotModifyTokenInfo, // TODO
-			types.DoNotModifyTokenInfo, types.DoNotModifyTokenInfo, // TODO
-			types.DoNotModifyTokenInfo, types.DoNotModifyTokenInfo, // TODO
-		)
+		msg := randomModifyTokenMsg(r, token, symbol, owner)
 		if msg.ValidateBasic() != nil {
 			return simulation.NoOpMsg(asset.ModuleName), nil, nil
 		}
@@ -412,6 +405,42 @@ func SimulateMsgModifyTokenInfo(k asset.Keeper) simulation.Operation {
 		}
 		return simulation.NewOperationMsg(msg, ok, ""), nil, nil
 	}
+}
+func randomModifyTokenMsg(r *rand.Rand,
+	token types.Token, symbol string, owner sdk.AccAddress) types.MsgModifyTokenInfo {
+
+	url := fmt.Sprintf("www.%s.org", symbol)
+	describe := fmt.Sprintf("simulation modify info %s", symbol)
+	identity := types.TestIdentityString
+	name := types.DoNotModifyTokenInfo
+	totalSupply := types.DoNotModifyTokenInfo
+	mintable := types.DoNotModifyTokenInfo
+	burnable := types.DoNotModifyTokenInfo
+	addrForbiddable := types.DoNotModifyTokenInfo
+	tokenForbiddable := types.DoNotModifyTokenInfo
+	if token != nil {
+		if r.Intn(10) > 2 {
+			name = token.GetName() + "2"
+		}
+		if r.Intn(10) > 2 {
+			totalSupply = token.GetTotalSupply().AddRaw(r.Int63n(10000)).String()
+		}
+		if r.Intn(10) > 2 {
+			mintable = fmt.Sprintf("%v", !token.GetMintable())
+		}
+		if r.Intn(10) > 2 {
+			burnable = fmt.Sprintf("%v", !token.GetBurnable())
+		}
+		if r.Intn(10) > 2 {
+			addrForbiddable = fmt.Sprintf("%v", !token.GetAddrForbiddable())
+		}
+		if r.Intn(10) > 2 {
+			tokenForbiddable = fmt.Sprintf("%v", !token.GetTokenForbiddable())
+		}
+	}
+	return asset.NewMsgModifyTokenInfo(symbol, url, describe, identity, owner,
+		name, totalSupply, mintable, burnable, addrForbiddable, tokenForbiddable,
+	)
 }
 func verifyModifyTokenInfo(ctx sdk.Context, k asset.Keeper, msg types.MsgModifyTokenInfo) bool {
 	token := k.GetToken(ctx, msg.Symbol)
