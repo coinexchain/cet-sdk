@@ -419,22 +419,22 @@ func randomModifyTokenMsg(r *rand.Rand,
 	addrForbiddable := types.DoNotModifyTokenInfo
 	tokenForbiddable := types.DoNotModifyTokenInfo
 	if token != nil {
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			name = token.GetName() + "2"
 		}
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			totalSupply = token.GetTotalSupply().AddRaw(r.Int63n(10000)).String()
 		}
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			mintable = fmt.Sprintf("%v", !token.GetMintable())
 		}
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			burnable = fmt.Sprintf("%v", !token.GetBurnable())
 		}
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			addrForbiddable = fmt.Sprintf("%v", !token.GetAddrForbiddable())
 		}
-		if r.Intn(10) > 2 {
+		if r.Intn(10) > 6 {
 			tokenForbiddable = fmt.Sprintf("%v", !token.GetTokenForbiddable())
 		}
 	}
