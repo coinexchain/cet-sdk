@@ -682,10 +682,72 @@ func TestTokenKeeper_ModifyTokenInfo_AfterDistribution2(t *testing.T) {
 	testModifyTokenInfo(t, tokenTmpl, true, func(token types.Token) error { token.SetTokenForbiddable(!token.GetTokenForbiddable()); return nil }, "token TokenForbiddable sealed")
 }
 
+func TestTokenKeeper_ModifyMintableToFalse(t *testing.T) {
+	tokenTmpl, err := types.NewToken("ABC token", "abc", sdk.NewInt(2100), testAddr,
+		true, true, true, true, "www.abc.org", "abc example description", types.TestIdentityString)
+	require.NoError(t, err)
+	err = tokenTmpl.SetTotalMint(sdk.NewInt(10))
+	require.NoError(t, err)
+	modifyFn := func(token types.Token) error { token.SetMintable(false); return nil }
+	newToken := testModifyTokenInfo(t, tokenTmpl, true, modifyFn, "")
+	require.True(t, newToken.GetTotalMint().IsZero()) // total_mint -> 0
+}
+func TestTokenKeeper_ModifyBurnableToFalse(t *testing.T) {
+	tokenTmpl, err := types.NewToken("ABC token", "abc", sdk.NewInt(2100), testAddr,
+		true, true, true, true, "www.abc.org", "abc example description", types.TestIdentityString)
+	require.NoError(t, err)
+	err = tokenTmpl.SetTotalBurn(sdk.NewInt(10))
+	require.NoError(t, err)
+	modifyFn := func(token types.Token) error { token.SetBurnable(false); return nil }
+	newToken := testModifyTokenInfo(t, tokenTmpl, false, modifyFn, "")
+	require.True(t, newToken.GetTotalBurn().IsZero()) // total_burn -> 0
+}
+func TestTokenKeeper_ModifyTokenForbiddableToFalse(t *testing.T) {
+	tokenTmpl, err := types.NewToken("ABC token", "abc", sdk.NewInt(2100), testAddr,
+		true, true, true, true, "www.abc.org", "abc example description", types.TestIdentityString)
+	require.NoError(t, err)
+	tokenTmpl.SetIsForbidden(true)
+	modifyFn := func(token types.Token) error { token.SetTokenForbiddable(false); return nil }
+	newToken := testModifyTokenInfo(t, tokenTmpl, true, modifyFn, "")
+	require.False(t, newToken.GetIsForbidden()) // forbidden -> false
+}
+func TestTokenKeeper_ModifyAddrForbiddableToFalse(t *testing.T) {
+	tokenTmpl, err := types.NewToken("ABC token", "abc", sdk.NewInt(2100), testAddr,
+		true, true, true, true, "www.abc.org", "abc example description", types.TestIdentityString)
+	require.NoError(t, err)
+
+	input := createTestInput()
+	err = input.tk.IssueToken(input.ctx, tokenTmpl.GetName(), tokenTmpl.GetSymbol(),
+		tokenTmpl.GetTotalSupply(), tokenTmpl.GetOwner(),
+		tokenTmpl.GetMintable(), tokenTmpl.GetBurnable(),
+		tokenTmpl.GetAddrForbiddable(), tokenTmpl.GetTokenForbiddable(),
+		tokenTmpl.GetURL(), tokenTmpl.GetDescription(), tokenTmpl.GetIdentity())
+	require.NoError(t, err)
+
+	var _, _, badGuy1 = keyPubAddr()
+	var _, _, badGuy2 = keyPubAddr()
+	badGuys := []sdk.AccAddress{badGuy1, badGuy2}
+	err = input.tk.ForbidAddress(input.ctx, tokenTmpl.GetSymbol(), tokenTmpl.GetOwner(), badGuys)
+	require.NoError(t, err)
+	blackList := input.tk.GetForbiddenAddresses(input.ctx, tokenTmpl.GetSymbol())
+	require.Equal(t, 2, len(blackList))
+	require.True(t, input.tk.GetToken(input.ctx, tokenTmpl.GetSymbol()).GetAddrForbiddable())
+
+	err = input.tk.ModifyTokenInfo(input.ctx, tokenTmpl.GetSymbol(), tokenTmpl.GetOwner(),
+		tokenTmpl.GetURL(), tokenTmpl.GetDescription(), tokenTmpl.GetIdentity(),
+		tokenTmpl.GetName(), tokenTmpl.GetTotalSupply(),
+		tokenTmpl.GetMintable(), tokenTmpl.GetBurnable(),
+		false, tokenTmpl.GetTokenForbiddable())
+	require.NoError(t, err)
+	blackList = input.tk.GetForbiddenAddresses(input.ctx, tokenTmpl.GetSymbol())
+	require.Equal(t, 0, len(blackList)) // blacklist -> empty
+	require.False(t, input.tk.GetToken(input.ctx, tokenTmpl.GetSymbol()).GetAddrForbiddable())
+}
+
 func testModifyTokenInfo(t *testing.T,
 	tokenTmpl types.Token, distributed bool,
 	modifyFn func(token types.Token) error,
-	errMsg string) {
+	errMsg string) types.Token {
 
 	input, token := issueTokenForTest(t, tokenTmpl, distributed)
 	oldSupply := token.GetTotalSupply()
@@ -708,9 +770,12 @@ func testModifyTokenInfo(t *testing.T,
 			require.Equal(t, newSupply,
 				input.bkx.GetTotalCoins(input.ctx, token.GetOwner()).AmountOf(token.GetSymbol()))
 		}
+
+		return newToken
 	} else {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), errMsg)
+		return nil
 	}
 }
 
@@ -723,12 +788,28 @@ func issueTokenForTest(t *testing.T, tokenTmpl types.Token, distributed bool) (t
 		tokenTmpl.GetURL(), tokenTmpl.GetDescription(), tokenTmpl.GetIdentity())
 	require.NoError(t, err)
 
-	supply := tokenTmpl.GetTotalSupply()
+	totalSupply := tokenTmpl.GetTotalSupply()
 	if distributed {
-		supply = supply.SubRaw(100) // simulate transfer
+		totalSupply = totalSupply.SubRaw(100) // simulate transfer
 	}
-	err = input.tk.SendCoinsFromAssetModuleToAccount(input.ctx, testAddr, types.NewTokenCoins(tokenTmpl.GetSymbol(), supply))
+
+	if tokenTmpl.GetTotalBurn().GT(sdk.ZeroInt()) {
+		err = input.tk.BurnToken(input.ctx, tokenTmpl.GetSymbol(), tokenTmpl.GetOwner(), tokenTmpl.GetTotalBurn())
+		require.NoError(t, err)
+		totalSupply = totalSupply.Sub(tokenTmpl.GetTotalBurn())
+	}
+
+	err = input.tk.SendCoinsFromAssetModuleToAccount(input.ctx, testAddr, types.NewTokenCoins(tokenTmpl.GetSymbol(), totalSupply))
 	require.NoError(t, err)
+
+	if tokenTmpl.GetTotalMint().GT(sdk.ZeroInt()) {
+		err = input.tk.MintToken(input.ctx, tokenTmpl.GetSymbol(), tokenTmpl.GetOwner(), tokenTmpl.GetTotalMint())
+		require.NoError(t, err)
+	}
+	if tokenTmpl.GetIsForbidden() {
+		err = input.tk.ForbidToken(input.ctx, tokenTmpl.GetSymbol(), tokenTmpl.GetOwner())
+		require.NoError(t, err)
+	}
 
 	token := input.tk.GetToken(input.ctx, tokenTmpl.GetSymbol())
 	return input, token
