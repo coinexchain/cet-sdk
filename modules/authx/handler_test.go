@@ -91,7 +91,7 @@ func Test_HandleMsg_RefereeChangeTooFast(t *testing.T) {
 	require.Equal(t, types.CodeRefereeChangeTooFast, res.Code)
 
 	//referee can be updated later
-	ctx := input.ctx.WithBlockTime(time.Unix(0, input.ctx.BlockTime().UnixNano()+24*time.Hour.Nanoseconds()))
+	ctx := input.ctx.WithBlockTime(time.Unix(0, input.ctx.BlockTime().UnixNano()+8*24*time.Hour.Nanoseconds()))
 	res = handler(ctx, msg)
 	require.True(t, res.IsOK())
 }

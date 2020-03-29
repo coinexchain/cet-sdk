@@ -322,6 +322,9 @@ func TestMarketInfoSetFailed(t *testing.T) {
 	require.Equal(t, true, input.hasCoins(haveCetAddress, sdk.Coins{remainCoin}), "The amount is error")
 
 	// failed by not have sufficient cet
+	parameters := types.DefaultParams()
+	parameters.CreateMarketFee = 1e12
+	input.mk.SetParams(input.ctx, parameters)
 	failedInsufficient := msgMarket
 	failedInsufficient.Creator = notHaveCetAddress
 	failedInsufficient.Money = "cet"
@@ -334,7 +337,7 @@ func TestMarketInfoSetFailed(t *testing.T) {
 	failedNotHaveCetTrade := msgMarket
 	ret = input.handler(input.ctx, failedNotHaveCetTrade)
 	require.EqualValues(t, sdk.CodeOK, ret.Code)
-	remainCoin = remainCoin.Sub(dex.NewCetCoin(types.DefaultCreateMarketFee))
+	remainCoin = remainCoin.Sub(dex.NewCetCoin(parameters.CreateMarketFee))
 	require.Equal(t, true, input.hasCoins(haveCetAddress, sdk.Coins{remainCoin}), "The amount is error")
 }
 
@@ -1095,6 +1098,9 @@ func TestCheckMsgCreateOrder(t *testing.T) {
 	input := prepareMockInput(t, true, true)
 	require.True(t, input.mk.IsTokenForbidden(input.ctx, stock))
 	require.True(t, input.mk.IsForbiddenByTokenIssuer(input.ctx, stock, forbidAddr))
+	remain := OriginHaveCetAmount + issueAmount - asset.DefaultIssue4CharTokenFee*2 - asset.DefaultIssue5CharTokenFee
+	remainCoin := dex.NewCetCoin(remain)
+	require.Equal(t, true, input.hasCoins(haveCetAddress, sdk.Coins{remainCoin}), "The amount is error")
 
 	// Insufficient coin
 	msg := MsgCreateOrder{
@@ -1109,7 +1115,7 @@ func TestCheckMsgCreateOrder(t *testing.T) {
 		TimeInForce:    GTE,
 		ExistBlocks:    10000,
 	}
-	err := checkMsgCreateOrder(input.ctx, input.mk, msg, OriginHaveCetAmount+1, 1, dex.CET, 1)
+	err := checkMsgCreateOrder(input.ctx, input.mk, msg, remain+1, 1, dex.CET, 1)
 	require.EqualValues(t, err.Code(), types.CodeInsufficientCoin)
 
 	err = checkMsgCreateOrder(input.ctx, input.mk, msg, issueAmount, OriginHaveCetAmount, dex.CET, 1)
@@ -1200,6 +1206,9 @@ func TestCheckMsgCreateTradingPair(t *testing.T) {
 	msg.Creator = haveCetAddress
 	msg.Money = dex.CET
 	msg.Stock = stock
+	input.mk.SetParams(input.ctx, types.Params{
+		CreateMarketFee: 1e18,
+	})
 	err = checkMsgCreateTradingPair(input.ctx, msg, input.mk)
 	require.NotNil(t, err)
 	require.EqualValues(t, types.CodeInsufficientCoin, err.Code())

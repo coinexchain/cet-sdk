@@ -486,9 +486,10 @@ func TestTimeReachedRemoveOrNot(t *testing.T) {
 	require.EqualValues(t, 6, len(orders))
 
 	// EndBlocker remove.
-	input.ctx = input.ctx.WithBlockTime(time.Unix(2, 0))
+	input.ctx = input.ctx.WithBlockTime(time.Unix(2+60, 0))
 	require.EqualValues(t, 20, input.ctx.BlockHeight())
-	require.EqualValues(t, 2, input.ctx.BlockTime().Unix())
+	require.EqualValues(t, 2+60, input.ctx.BlockTime().Unix())
+	fmt.Printf("Here!! \n")
 	EndBlocker(input.ctx, input.mk)
 	orders = orderKeeper.GetOlderThan(input.ctx, 10)
 	require.EqualValues(t, 1, len(orders))
