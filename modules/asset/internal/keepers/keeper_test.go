@@ -321,6 +321,31 @@ func TestTokenKeeper_BurnToken(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestTokenKeeper_BurnTokenAfterModifyToken(t *testing.T) {
+	input := createTestInput()
+	symbol := "abc"
+
+	err := input.tk.IssueToken(input.ctx, "ABC token", symbol, sdk.NewInt(2100), testAddr,
+		false, false, false, false, "", "", types.TestIdentityString)
+	require.NoError(t, err)
+	token := input.tk.GetToken(input.ctx, symbol)
+	err = input.tk.BurnToken(input.ctx, symbol, testAddr, sdk.NewInt(1000))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "token abc do not support burn")
+
+	err = input.tk.ModifyTokenInfo(input.ctx, symbol, token.GetOwner(),
+		token.GetURL(), token.GetDescription(), token.GetIdentity(), token.GetName(),
+		token.GetTotalSupply(), token.GetMintable(), true,
+		token.GetAddrForbiddable(), token.GetTokenForbiddable())
+	require.NoError(t, err)
+
+	err = input.tk.BurnToken(input.ctx, symbol, testAddr, sdk.NewInt(1000))
+	require.NoError(t, err)
+	token = input.tk.GetToken(input.ctx, symbol)
+	require.Equal(t, sdk.NewInt(1100), token.GetTotalSupply())
+	require.Equal(t, sdk.NewInt(1000), token.GetTotalBurn())
+}
+
 func TestTokenKeeper_ForbidToken(t *testing.T) {
 	input := createTestInput()
 	symbol := "abc"
