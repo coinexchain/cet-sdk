@@ -91,4 +91,8 @@ func TestOrder_CalActualOrderFeatureFeeInt64(t *testing.T) {
 	ctx = ctx.WithBlockHeight(20800)
 	fee = order.CalActualOrderFeatureFeeInt64(ctx, 100)
 	require.EqualValues(t, 100, fee)
+
+	ctx = ctx.WithBlockHeight(210)
+	fee = order.CalActualOrderFeatureFeeInt64(ctx, 200)
+	require.EqualValues(t, 0, fee)
 }
