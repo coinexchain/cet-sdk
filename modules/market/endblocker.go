@@ -423,6 +423,10 @@ func packageCancelOrderMsg(ctx sdk.Context, order *types.Order,
 func packageCancelOrderMsgWithDelReason(ctx sdk.Context, order *types.Order, delReason string,
 	marketParams *Params, keeper types.ExpectedAuthXKeeper) types.CancelOrderInfo {
 	currentHeight := ctx.BlockHeight()
+	usedFeatureFee := int64(0)
+	if order.FrozenFeatureFee != 0 {
+		usedFeatureFee = order.CalActualOrderFeatureFeeInt64(ctx, marketParams.GTEOrderLifetime)
+	}
 	msgInfo := types.CancelOrderInfo{
 		OrderID:        order.OrderID(),
 		TradingPair:    order.TradingPair,
@@ -430,7 +434,7 @@ func packageCancelOrderMsgWithDelReason(ctx sdk.Context, order *types.Order, del
 		Height:         currentHeight,
 		Price:          order.Price,
 		UsedCommission: order.CalActualOrderCommissionInt64(marketParams.FeeForZeroDeal),
-		UsedFeatureFee: order.CalActualOrderFeatureFeeInt64(ctx, marketParams.GTEOrderLifetime),
+		UsedFeatureFee: usedFeatureFee,
 		LeftStock:      order.LeftStock,
 		RemainAmount:   order.Freeze,
 		DealStock:      order.DealStock,
