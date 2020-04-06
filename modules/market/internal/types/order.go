@@ -48,6 +48,9 @@ func (or *Order) CalActualOrderCommissionInt64(feeForZeroDeal int64) int64 {
 }
 
 func (or *Order) CalActualOrderFeatureFeeInt64(ctx sdk.Context, freeTimeBlocks int64) int64 {
+	if or.ExistBlocks <= freeTimeBlocks {
+		return 0
+	}
 	existTime := ctx.BlockHeight() - or.Height + 1
 	if existTime < freeTimeBlocks {
 		return 0
