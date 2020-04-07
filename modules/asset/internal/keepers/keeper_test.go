@@ -797,11 +797,10 @@ func testModifyTokenInfo(t *testing.T,
 		}
 
 		return newToken
-	} else {
-		require.Error(t, err)
-		require.Contains(t, err.Error(), errMsg)
-		return nil
 	}
+	require.Error(t, err)
+	require.Contains(t, err.Error(), errMsg)
+	return nil
 }
 
 func issueTokenForTest(t *testing.T, tokenTmpl types.Token, distributed bool) (testInput, types.Token) {

@@ -44,6 +44,6 @@ func SimulateMsgSetReferee(k authx.AccountXKeeper, ak authx.ExpectedAccountKeepe
 	}
 }
 func checkSetReferee(ctx sdk.Context, k authx.AccountXKeeper, msg authx.MsgSetReferee) bool {
-	sender_acc, ok := k.GetAccountX(ctx, msg.Sender)
-	return ok && sender_acc.Referee.Equals(msg.Referee) && sender_acc.RefereeChangeTime > 0
+	senderAcc, ok := k.GetAccountX(ctx, msg.Sender)
+	return ok && senderAcc.Referee.Equals(msg.Referee) && senderAcc.RefereeChangeTime > 0
 }

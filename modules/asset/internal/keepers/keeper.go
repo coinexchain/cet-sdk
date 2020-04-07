@@ -370,7 +370,7 @@ func (keeper BaseKeeper) ModifyTokenInfo(ctx sdk.Context, symbol string, owner s
 			return types.ErrCodeTokenInfoSealed("Mintable")
 		}
 		token.SetMintable(mintable)
-		if mintable == false {
+		if !mintable {
 			if err := token.SetTotalMint(sdk.ZeroInt()); err != nil {
 				return err
 			}
@@ -381,7 +381,7 @@ func (keeper BaseKeeper) ModifyTokenInfo(ctx sdk.Context, symbol string, owner s
 			return types.ErrCodeTokenInfoSealed("Burnable")
 		}
 		token.SetBurnable(burnable)
-		if burnable == false {
+		if !burnable {
 			if err := token.SetTotalBurn(sdk.ZeroInt()); err != nil {
 				return err
 			}
@@ -392,7 +392,7 @@ func (keeper BaseKeeper) ModifyTokenInfo(ctx sdk.Context, symbol string, owner s
 			return types.ErrCodeTokenInfoSealed("AddrForbiddable")
 		}
 		token.SetAddrForbiddable(addrForbiddable)
-		if addrForbiddable == false {
+		if !addrForbiddable {
 			blackList := keeper.GetForbiddenAddresses(ctx, symbol)
 			if err := keeper.removeForbiddenAddress(ctx, symbol, blackList); err != nil {
 				return err
@@ -404,7 +404,7 @@ func (keeper BaseKeeper) ModifyTokenInfo(ctx sdk.Context, symbol string, owner s
 			return types.ErrCodeTokenInfoSealed("TokenForbiddable")
 		}
 		token.SetTokenForbiddable(tokenForbiddable)
-		if tokenForbiddable == false {
+		if !tokenForbiddable {
 			token.SetIsForbidden(false)
 		}
 	}
