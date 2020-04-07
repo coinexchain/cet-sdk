@@ -183,7 +183,7 @@ func handleFeeForCreateOrder(ctx sdk.Context, keeper keepers.Keeper, amount int6
 	return nil
 }
 
-func sendCreateOrderMsg(ctx sdk.Context, keeper keepers.Keeper, order types.Order, featureFee int64) {
+func sendCreateOrderMsg(ctx sdk.Context, keeper keepers.Keeper, order types.Order) {
 	if keeper.IsSubScribed(types.Topic) {
 		// send msg to kafka
 		createOrderInfo := types.CreateOrderInfo{
@@ -278,7 +278,7 @@ func handleMsgCreateOrder(ctx sdk.Context, msg types.MsgCreateOrder, keeper keep
 	if err := handleFeeForCreateOrder(ctx, keeper, amount, denom, order.Sender, frozenFee, featureFee); err != nil {
 		return err.Result()
 	}
-	sendCreateOrderMsg(ctx, keeper, order, featureFee)
+	sendCreateOrderMsg(ctx, keeper, order)
 
 	ctx.EventManager().EmitEvents(sdk.Events{
 		sdk.NewEvent(

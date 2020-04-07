@@ -1417,3 +1417,41 @@ func TestCheckMsgModifyPricePrecision(t *testing.T) {
 	err = checkMsgModifyPricePrecision(input.ctx, msg, input.mk)
 	require.EqualValues(t, types.CodeNotMatchSender, err.Code())
 }
+
+func TestPackageCancelOrderMsgWithDelReason(t *testing.T) {
+	var (
+		keeper = &mockKeeper{}
+		param  = types.DefaultParams()
+		ctx    = sdk.NewContext(nil, abci.Header{ChainID: "test-chain-id"},
+			false, log.NewNopLogger())
+	)
+	param.GTEOrderLifetime = 200
+	ctx = ctx.WithBlockHeight(299)
+	or := &types.Order{
+		Sender:           haveCetAddress,
+		Sequence:         1,
+		Identify:         2,
+		TradingPair:      GetSymbol("abc", "cet"),
+		OrderType:        types.LimitOrder,
+		Price:            sdk.NewDec(100),
+		Quantity:         10000000,
+		Side:             types.SELL,
+		TimeInForce:      types.GTE,
+		Height:           100,
+		ExistBlocks:      200,
+		FrozenFeatureFee: 4100,
+		FrozenCommission: 3900,
+		FrozenFee:        5600,
+
+		LeftStock: 10000000,
+		Freeze:    30000000,
+		DealStock: 0,
+		DealMoney: 0,
+	}
+
+	msg := packageCancelOrderMsgWithDelReason(ctx, or, types.CancelOrderByManual, &param, keeper)
+	require.EqualValues(t, 0, msg.UsedFeatureFee)
+	require.EqualValues(t, param.FeeForZeroDeal, msg.UsedCommission)
+	require.EqualValues(t, param.FeeForZeroDeal*keeper.GetRebateRatio(ctx)/keeper.GetRebateRatioBase(ctx), msg.RebateAmount)
+
+}
