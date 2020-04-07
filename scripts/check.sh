@@ -33,13 +33,14 @@ linter_targets=$(glide novendor)
 test -z "$(golangci-lint  run -j 4 --disable-all \
 --enable=gofmt \
 --enable=golint \
---enable=gosimple \
 --enable=ineffassign \
+--enable=gosimple \
 --enable=vet \
 --enable=misspell \
 --enable=unconvert \
 --exclude='should have comment' \
 --exclude='and that stutters;' \
+--timeout=30m50s \
  $linter_targets 2>&1 | grep -v 'ALL_CAPS\|OP_' 2>&1 | tee /dev/stderr)"
 
 time go test -covermode=atomic -coverprofile=coverage.out -race -tags rpctest $linter_targets

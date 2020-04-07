@@ -19,12 +19,13 @@ matrix:
 
       before_install:
         - curl https://glide.sh/get | sh
-        - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.20.0
+        - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.24.0
         # todo cache apt package
         # - sudo -E apt-get -yq --no-install-suggests --no-install-recommends install g++-6 gcc-6
         - export GO111MODULE=on
         - export GOPRIVATE=github.com/coinexchain/*
         - export GOROOT=$(go env GOROOT)
+        - export GOGC=20
         - export CXX="g++-6" CC="gcc-6"
         - export PATH=$PATH:$HOME/gopath/bin
 
@@ -34,7 +35,7 @@ matrix:
         - go mod vendor
         - go get golang.org/x/tools/cmd/cover
         - go get github.com/mattn/goveralls
-
+        - free -m
       script:
         - RUN_IN_TRAVIS=true ./scripts/check.sh
 
