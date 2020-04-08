@@ -34,7 +34,6 @@ test -z "$(golangci-lint  run -j 4 --disable-all \
 --enable=gofmt \
 --enable=golint \
 --enable=ineffassign \
---enable=gosimple \
 --enable=vet \
 --enable=misspell \
 --enable=unconvert \
