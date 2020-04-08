@@ -6,6 +6,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/tendermint/tendermint/types"
 
 	dex "github.com/coinexchain/cet-sdk/types"
 )
@@ -74,7 +75,7 @@ func doAdditionalCheck(ctx sdk.Context, tx auth.StdTx, simulate bool,
 }
 
 func checkGasPrice(ctx sdk.Context, tx auth.StdTx, axk AccountXKeeper) sdk.Error {
-	if ctx.BlockHeader().Height == 0 {
+	if ctx.BlockHeader().Height == types.GenesisBlockHeight {
 		// do not check gas price during the genesis block
 		return nil
 	}

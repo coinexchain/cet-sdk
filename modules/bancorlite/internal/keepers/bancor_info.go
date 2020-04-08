@@ -69,7 +69,6 @@ func (bi *BancorInfo) UpdateStockInPool(stockInPool sdk.Int) bool {
 			Add(bi.InitPrice.MulInt(suppliedStock)).TruncateInt()
 		// price = priceRatio * (maxPrice - initPrice) + initPrice
 		bi.Price = priceRatio.MulTruncate(bi.MaxPrice.Sub(bi.InitPrice)).Add(bi.InitPrice)
-
 	}
 	return true
 }
@@ -132,6 +131,25 @@ type BancorInfoDisplay struct {
 }
 
 func NewBancorInfoDisplay(bi *BancorInfo) BancorInfoDisplay {
+	price := sdk.ZeroDec()
+	suppliedStock := bi.MaxSupply.Sub(bi.StockInPool)
+	if bi.MaxMoney.IsPositive() {
+		s := suppliedStock.MulRaw(types.SupplyRatioSamples).Quo(bi.MaxSupply).Int64()
+		if s == types.SupplyRatioSamples {
+			price = bi.MaxPrice
+		} else if s == 0 && bi.MoneyInPool.IsZero() {
+			price = bi.InitPrice
+		} else {
+			ratio := types.TableLookup(bi.AR+types.ARSamples, s)
+			ratioNext := types.TableLookup(bi.AR+types.ARSamples, s+1)
+			price = bi.InitPrice.Add(
+				bi.MaxPrice.Sub(bi.InitPrice).MulInt64(types.ARSamples).MulInt64(types.ARSamples).
+					QuoInt64(bi.AR + types.ARSamples).
+					Mul(ratioNext.Sub(ratio)))
+		}
+	} else {
+		price = bi.Price
+	}
 	return BancorInfoDisplay{
 		Owner:              bi.Owner.String(),
 		Stock:              bi.Stock,
@@ -142,7 +160,7 @@ func NewBancorInfoDisplay(bi *BancorInfo) BancorInfoDisplay {
 		MaxPrice:           bi.MaxPrice.String(),
 		MaxMoney:           bi.MaxMoney.String(),
 		AR:                 fmt.Sprintf("%d", bi.AR),
-		CurrentPrice:       bi.Price.String(),
+		CurrentPrice:       price.String(),
 		StockInPool:        bi.StockInPool.String(),
 		MoneyInPool:        bi.MoneyInPool.String(),
 		EarliestCancelTime: bi.EarliestCancelTime,

@@ -288,3 +288,34 @@ func TestKeeper_GetRebate(t *testing.T) {
 	require.Equal(t, int64(80000), balance.Int64())
 	require.Equal(t, exist, true)
 }
+
+func TestCurrentPriceCalculate(t *testing.T) {
+	bi := keepers.BancorInfo{
+		Owner:              nil,
+		Stock:              "btc",
+		Money:              "cet",
+		InitPrice:          sdk.NewDec(3),
+		MaxSupply:          sdk.NewInt(10000000000000),
+		StockPrecision:     6,
+		MaxPrice:           sdk.NewDec(10),
+		MaxMoney:           sdk.NewInt(70000000000000),
+		AR:                 750,
+		Price:              sdk.NewDec(3),
+		StockInPool:        sdk.NewInt(100000_0000_0000),
+		MoneyInPool:        sdk.NewInt(0),
+		EarliestCancelTime: 0,
+	}
+
+	biNew := bi
+	display := keepers.NewBancorInfoDisplay(&biNew)
+	require.Equal(t, display.CurrentPrice, bi.InitPrice.String())
+	biNew.UpdateStockInPool(biNew.StockInPool.Sub(sdk.NewInt(1_0000_0000)))
+	display = keepers.NewBancorInfoDisplay(&biNew)
+	biNew.UpdateStockInPool(biNew.StockInPool.Sub(sdk.NewInt(99_0000_0000)))
+
+	priceRatio := types.TableLookup(1750, 1)
+	pp := biNew.InitPrice.MulInt(sdk.NewInt(100_0000_0000)).Add(biNew.MaxPrice.Sub(biNew.InitPrice).MulInt(biNew.MaxSupply).QuoInt64(175).MulInt64(100).Mul(priceRatio)).QuoInt64(100_0000_0000)
+	for i := 0; i < 10; i++ {
+		require.Equal(t, display.CurrentPrice[i], pp.String()[i])
+	}
+}
