@@ -248,7 +248,7 @@ func handleMsgBancorTrade(ctx sdk.Context, k Keeper, msg types.MsgBancorTrade) s
 			sdk.NewAttribute(AttributeSymbol, bi.GetSymbol()),
 			sdk.NewAttribute(AttributeNewStockInPool, biNew.StockInPool.String()),
 			sdk.NewAttribute(AttributeNewMoneyInPool, biNew.MoneyInPool.String()),
-			sdk.NewAttribute(AttributeNewPrice, biNew.Price.String()),
+			sdk.NewAttribute(AttributeNewPrice, info.CurrentPrice),
 			sdk.NewAttribute(AttributeTradeSide, sideStr),
 			sdk.NewAttribute(AttributeCoinsFromPool, coinsFromPool.String()),
 			sdk.NewAttribute(AttributeCoinsToPool, coinsToPool.String()),
