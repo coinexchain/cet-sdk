@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/coinexchain/cet-sdk/types"
@@ -49,15 +51,18 @@ func (or *Order) CalActualOrderCommissionInt64(feeForZeroDeal int64) int64 {
 
 func (or *Order) CalActualOrderFeatureFeeInt64(ctx sdk.Context, freeTimeBlocks int64) int64 {
 	if or.ExistBlocks <= freeTimeBlocks {
+		fmt.Println("======")
 		return 0
 	}
 	existTime := ctx.BlockHeight() - or.Height + 1
 	if existTime < freeTimeBlocks {
+		fmt.Println("---------")
 		return 0
 	}
 	chargeBlocks := existTime - freeTimeBlocks
 	fee := sdk.NewDec(chargeBlocks).MulInt64(or.FrozenFeatureFee).QuoInt64(or.ExistBlocks - freeTimeBlocks).TruncateInt64()
 	if fee > or.FrozenFeatureFee {
+		fmt.Println("***********")
 		fee = or.FrozenFeatureFee
 	}
 	return fee

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -95,4 +96,59 @@ func TestOrder_CalActualOrderFeatureFeeInt64(t *testing.T) {
 	ctx = ctx.WithBlockHeight(210)
 	fee = order.CalActualOrderFeatureFeeInt64(ctx, 200)
 	require.EqualValues(t, 0, fee)
+}
+
+func TestFuzz_CalActualOrderCommissionInt64(t *testing.T) {
+	param := DefaultParams()
+	r := rand.New(rand.NewSource(2))
+	addr, _ := sdk.AccAddressFromHex("0123456789012345678901234567890123423456")
+	for i := 0; i < 500; i++ {
+		or := getRandOrder(r, addr, &param)
+		or.CalActualOrderCommissionInt64(param.FeeForZeroDeal)
+	}
+}
+
+func TestFuzz_CalActualOrderFeatureFeeInt64(t *testing.T) {
+	ctx := sdk.Context{}
+	param := DefaultParams()
+	r := rand.New(rand.NewSource(2))
+	addr, _ := sdk.AccAddressFromHex("0123456789012345678901234567890123423456")
+
+	for i := 0; i < 500; i++ {
+		ctx = ctx.WithBlockHeight(r.Int63n(10000))
+		or := getRandOrder(r, addr, &param)
+		or.CalActualOrderFeatureFeeInt64(ctx, param.GTEOrderLifetime)
+	}
+}
+
+func getRandOrder(r *rand.Rand, addr sdk.AccAddress, param *Params) *Order {
+	side := SELL
+	if r.Int31n(2) == 1 {
+		side = BUY
+	}
+	tif := GTE
+	if r.Int31n(4)%3 == 0 {
+		tif = IOC
+	}
+	or := Order{
+		Sender:           addr,
+		Sequence:         r.Uint64(),
+		Identify:         0,
+		TradingPair:      "abc/cet",
+		OrderType:        LimitOrder,
+		Price:            sdk.NewDec(r.Int63n(1000000)),
+		Quantity:         r.Int63n(100000),
+		Side:             byte(side),
+		TimeInForce:      int64(tif),
+		Height:           r.Int63n(10000),
+		FrozenCommission: r.Int63n(param.FeeForZeroDeal * 1000),
+		ExistBlocks:      r.Int63n(param.GTEOrderLifetime * 100),
+		FrozenFeatureFee: r.Int63n(param.FeeForZeroDeal * 100),
+		FrozenFee:        r.Int63n(10000),
+		LeftStock:        0,
+		Freeze:           0,
+		DealStock:        r.Int63n(10000),
+		DealMoney:        r.Int63n(10000),
+	}
+	return &or
 }
