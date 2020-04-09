@@ -5,6 +5,7 @@ jobs:
   build:
     docker:
       - image: cimg/go:1.13
+    resource_class: xlarge
     steps:
       - add_ssh_keys:
           fingerprints:

@@ -270,5 +270,5 @@ func runTest(seed int64, priceRange int64, amountRange int64, delStep int32, liv
 
 func main() {
 	//     seed, priceRange, amountRange, delStep, liveOrderUpper, liveOrderLower, heightLimit
-	runTest(0, 100, 1000, 3, 8000, 6000, 1000)
+	runTest(0, 100, 1000, 3, 8000, 6000, 50)
 }

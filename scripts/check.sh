@@ -44,5 +44,6 @@ test -z "$(golangci-lint  run -j 4 --disable-all \
 
 time go test -covermode=atomic -coverprofile=coverage.out -race -tags rpctest $linter_targets
 
+time go run modules/market/matchfuzz/main.go
 
 
