@@ -30,6 +30,7 @@ jobs:
             ls -al
             go get golang.org/x/tools/cmd/cover
             go get github.com/mattn/goveralls
+            go get golang.org/x/tools/cmd/goimports
             go mod tidy
             go mod vendor
             bash scripts/check.sh
