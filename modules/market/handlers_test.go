@@ -2,6 +2,7 @@ package market
 
 import (
 	"bytes"
+	"fmt"
 	"math"
 	"math/rand"
 	"testing"
@@ -1454,4 +1455,37 @@ func TestPackageCancelOrderMsgWithDelReason(t *testing.T) {
 	require.EqualValues(t, param.FeeForZeroDeal, msg.UsedCommission)
 	require.EqualValues(t, param.FeeForZeroDeal*keeper.GetRebateRatio(ctx)/keeper.GetRebateRatioBase(ctx), msg.RebateAmount)
 
+}
+
+func TestCalOrderCommissionAndFee(t *testing.T) {
+	msg := MsgCreateOrder{
+		Identify:       0,
+		OrderType:      LimitOrder,
+		Price:          4,
+		PricePrecision: 3,
+		Quantity:       50000000000,
+		Side:           SELL,
+		TimeInForce:    GTE,
+		ExistBlocks:    2880000,
+		TradingPair:    "blt/cet",
+	}
+	ctx := sdk.Context{}
+	param := DefaultParams()
+	mk := MockQueryMarketInfoAndParams{}
+	featureFee := calFeatureFeeForExistBlocks(msg, param)
+	fmt.Println(featureFee)
+
+	commission, err := calOrderCommission(ctx, &mk, msg)
+	require.Nil(t, err)
+	fmt.Println(commission)
+
+	fmt.Println(featureFee + commission)
+}
+
+type MockQueryMarketInfoAndParams struct {
+	keepers.Keeper
+}
+
+func (m *MockQueryMarketInfoAndParams) GetParams(ctx sdk.Context) types.Params {
+	return DefaultParams()
 }

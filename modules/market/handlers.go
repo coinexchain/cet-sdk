@@ -134,7 +134,7 @@ func CalCommission(ctx sdk.Context, keeper keepers.QueryMarketInfoAndParams, msg
 	return commission, nil
 }
 
-func calOrderCommission(ctx sdk.Context, keeper keepers.Keeper, msg types.MsgCreateOrder) (int64, sdk.Error) {
+func calOrderCommission(ctx sdk.Context, keeper keepers.QueryMarketInfoAndParams, msg types.MsgCreateOrder) (int64, sdk.Error) {
 	moneyAmount, err := calculateAmount(msg.Price, msg.Quantity, msg.PricePrecision)
 	if err != nil {
 		return 0, types.ErrInvalidOrderAmount(err.Error())
