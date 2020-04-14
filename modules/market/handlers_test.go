@@ -1457,6 +1457,8 @@ func TestPackageCancelOrderMsgWithDelReason(t *testing.T) {
 
 }
 
+// Only for online debug
+
 func TestCalOrderCommissionAndFee(t *testing.T) {
 	msg := MsgCreateOrder{
 		Identify:       0,
@@ -1488,4 +1490,32 @@ type MockQueryMarketInfoAndParams struct {
 
 func (m *MockQueryMarketInfoAndParams) GetParams(ctx sdk.Context) types.Params {
 	return DefaultParams()
+}
+
+func (m *MockQueryMarketInfoAndParams) GetMarketVolume(ctx sdk.Context, stock, money string, stockVolume, moneyVolume sdk.Dec) sdk.Dec {
+	if stock == dex.CET || money == dex.CET {
+		return m.Keeper.GetMarketVolume(ctx, stock, money, stockVolume, moneyVolume)
+	}
+
+	volume := sdk.ZeroDec()
+	if marketInfo, err := m.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, money)); err == nil {
+		if marketInfo.LastExecutedPrice.IsZero() {
+			return volume
+		}
+		volume = moneyVolume.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := m.GetMarketInfo(ctx, dex.GetSymbol(dex.CET, stock)); err == nil {
+		if marketInfo.LastExecutedPrice.IsZero() {
+			return volume
+		}
+		volume = stockVolume.Quo(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := m.GetMarketInfo(ctx, dex.GetSymbol(money, dex.CET)); err == nil {
+		volume = moneyVolume.Mul(marketInfo.LastExecutedPrice)
+	} else if marketInfo, err := m.GetMarketInfo(ctx, dex.GetSymbol(stock, dex.CET)); err == nil {
+		volume = stockVolume.Mul(marketInfo.LastExecutedPrice)
+	}
+	return volume
+}
+
+func (m *MockQueryMarketInfoAndParams) GetMarketInfo(ctx sdk.Context, tradingPair string) (types.MarketInfo, error) {
+	return types.MarketInfo{}, nil
 }
