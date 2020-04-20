@@ -24,6 +24,7 @@ const (
 	CfgPrefixOS    = "os:"
 	CfgPrefixDir   = "dir:"
 	CfgNamedPipe   = "pipe:"
+	CfgPrefixMem   = "mem:"
 )
 
 const RetryNum = math.MaxInt64
