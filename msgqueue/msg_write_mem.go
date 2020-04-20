@@ -5,11 +5,12 @@ import (
 
 	"github.com/prometheus/common/log"
 
-	"github.com/coinexchain/trade-server/core"
-	"github.com/coinexchain/trade-server/server"
 	toml "github.com/pelletier/go-toml"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
+
+	"github.com/coinexchain/trade-server/core"
+	"github.com/coinexchain/trade-server/server"
 )
 
 type MemWriteConsumer struct {
