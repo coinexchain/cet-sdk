@@ -440,6 +440,12 @@ func GetCmdModifyTokenInfo(cdc *codec.Codec) *cobra.Command {
 
 Example:
 $ cetcli tx asset modify-token-info --symbol="abc" \
+	--name="ABC Token" \
+	--total-supply=2100000000000000 \
+	--mintable=false \
+	--burnable=true \
+	--addr-forbiddable=false \
+	--token-forbiddable=false \
 	--url="www.abc.com" \
 	--description="abc example description" \
 	--identity="552A83BA62F9B1F8" \
@@ -455,11 +461,11 @@ $ cetcli tx asset modify-token-info --symbol="abc" \
 	}
 
 	cmd.Flags().String(flagSymbol, "", "which token will be modify")
-	cmd.Flags().String(flagTokenURL, types.DoNotModifyTokenInfo, "the url of token")
-	cmd.Flags().String(flagTokenDescription, types.DoNotModifyTokenInfo, "the description of token")
-	cmd.Flags().String(flagTokenIdentity, types.DoNotModifyTokenInfo, "the identity of token")
-	cmd.Flags().String(flagName, types.DoNotModifyTokenInfo, "the name of token")
-	cmd.Flags().String(flagTotalSupply, types.DoNotModifyTokenInfo, "the total supply of token")
+	cmd.Flags().String(flagTokenURL, types.DoNotModifyTokenInfo, "new url of token")
+	cmd.Flags().String(flagTokenDescription, types.DoNotModifyTokenInfo, "new description of token")
+	cmd.Flags().String(flagTokenIdentity, types.DoNotModifyTokenInfo, "new identity of token")
+	cmd.Flags().String(flagName, types.DoNotModifyTokenInfo, "new name of token")
+	cmd.Flags().String(flagTotalSupply, types.DoNotModifyTokenInfo, "new total supply of token")
 	cmd.Flags().String(flagMintable, types.DoNotModifyTokenInfo, "whether the token could be minted")
 	cmd.Flags().String(flagBurnable, types.DoNotModifyTokenInfo, "whether the token could be burned")
 	cmd.Flags().String(flagAddrForbiddable, types.DoNotModifyTokenInfo, "whether the token holder address can be forbidden by token owner")
