@@ -46,7 +46,7 @@ func (r *RegulateWriteDir) timeToNewFile() func(k, v []byte) bool {
 			if err := json.Unmarshal(v, &info); err != nil {
 				panic(fmt.Sprintf("json unmarshal height_info failed; err: %s\n", err.Error()))
 			}
-			return ((info.Height - r.initChainHeight - 1) % FILEHEIGHT) == 0
+			return info.Height != r.initChainHeight+1 && ((info.Height-r.initChainHeight-1)%FILEHEIGHT) == 0
 		}
 		return false
 	}
