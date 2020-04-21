@@ -11,9 +11,6 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	toml "github.com/pelletier/go-toml"
-	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
 )
 
 func GetFilePathAndFileIndexFromDir(dir string, maxFileSize int) (filePath string, fileIndex int, err error) {
@@ -156,18 +153,4 @@ func FillMsgs(ctx sdk.Context, key string, msg interface{}) {
 	}
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeMsgQueue, sdk.NewAttribute(key, string(bytes))))
-}
-
-func initConf() (*toml.Tree, error) {
-	conf := cfg.DefaultConfig()
-	err := viper.Unmarshal(conf)
-	if err != nil {
-		return nil, err
-	}
-	filePath := conf.RootDir + "config/trade-server.toml"
-	info, err := os.Stat(filePath)
-	if err != nil || info.IsDir() {
-		return nil, err
-	}
-	return toml.LoadFile(filePath)
 }
