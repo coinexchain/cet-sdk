@@ -25,6 +25,7 @@ const (
 	CfgPrefixDir   = "dir:"
 	CfgNamedPipe   = "pipe:"
 	CfgPrefixMem   = "mem:"
+	CfgPrefixPrune = "prune:"
 )
 
 const RetryNum = math.MaxInt64

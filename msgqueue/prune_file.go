@@ -3,24 +3,26 @@ package msgqueue
 import (
 	"log"
 	"os"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+type ExpectGetHeight interface {
+	GetHeight() int64
+}
 
 // Prune backup-* file;
 // Every file contains 10000 blocks data.
 
 type PruneFile struct {
-	doneHeightCh <-chan int
+	doneHeightCh <-chan int64
 	dir          string
-	ctx          sdk.Context
+	ExpectGetHeight
 }
 
-func NewPruneFile(ctx sdk.Context, heightCh <-chan int, dir string) *PruneFile {
-	return &PruneFile{doneHeightCh: heightCh, dir: dir, ctx: ctx}
+func NewPruneFile(ght ExpectGetHeight, heightCh <-chan int64, dir string) *PruneFile {
+	return &PruneFile{doneHeightCh: heightCh, dir: dir, ExpectGetHeight: ght}
 }
 
-func (p *PruneFile) work() {
+func (p *PruneFile) Work() {
 	for {
 		doneHeight, ok := <-p.doneHeightCh
 		if !ok {
@@ -31,7 +33,7 @@ func (p *PruneFile) work() {
 	}
 }
 
-func (p *PruneFile) removeFiles(doneHeight int) {
+func (p *PruneFile) removeFiles(doneHeight int64) {
 	fileName, leastHeight := p.getLeastHeightFileFromDir()
 	if p.timeToRemove(leastHeight, doneHeight) {
 		if err := os.Remove(fileName); err != nil {
@@ -45,8 +47,8 @@ func (p *PruneFile) getLeastHeightFileFromDir() (fileName string, leastHeight in
 	return
 }
 
-func (p *PruneFile) timeToRemove(height int, doneHeight int) bool {
-	currHeight := p.ctx.BlockHeight()
+func (p *PruneFile) timeToRemove(height int, doneHeight int64) bool {
+	currHeight := p.GetHeight()
 	_ = currHeight
 
 	return false

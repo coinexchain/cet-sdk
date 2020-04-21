@@ -7,16 +7,16 @@ import (
 )
 
 type Consumer struct {
-	*server.TradeConsumerWithDirTail
+	server.Consumer
 	doneHeightCh chan<- int64
 	dirName      string
 }
 
-func NewConsumer(tradeConsumerWithDirTail *server.TradeConsumerWithDirTail, doneHeightCh chan<- int64) *Consumer {
-	return &Consumer{TradeConsumerWithDirTail: tradeConsumerWithDirTail, doneHeightCh: doneHeightCh}
+func NewConsumer(tradeConsumerWithDirTail server.Consumer, doneHeightCh chan<- int64) *Consumer {
+	return &Consumer{Consumer: tradeConsumerWithDirTail, doneHeightCh: doneHeightCh}
 }
 
-func (c *Consumer) work() {
+func (c *Consumer) Work() {
 	c.Consume()
 	go c.tickDoneHeight()
 }
@@ -27,7 +27,8 @@ func (c *Consumer) tickDoneHeight() {
 
 	for {
 		<-tick.C
-		doneHeight := c.GetLeastHeight()
+		tcd := c.Consumer.(*server.TradeConsumerWithDirTail)
+		doneHeight := tcd.GetDumpHeight()
 		if doneHeight != 0 {
 			c.doneHeightCh <- doneHeight
 		}
