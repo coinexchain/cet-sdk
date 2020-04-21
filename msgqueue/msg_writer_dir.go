@@ -14,15 +14,18 @@ var MaxFileSize = 1024 * 1024 * 100
 
 var _ MsgWriter = (*dirMsgWriter)(nil)
 
+type GetFilePathAndFileIndexFromDirCb func(string, int) (filePath string, fileIndex int, err error)
+
 type dirMsgWriter struct {
 	io.WriteCloser
 	haveWriteSize int
 	fileIndex     int
 	dir           string
+	timeNewFile   func(k, v []byte) bool
 }
 
-func NewDirMsgWriter(dir string) (MsgWriter, error) {
-	filePath, fileIndex, err := GetFilePathAndFileIndexFromDir(dir, MaxFileSize)
+func NewDirMsgWriter(dir string, cb GetFilePathAndFileIndexFromDirCb) (MsgWriter, error) {
+	filePath, fileIndex, err := cb(dir, MaxFileSize)
 	if err != nil {
 		return &dirMsgWriter{}, err
 	}
@@ -43,7 +46,7 @@ func NewDirMsgWriter(dir string) (MsgWriter, error) {
 }
 
 func (w *dirMsgWriter) WriteKV(k, v []byte) error {
-	if len(k)+len(v)+3+w.haveWriteSize > MaxFileSize {
+	if w.timeNewFile(k, v) {
 		if err := w.Close(); err != nil {
 			return err
 		}
@@ -73,4 +76,14 @@ func (w *dirMsgWriter) Close() error {
 
 func (w *dirMsgWriter) String() string {
 	return "dir"
+}
+
+func (w *dirMsgWriter) SetTimeToNewFile(cb func(k, v []byte) bool) {
+	w.timeNewFile = cb
+}
+
+func (w *dirMsgWriter) timeToNewFile() func(k, v []byte) bool {
+	return func(k, v []byte) bool {
+		return len(k)+len(v)+3+w.haveWriteSize > MaxFileSize
+	}
 }
