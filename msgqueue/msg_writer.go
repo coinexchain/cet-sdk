@@ -34,7 +34,7 @@ func createMsgWriter(cfg string) (MsgWriter, error) {
 	} else if strings.HasPrefix(cfg, CfgPrefixMem) {
 		return NewMemWriteConsumer()
 	} else if strings.HasPrefix(cfg, CfgPrefixPrune) {
-		dirPath := strings.TrimPrefix(cfg, CfgPrefixDir)
+		dirPath := strings.TrimPrefix(cfg, CfgPrefixPrune)
 		return NewRegulateWriteDirAndComponents(dirPath)
 	}
 	return nil, fmt.Errorf("unsupported config: %s", cfg)
