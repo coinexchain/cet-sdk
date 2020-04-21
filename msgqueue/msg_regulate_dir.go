@@ -13,47 +13,6 @@ import (
 
 const FILEHEIGHT = 10000
 
-type RegulateWriteDir struct {
-	*dirMsgWriter
-	initChainHeight int64
-	currHeight      int64
-	pfWork          Worker
-	dataWork        Worker
-}
-
-func NewRegulateWriteDirAndComponents(dir string) (*RegulateWriteDir, error) {
-	rgw := &RegulateWriteDir{initChainHeight: viper.GetInt64("genesis_block_height")}
-	w, err := NewDirMsgWriter(dir, getFilePathAndIndex)
-	if err != nil {
-		return nil, err
-	}
-	diw := w.(*dirMsgWriter)
-	diw.SetTimeToNewFile(rgw.TimeToNewFile())
-	rgw.creatPruneAndTradeConsumer(rgw, dir)
-	rgw.startWork()
-	return rgw, nil
-}
-
-func (r *RegulateWriteDir) TimeToNewFile() func(k, v []byte) bool {
-	return func(k, v []byte) bool {
-		if string(k) == ("height_info") {
-			var info NewHeightInfo
-			json.Unmarshal(v, &info)
-			r.currHeight = info.Height - 1
-			return ((info.Height - 1) % FILEHEIGHT) == 0
-		}
-		return false
-	}
-}
-
-func (r *RegulateWriteDir) GetHeight() int64 {
-	return r.currHeight
-}
-
-func getFilePathAndIndex(dir string, height int) (filePath string, fileIndex int, err error) {
-	return
-}
-
 type NewHeightInfo struct {
 	ChainID       string       `json:"chain_id"`
 	Height        int64        `json:"height"`
@@ -65,16 +24,58 @@ type Worker interface {
 	Work()
 }
 
-func (r *RegulateWriteDir) creatPruneAndTradeConsumer(ght ExpectGetHeight, dir string) {
+type RegulateWriteDir struct {
+	MsgWriter
+	initChainHeight int64
+	pfWork          Worker
+	dataWork        Worker
+}
+
+func NewRegulateWriteDirAndComponents(dir string) (*RegulateWriteDir, error) {
+	var (
+		err error
+		rgw = &RegulateWriteDir{initChainHeight: viper.GetInt64("genesis_block_height")}
+	)
+	if rgw.MsgWriter, err = NewDirMsgWriter(dir, getFilePathAndIndex); err != nil {
+		return nil, err
+	}
+	rgw.MsgWriter.(*dirMsgWriter).SetTimeToNewFile(rgw.timeToNewFile())
+	if err = rgw.creatPruneAndTradeConsumer(dir); err != nil {
+		return nil, err
+	}
+	rgw.startWork()
+	return rgw, nil
+}
+
+func (r *RegulateWriteDir) timeToNewFile() func(k, v []byte) bool {
+	return func(k, v []byte) bool {
+		if string(k) == ("height_info") {
+			var info NewHeightInfo
+			json.Unmarshal(v, &info)
+			return ((info.Height - r.initChainHeight - 1) % FILEHEIGHT) == 0
+		}
+		return false
+	}
+}
+
+func (r *RegulateWriteDir) creatPruneAndTradeConsumer(dir string) error {
 	doneHeightCh := make(chan int64)
-	pf := NewPruneFile(ght, doneHeightCh, dir)
+	r.pfWork = NewPruneFile(doneHeightCh, dir)
 
 	conf, err := initConf()
-	_ = err
+	if err != nil {
+		return err
+	}
 	hub, err := server.CreateHub(conf)
+	if err != nil {
+		return err
+	}
 	cdt, err := server.NewConsumerWithDirTail(conf, hub)
+	if err != nil {
+		return err
+	}
 	r.dataWork = ts.NewConsumer(cdt, doneHeightCh)
-	r.pfWork = pf
+	return nil
 }
 
 func (r *RegulateWriteDir) startWork() {
