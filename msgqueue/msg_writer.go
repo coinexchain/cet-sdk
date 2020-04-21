@@ -30,10 +30,12 @@ func createMsgWriter(cfg string) (MsgWriter, error) {
 		return NewPipeMsgWriter(pipeName)
 	} else if strings.HasPrefix(cfg, CfgPrefixDir) {
 		dirPath := strings.TrimPrefix(cfg, CfgPrefixDir)
-		return NewDirMsgWriter(dirPath)
+		return NewDirMsgWriter(dirPath, GetFilePathAndFileIndexFromDir)
 	} else if strings.HasPrefix(cfg, CfgPrefixMem) {
 		return NewMemWriteConsumer()
-	} else {
-		return nil, fmt.Errorf("unsupported config: %s", cfg)
+	} else if strings.HasPrefix(cfg, CfgPrefixPrune) {
+		dirPath := strings.TrimPrefix(cfg, CfgPrefixDir)
+		return NewRegulateWriteDirAndComponents(dirPath)
 	}
+	return nil, fmt.Errorf("unsupported config: %s", cfg)
 }
