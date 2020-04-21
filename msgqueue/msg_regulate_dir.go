@@ -2,13 +2,11 @@ package msgqueue
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/spf13/viper"
 
 	cmn "github.com/tendermint/tendermint/libs/common"
-
-	ts "github.com/coinexchain/cet-sdk/trade_server"
-	"github.com/coinexchain/trade-server/server"
 )
 
 const FILEHEIGHT = 10000
@@ -27,11 +25,9 @@ type Worker interface {
 type RegulateWriteDir struct {
 	MsgWriter
 	initChainHeight int64
-	pfWork          Worker
-	dataWork        Worker
 }
 
-func NewRegulateWriteDirAndComponents(dir string) (*RegulateWriteDir, error) {
+func NewRegulateWriteDir(dir string) (*RegulateWriteDir, error) {
 	var (
 		err error
 		rgw = &RegulateWriteDir{initChainHeight: viper.GetInt64("genesis_block_height")}
@@ -40,10 +36,6 @@ func NewRegulateWriteDirAndComponents(dir string) (*RegulateWriteDir, error) {
 		return nil, err
 	}
 	rgw.MsgWriter.(*dirMsgWriter).SetTimeToNewFile(rgw.timeToNewFile())
-	if err = rgw.creatPruneAndTradeConsumer(dir); err != nil {
-		return nil, err
-	}
-	rgw.startWork()
 	return rgw, nil
 }
 
@@ -51,34 +43,11 @@ func (r *RegulateWriteDir) timeToNewFile() func(k, v []byte) bool {
 	return func(k, v []byte) bool {
 		if string(k) == ("height_info") {
 			var info NewHeightInfo
-			json.Unmarshal(v, &info)
+			if err := json.Unmarshal(v, &info); err != nil {
+				panic(fmt.Sprintf("json unmarshal height_info failed; err: %s\n", err.Error()))
+			}
 			return ((info.Height - r.initChainHeight - 1) % FILEHEIGHT) == 0
 		}
 		return false
 	}
-}
-
-func (r *RegulateWriteDir) creatPruneAndTradeConsumer(dir string) error {
-	doneHeightCh := make(chan int64)
-	r.pfWork = NewPruneFile(doneHeightCh, dir)
-
-	conf, err := initConf()
-	if err != nil {
-		return err
-	}
-	hub, err := server.CreateHub(conf)
-	if err != nil {
-		return err
-	}
-	cdt, err := server.NewConsumerWithDirTail(conf, hub)
-	if err != nil {
-		return err
-	}
-	r.dataWork = ts.NewConsumer(cdt, doneHeightCh)
-	return nil
-}
-
-func (r *RegulateWriteDir) startWork() {
-	r.pfWork.Work()
-	r.dataWork.Work()
 }
