@@ -7,7 +7,7 @@ require (
 	github.com/Shopify/sarama v1.23.1
 	github.com/coinexchain/cosmos-utils v0.0.0-20200109031554-f15ba3b1d6a7
 	github.com/coinexchain/shorthanzi v0.1.0
-	github.com/coinexchain/trade-server v0.2.8-0.20200420085009-ed6335e2eda2
+	github.com/coinexchain/trade-server v0.2.8-0.20200421075141-37b0fb89674a
 	github.com/cosmos/cosmos-sdk v0.37.4
 	github.com/emirpasic/gods v1.12.0
 	github.com/gorilla/mux v1.7.3
