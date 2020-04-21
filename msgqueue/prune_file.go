@@ -48,5 +48,5 @@ func (p *PruneFile) getLeastHeightFileFromDir() (fileName string, leastHeight in
 }
 
 func (p *PruneFile) timeToRemove(leastHeight int64, doneHeight int64) bool {
-	return doneHeight-leastHeight > int64(2*FILEHEIGHT)
+	return doneHeight-leastHeight >= int64(2*FILEHEIGHT)
 }

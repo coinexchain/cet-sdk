@@ -4,16 +4,21 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
-	"github.com/spf13/viper"
+	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/spf13/viper"
 )
 
-func TestNewRegulateWriteDirAndComponents(t *testing.T) {
+func TestNewPruneFile(t *testing.T) {
+	doneHeightCh := make(chan int64)
+	pf := NewPruneFile(doneHeightCh, "test")
+	pf.Work()
+
 	rwc, err := NewRegulateWriteDir("test")
-	defer os.RemoveAll("test")
 	require.Nil(t, err)
+	defer os.RemoveAll("test")
 
 	viper.Set("genesis_block_height", 1)
 	key := []byte(`height_info`)
@@ -21,26 +26,26 @@ func TestNewRegulateWriteDirAndComponents(t *testing.T) {
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 1)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 2)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 3)))
-	files, err := getAllFilesFromDir("test")
-	require.Nil(t, err)
-	require.EqualValues(t, 1, len(files))
-	require.EqualValues(t, "backup-0", files[0])
-
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 10001)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 10002)))
-	files, err = getAllFilesFromDir("test")
-	require.Nil(t, err)
-	require.EqualValues(t, 2, len(files))
-	require.EqualValues(t, "backup-0", files[0])
-	require.EqualValues(t, "backup-1", files[1])
-
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 20001)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 20002)))
-	files, err = getAllFilesFromDir("test")
-	require.Nil(t, err)
-	require.EqualValues(t, 3, len(files))
-	require.EqualValues(t, "backup-0", files[0])
-	require.EqualValues(t, "backup-1", files[1])
-	require.EqualValues(t, "backup-2", files[2])
 
+	doneHeightCh <- 20000
+	time.Sleep(time.Millisecond)
+	files, _ := getAllFilesFromDir("test")
+	require.EqualValues(t, 3, len(files))
+
+	doneHeightCh <- 20001
+	time.Sleep(time.Millisecond)
+	files, _ = getAllFilesFromDir("test")
+	require.EqualValues(t, 2, len(files))
+	require.EqualValues(t, "backup-1", files[0])
+	require.EqualValues(t, "backup-2", files[1])
+
+	doneHeightCh <- 30001
+	time.Sleep(time.Millisecond)
+	files, _ = getAllFilesFromDir("test")
+	require.EqualValues(t, 1, len(files))
+	require.EqualValues(t, "backup-2", files[0])
 }
