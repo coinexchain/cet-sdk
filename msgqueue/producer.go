@@ -24,7 +24,6 @@ const (
 	CfgPrefixOS    = "os:"
 	CfgPrefixDir   = "dir:"
 	CfgNamedPipe   = "pipe:"
-	CfgPrefixMem   = "mem:"
 	CfgPrefixPrune = "prune:"
 )
 
