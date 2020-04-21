@@ -34,7 +34,7 @@ func NewMemWriteConsumer() (*MemWriteConsumer, error) {
 		return nil, err
 	}
 	if tc, err = server.NewConsumerWithMemBuf(conf, hub); err != nil {
-		log.Error("Init TradeConsumerWithMemBuf failed: %s\n", err.Error())
+		log.Errorf("Init TradeConsumerWithMemBuf failed: %s\n", err.Error())
 		return nil, err
 	}
 
