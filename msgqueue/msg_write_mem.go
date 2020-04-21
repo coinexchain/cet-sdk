@@ -1,16 +1,11 @@
 package msgqueue
 
 import (
-	"os"
-
 	"github.com/prometheus/common/log"
-
-	toml "github.com/pelletier/go-toml"
-	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
 
 	"github.com/coinexchain/trade-server/core"
 	"github.com/coinexchain/trade-server/server"
+	toml "github.com/pelletier/go-toml"
 )
 
 type MemWriteConsumer struct {
@@ -39,20 +34,6 @@ func NewMemWriteConsumer() (*MemWriteConsumer, error) {
 	}
 
 	return &MemWriteConsumer{TradeConsumerWithMemBuf: tc}, nil
-}
-
-func initConf() (*toml.Tree, error) {
-	conf := cfg.DefaultConfig()
-	err := viper.Unmarshal(conf)
-	if err != nil {
-		return nil, err
-	}
-	filePath := conf.RootDir + "config/trade-server.toml"
-	info, err := os.Stat(filePath)
-	if err != nil || info.IsDir() {
-		return nil, err
-	}
-	return toml.LoadFile(filePath)
 }
 
 func (m *MemWriteConsumer) WriteKV(k, v []byte) error {
