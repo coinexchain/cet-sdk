@@ -63,7 +63,7 @@ Example :
 
 func QueryMarketCmd(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "trading-pair",
+		Use:   "trading-pair [pair]",
 		Short: "query trading-pair info in blockchain",
 		Long: `query trading-pair info in blockchain. 
 
@@ -83,7 +83,7 @@ Example :
 
 func QueryOrderbookCmd(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "orderbook",
+		Use:   "orderbook [pair]",
 		Short: "query the orders in a market",
 		Long: `query the orders in a market. 
 
@@ -103,7 +103,7 @@ Example :
 
 func QueryOrderCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "order-info",
+		Use:   "order-info [orderID]",
 		Short: "Query order info in blockchain",
 		Long: `Query order info in blockchain. 
 
