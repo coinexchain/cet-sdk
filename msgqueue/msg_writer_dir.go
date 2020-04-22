@@ -37,12 +37,14 @@ func NewDirMsgWriter(dir string, cb GetFilePathAndFileIndexFromDirCb) (MsgWriter
 	if fileSize < 0 {
 		return &dirMsgWriter{}, fmt.Errorf("The parameter passed in is not the correct file path. ")
 	}
-	return &dirMsgWriter{
+	diw := &dirMsgWriter{
 		WriteCloser:   file,
 		fileIndex:     fileIndex,
 		dir:           dir,
 		haveWriteSize: fileSize,
-	}, nil
+	}
+	diw.timeNewFile = diw.timeToNewFile()
+	return diw, nil
 }
 
 func (w *dirMsgWriter) WriteKV(k, v []byte) error {
