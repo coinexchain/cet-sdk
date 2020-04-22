@@ -13,8 +13,8 @@ import (
 
 func TestNewPruneFile(t *testing.T) {
 	doneHeightCh := make(chan int64)
-	pf := NewPruneFile(doneHeightCh, "test")
-	pf.Work()
+	pf := NewFileDeleter(doneHeightCh, "test")
+	pf.Run()
 
 	rwc, err := NewRegulateWriteDir("test")
 	require.Nil(t, err)
