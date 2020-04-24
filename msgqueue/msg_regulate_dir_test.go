@@ -21,6 +21,7 @@ func TestNewRegulateWriteDirAndComponents(t *testing.T) {
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 1)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 2)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 3)))
+	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 10000)))
 	files, err := getAllFilesFromDir("test")
 	require.Nil(t, err)
 	require.EqualValues(t, 1, len(files))
@@ -28,6 +29,7 @@ func TestNewRegulateWriteDirAndComponents(t *testing.T) {
 
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 10001)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 10002)))
+	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 20000)))
 	files, err = getAllFilesFromDir("test")
 	require.Nil(t, err)
 	require.EqualValues(t, 2, len(files))
@@ -36,6 +38,7 @@ func TestNewRegulateWriteDirAndComponents(t *testing.T) {
 
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 20001)))
 	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 20002)))
+	rwc.WriteKV(key, []byte(fmt.Sprintf(model, 30000)))
 	files, err = getAllFilesFromDir("test")
 	require.Nil(t, err)
 	require.EqualValues(t, 3, len(files))
