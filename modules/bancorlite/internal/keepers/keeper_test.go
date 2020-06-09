@@ -1,6 +1,7 @@
 package keepers_test
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"reflect"
@@ -318,4 +319,49 @@ func TestCurrentPriceCalculate(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		require.Equal(t, display.CurrentPrice[i], pp.String()[i])
 	}
+}
+
+func TestPrice(t *testing.T) {
+	p, _ := sdk.NewDecFromStr("2.013267155742863000")
+	bi := keepers.BancorInfo{
+		Owner:              nil,
+		Stock:              "btc",
+		Money:              "cet",
+		InitPrice:          sdk.NewDec(2),
+		MaxSupply:          sdk.NewInt(200_0000_0000),
+		StockPrecision:     4,
+		MaxPrice:           sdk.NewDec(5),
+		MaxMoney:           sdk.NewInt(600_0000_0000),
+		AR:                 2000,
+		Price:              p,
+		StockInPool:        sdk.NewInt(186_7000_0000),
+		MoneyInPool:        sdk.NewInt(2665902715 - 20133),
+		EarliestCancelTime: 0,
+	}
+	//for i := 0; i < 9; i++ {
+	biNew := bi
+	stockInPool := bi.StockInPool.SubRaw(1_0000)
+	biNew.UpdateStockInPool(stockInPool)
+	diff := sdk.NewDecFromInt(biNew.MoneyInPool.Sub(bi.MoneyInPool)).QuoInt64(1_0000)
+	//fmt.Println(diff, "cet")
+	bi = biNew
+	biNew = bi
+	stockInPool = bi.StockInPool.SubRaw(1_0000)
+	biNew.UpdateStockInPool(stockInPool)
+	diff = sdk.NewDecFromInt(biNew.MoneyInPool.Sub(bi.MoneyInPool)).QuoInt64(1_0000)
+	//fmt.Println(diff, "cet")
+	bi = biNew
+	biNew = bi
+	stockInPool = bi.StockInPool.SubRaw(1_0000)
+	biNew.UpdateStockInPool(stockInPool)
+	diff = sdk.NewDecFromInt(biNew.MoneyInPool.Sub(bi.MoneyInPool)).QuoInt64(1_0000)
+	//fmt.Println(diff, "cet")
+	bi = biNew
+	biNew = bi
+	stockInPool = bi.StockInPool.SubRaw(100_0000)
+	biNew.UpdateStockInPool(stockInPool)
+	diff = sdk.NewDecFromInt(biNew.MoneyInPool.Sub(bi.MoneyInPool)).QuoInt64(100_0000)
+	fmt.Println(diff, "cet")
+	bi = biNew
+	//}
 }
