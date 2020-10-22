@@ -1,9 +1,10 @@
 package keepers
 
 import (
+	"math/big"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"math/big"
 )
 
 type IPoolKeeper interface {
@@ -114,6 +115,7 @@ func (p PoolKeeper) SetPoolInfo(ctx sdk.Context, marketSymbol string, info PoolI
 	store := ctx.KVStore(p.key)
 	bytes := p.codec.MustMarshalBinaryBare(info)
 	store.Set(getPairKey(marketSymbol), bytes)
+	return nil
 }
 
 func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo {
