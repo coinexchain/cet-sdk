@@ -25,9 +25,9 @@ func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {
 	return append(append(PoolLiquidityKey, marketSymbol...), address.Bytes()...)
 }
 
-// getMarketKey key = prefix | symbol | swapFlag
-// value = vault
-func getMarketKey(symbol string, isOpenSwap bool) []byte {
+// getPairKey key = prefix | symbol | swapFlag
+// value = PoolInfo
+func getPairKey(symbol string, isOpenSwap bool) []byte {
 	swapByte := OpenSwap
 	if !isOpenSwap {
 		swapByte = NonSwap
@@ -36,10 +36,10 @@ func getMarketKey(symbol string, isOpenSwap bool) []byte {
 }
 
 // getOrderKey key = prefix | swapFlag | side | symbol | orderID
-// value =  order info
-func getOrderKey(order *types.Order, isOpenSwap bool) []byte {
+// value = pair info
+func getOrderKey(order *types.Order) []byte {
 	swapByte := OpenSwap
-	if !isOpenSwap {
+	if !order.IsOpenSwap {
 		swapByte = NonSwap
 	}
 	side := BUY
@@ -53,7 +53,7 @@ func getOrderKey(order *types.Order, isOpenSwap bool) []byte {
 
 // getBestOrderPriceKey key = prefix | isOpenSwap | side | symbol
 // value = orderID
-func getBestOrderPriceKey(isOpenSwap, isBuy bool, symbol string) []byte {
+func getBestOrderPriceKey(symbol string, isOpenSwap, isBuy bool) []byte {
 	swapByte := OpenSwap
 	if !isOpenSwap {
 		swapByte = NonSwap
@@ -63,8 +63,4 @@ func getBestOrderPriceKey(isOpenSwap, isBuy bool, symbol string) []byte {
 		side = SELL
 	}
 	return append(append(append(BestOrderPriceKey, swapByte...), side...), symbol...)
-}
-
-func getPairKey(pairSymbol string) []byte {
-	return []byte(pairSymbol)
 }
