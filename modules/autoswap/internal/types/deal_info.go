@@ -1,8 +1,9 @@
 package types
 
 type DealInfo struct {
-	RemainAmount            uint64
-	DealWithPoolAmount      uint64
-	DealWithBookMoneyAmount uint64
-	DealWithBookStockAmount uint64
+	HasDealInOrderBook bool
+	RemainAmount       uint64
+	AmountInToPool     uint64
+	DealMoneyInBook    uint64
+	DealStockInBook    uint64
 }
