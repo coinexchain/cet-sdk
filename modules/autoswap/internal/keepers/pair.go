@@ -48,6 +48,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) error {
 		return fmt.Errorf("can't find available order id")
 	}
 	//1. todo. will calculate and check order amount
+	// freeze order balance in sender account
 
 	//2. calculate insert order position, try insert order if the order can't deal.
 	if order.HasPrevKey() {
