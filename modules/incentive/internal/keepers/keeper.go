@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"reflect"
 
 	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 )
@@ -41,6 +42,11 @@ func (k Keeper) GetParams(ctx sdk.Context) (param types.Params) {
 }
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramSubspace.SetParamSet(ctx, &params)
+}
+
+func (k Keeper) SetUpdatedRewards(ctx sdk.Context, newFixedValue int64) {
+	v := reflect.Indirect(reflect.ValueOf(newFixedValue)).Interface()
+	k.paramSubspace.Set(ctx, types.KeyIncentiveUpdatedRewards, v)
 }
 
 func (k Keeper) GetState(ctx sdk.Context) (state types.State) {

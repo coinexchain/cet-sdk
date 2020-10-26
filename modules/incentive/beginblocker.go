@@ -14,8 +14,19 @@ var (
 	PoolAddr = sdk.AccAddress(crypto.AddressHash([]byte("incentive_pool")))
 )
 
+
 func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
-	blockRewards := calcRewards(ctx, k)
+
+	var blockRewards sdk.Coins
+	if ctx.BlockHeight() >= Dex3StartHeight {
+		if ctx.BlockHeight() == Dex3StartHeight {
+			k.SetUpdatedRewards(ctx, DefaultParams().UpdatedRewards)
+		}
+		blockRewards = sdk.NewCoins(sdk.NewInt64Coin(dex.DefaultBondDenom, k.GetParams(ctx).UpdatedRewards))
+	} else {
+		blockRewards = calcRewards(ctx, k)
+	}
+
 	if k.HasCoins(ctx, PoolAddr, blockRewards) {
 		if err := collectRewardsFromPool(k, ctx, blockRewards); err != nil {
 			panic(err)
