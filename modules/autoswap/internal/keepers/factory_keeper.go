@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var
+//var
 
 type FactoryInterface interface {
 	CreatePair(ctx sdk.Context, msg types.MsgCreatePair) bool

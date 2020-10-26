@@ -14,7 +14,6 @@ var (
 	PoolAddr = sdk.AccAddress(crypto.AddressHash([]byte("incentive_pool")))
 )
 
-
 func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
 
 	var blockRewards sdk.Coins

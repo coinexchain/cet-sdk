@@ -19,4 +19,3 @@ const (
 	// Kafka topic name
 	Topic = ModuleName
 )
-
