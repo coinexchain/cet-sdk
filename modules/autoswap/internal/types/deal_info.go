@@ -1,9 +1,11 @@
 package types
 
+import sdk "github.com/cosmos/cosmos-sdk/types"
+
 type DealInfo struct {
 	HasDealInOrderBook bool
-	RemainAmount       uint64
-	AmountInToPool     uint64
-	DealMoneyInBook    uint64
-	DealStockInBook    uint64
+	RemainAmount       sdk.Int
+	AmountInToPool     sdk.Int
+	DealMoneyInBook    sdk.Int
+	DealStockInBook    sdk.Int
 }

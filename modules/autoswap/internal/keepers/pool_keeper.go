@@ -8,8 +8,6 @@ import (
 )
 
 type IPoolKeeper interface {
-	//SetPairInfos(ctx sdk.Context, marketSymbol string, ammStockAmount, ammMoneyAmount, orderBookStockAmount, orderBookMoneyAmount sdk.Int)
-	//GetPairInfos(ctx sdk.Context, marketSymbol string) (ammStockAmount, ammMoneyAmount, orderBookStockAmount, orderBookMoneyAmount sdk.Int)
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap bool, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo
 	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int

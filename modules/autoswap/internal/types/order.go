@@ -1,6 +1,7 @@
 package types
 
 import (
+	"math"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,22 +11,23 @@ type OrderBasic struct {
 	MarketSymbol string
 	IsOpenSwap   bool
 	Sender       sdk.AccAddress
-	Amount       uint64
+	Amount       int64
 	IsBuy        bool
 	IsLimitOrder bool
 }
 
 type Order struct {
 	OrderBasic
-	Price          uint64
-	PricePrecision uint64
+	Price          int64
+	PricePrecision int64
 	OrderID        int64
 	NextOrderID    int64
 	PrevKey        [3]int64 `json:"-"`
 
 	// cache
-	stock string
-	money string
+	stock       string
+	money       string
+	actualPrice sdk.Dec
 }
 
 func (or Order) HasPrevKey() bool {
@@ -56,4 +58,18 @@ func (or *Order) Money() string {
 	}
 	or.parseStockAndMoney()
 	return or.money
+}
+
+func (or *Order) ActualAmount() sdk.Int {
+	if or.IsBuy {
+		return or.actualPrice.Mul(sdk.NewDec(or.Amount)).Ceil().RoundInt()
+	}
+	return sdk.NewInt(or.Amount)
+}
+
+func (or *Order) ActualPrice() sdk.Dec {
+	if !or.actualPrice.IsZero() {
+		return or.actualPrice
+	}
+	return sdk.NewDec(or.Price).Quo(sdk.NewDec(int64(math.Pow10(int(or.PricePrecision)))))
 }

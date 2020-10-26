@@ -6,40 +6,40 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = MsgCreateLimitOrder{}
+var _ sdk.Msg = &MsgCreateLimitOrder{}
 
 type MsgCreateLimitOrder struct {
 	OrderBasic
 	OrderID        uint64
 	Price          uint64
 	PricePrecision byte
-	PrevKey        uint64
+	PrevKey        [3]int64
 }
 
-func (limit MsgCreateLimitOrder) Route() string {
+func (limit *MsgCreateLimitOrder) Route() string {
 	panic("implement me")
 }
 
-func (limit MsgCreateLimitOrder) Type() string {
+func (limit *MsgCreateLimitOrder) Type() string {
 	panic("implement me")
 }
 
-func (limit MsgCreateLimitOrder) ValidateBasic() sdk.Error {
+func (limit *MsgCreateLimitOrder) ValidateBasic() sdk.Error {
 	if limit.Sender.Empty() || limit.Price == 0 || limit.Amount == 0 {
 		return sdk.NewError(RouterKey, 1, "MsgCreateMarketOrder invalid")
 	}
 	return nil
 }
 
-func (limit MsgCreateLimitOrder) GetSignBytes() []byte {
+func (limit *MsgCreateLimitOrder) GetSignBytes() []byte {
 	panic("implement me")
 }
 
-func (limit MsgCreateLimitOrder) GetSigners() []sdk.AccAddress {
+func (limit *MsgCreateLimitOrder) GetSigners() []sdk.AccAddress {
 	panic("implement me")
 }
 
-func (limit MsgCreateLimitOrder) String() string {
+func (limit *MsgCreateLimitOrder) String() string {
 	content := fmt.Sprintf("Sender: %s, Price: %d, PricePrecision: %d,Amount: "+
 		"%d, OrderID: %d\n", limit.Sender.String(), limit.Price, limit.PricePrecision, limit.Amount, limit.OrderID)
 	return content
