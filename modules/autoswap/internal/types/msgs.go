@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -10,39 +8,53 @@ var _ sdk.Msg = &MsgCreateLimitOrder{}
 
 type MsgCreateLimitOrder struct {
 	OrderBasic
-	OrderID        uint64
-	Price          uint64
+	OrderID        int64
+	Price          int64
 	PricePrecision byte
 	PrevKey        [3]int64
 }
 
 func (limit *MsgCreateLimitOrder) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (limit *MsgCreateLimitOrder) Type() string {
-	panic("implement me")
+	return "create_limit_order"
 }
 
 func (limit *MsgCreateLimitOrder) ValidateBasic() sdk.Error {
-	if limit.Sender.Empty() || limit.Price == 0 || limit.Amount == 0 {
-		return sdk.NewError(RouterKey, 1, "MsgCreateMarketOrder invalid")
+	if limit.Sender.Empty() {
+		return ErrInvalidSender(limit.Sender)
+	}
+	if limit.Price <= 0 {
+		return ErrInvalidPrice(limit.Price)
+	}
+	if limit.PricePrecision <= 0 || int(limit.PricePrecision) > MaxPricePrecision {
+		return ErrInvalidPricePrecision(int(limit.PricePrecision))
+	}
+	actualAmount := limit.OrderInfo().ActualAmount()
+	if actualAmount.GT(MaxAmount) || actualAmount.IsZero() {
+		return ErrInvalidAmount(actualAmount)
 	}
 	return nil
 }
 
+func (limit *MsgCreateLimitOrder) OrderInfo() *Order {
+	return &Order{
+		OrderBasic:     limit.OrderBasic,
+		PricePrecision: int64(limit.PricePrecision),
+		Price:          limit.Price,
+		PrevKey:        limit.PrevKey,
+		OrderID:        limit.OrderID,
+	}
+}
+
 func (limit *MsgCreateLimitOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(limit))
 }
 
 func (limit *MsgCreateLimitOrder) GetSigners() []sdk.AccAddress {
-	panic("implement me")
-}
-
-func (limit *MsgCreateLimitOrder) String() string {
-	content := fmt.Sprintf("Sender: %s, Price: %d, PricePrecision: %d,Amount: "+
-		"%d, OrderID: %d\n", limit.Sender.String(), limit.Price, limit.PricePrecision, limit.Amount, limit.OrderID)
-	return content
+	return []sdk.AccAddress{limit.Sender}
 }
 
 func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
@@ -56,31 +68,29 @@ type MsgCreateMarketOrder struct {
 }
 
 func (mkOr MsgCreateMarketOrder) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (mkOr MsgCreateMarketOrder) Type() string {
-	panic("implement me")
+	return "create_market_order"
 }
 
 func (mkOr MsgCreateMarketOrder) ValidateBasic() sdk.Error {
-	if mkOr.Sender.Empty() || mkOr.Amount == 0 {
-		return sdk.NewError(RouterKey, 2, "MsgCreateMarketOrder invalid")
+	if mkOr.Sender.Empty() {
+		return ErrInvalidSender(mkOr.Sender)
+	}
+	if mkOr.Amount <= 0 {
+		return ErrInvalidAmount(sdk.NewInt(mkOr.Amount))
 	}
 	return nil
 }
 
 func (mkOr MsgCreateMarketOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(mkOr))
 }
 
 func (mkOr MsgCreateMarketOrder) GetSigners() []sdk.AccAddress {
-	panic("implement me")
-}
-
-func (mkOr MsgCreateMarketOrder) String() string {
-	return fmt.Sprintf("Sender: %s, MarketSymbol: %s, Amount: %d, IsBuy: %v\n",
-		mkOr.Sender.String(), mkOr.MarketSymbol, mkOr.Amount, mkOr.IsBuy)
+	return []sdk.AccAddress{mkOr.Sender}
 }
 
 func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {

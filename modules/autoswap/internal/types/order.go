@@ -11,9 +11,13 @@ type OrderBasic struct {
 	MarketSymbol string
 	IsOpenSwap   bool
 	Sender       sdk.AccAddress
-	Amount       int64
 	IsBuy        bool
 	IsLimitOrder bool
+
+	// if the order is market_order, the amount is the actualAmount(ie: buyActualAmount = amount, sellActualAmount = amount)
+	// if the order is limit_order, the amount is the stock amount and orderActualAmount will be calculated
+	// (ie: buyActualAmount = price * amount, sellActualAmount = amount)
+	Amount int64
 }
 
 type Order struct {
