@@ -74,6 +74,7 @@ $ cetcli tx autoswap create-pair --stock="foo" --money="bar" \
 	cmd.Flags().String(flagInitStock, "", "the init stock amount of the pool")
 	cmd.Flags().String(flagInitMoney, "", "the init money amount of the pool")
 	cmd.Flags().Bool(flagNoSwap, false, "disable swap function")
+	cmd.Flags().String(flagTo, "", "mint to")
 	markRequiredFlags(cmd, flagStock, flagMoney, flagInitStock, flagInitMoney, flagTo)
 
 	return cmd
@@ -87,7 +88,7 @@ func GetCreateMarketOrderCmd(cdc *codec.Codec) *cobra.Command {
 			`generate a tx and sign it to create autoswap market order in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap create-market-order --pool="foo/bar" --no-swap \
+$ cetcli tx autoswap create-market-order --pair="foo/bar" --no-swap \
 	--side=buy --amount=12345 \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
@@ -119,7 +120,7 @@ func GetCreateLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
 Example:
 $ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
 	--side=buy --amount=12345 \
-	--price=10000 --price-precision=8 --order-id= --prev-key="1,2,3"
+	--price=10000 --price-precision=8 --order-id=123 --prev-key="4,5,6"
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -204,8 +205,10 @@ func markRequiredFlags(cmd *cobra.Command, flagNames ...string) {
 	}
 }
 func parseSdkInt(flagName string) (val sdk.Int, err error) {
+	flagVal := viper.GetString(flagName)
+
 	ok := false
-	if val, ok = sdk.NewIntFromString(viper.GetString(flagName)); !ok {
+	if val, ok = sdk.NewIntFromString(flagVal); !ok {
 		err = fmt.Errorf("%s must be a valid integer", flagName)
 	}
 	return

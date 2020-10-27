@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	PoolAddr = sdk.AccAddress(crypto.AddressHash([]byte("incentive_pool")))
+	PoolAddr        = sdk.AccAddress(crypto.AddressHash([]byte("incentive_pool")))
 	Dex3StartHeight = int64(100000000) // TODO
 )
 
