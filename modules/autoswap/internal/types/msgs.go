@@ -45,6 +45,10 @@ func (limit *MsgCreateLimitOrder) String() string {
 	return content
 }
 
+func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
+	limit.Sender = address
+}
+
 var _ sdk.Msg = MsgCreateMarketOrder{}
 
 type MsgCreateMarketOrder struct {
@@ -77,6 +81,10 @@ func (mkOr MsgCreateMarketOrder) GetSigners() []sdk.AccAddress {
 func (mkOr MsgCreateMarketOrder) String() string {
 	return fmt.Sprintf("Sender: %s, MarketSymbol: %s, Amount: %d, IsBuy: %v\n",
 		mkOr.Sender.String(), mkOr.MarketSymbol, mkOr.Amount, mkOr.IsBuy)
+}
+
+func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {
+	mkOr.Sender = address
 }
 
 var _ sdk.Msg = MsgCreatePair{}
@@ -120,4 +128,8 @@ func (m MsgCreatePair) GetSignBytes() []byte {
 
 func (m MsgCreatePair) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
+}
+
+func (m *MsgCreatePair) SetAccAddress(address sdk.AccAddress) {
+	m.Owner = address
 }
