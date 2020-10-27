@@ -61,7 +61,7 @@ func TestCreatePairCmd(t *testing.T) {
 	cliutil.SetViperWithArgs(args)
 	err := txCmd.Execute()
 	assert.Equal(t, nil, err)
-	assert.Equal(t, &types.MsgCreatePair{
+	assert.Equal(t, &types.MsgAddLiquidity{
 		Owner:      fromAddr,
 		To:         fromAddr,
 		Stock:      "foo",

@@ -147,8 +147,8 @@ $ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
 	return cmd
 }
 
-func getCreatePairMsg() (msg *types.MsgCreatePair, err error) {
-	msg = &types.MsgCreatePair{
+func getCreatePairMsg() (msg *types.MsgAddLiquidity, err error) {
+	msg = &types.MsgAddLiquidity{
 		Stock:      viper.GetString(flagStock),
 		Money:      viper.GetString(flagMoney),
 		IsOpenSwap: !viper.GetBool(flagNoSwap),

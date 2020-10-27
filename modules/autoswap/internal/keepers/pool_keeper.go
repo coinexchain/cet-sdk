@@ -140,3 +140,14 @@ type PoolInfo struct {
 	totalSupply           sdk.Int
 	kLast                 sdk.Int
 }
+
+func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {
+	if !p.moneyAmmReserve.IsZero() && !p.stockAmmReserve.IsZero() {
+		stockRequired := amountMoneyIn.Mul(p.stockAmmReserve).Quo(p.moneyAmmReserve)
+		if stockRequired.LT(amountStockIn) {
+			return stockRequired, amountMoneyIn
+		}
+		return amountStockIn, amountStockIn.Mul(p.moneyAmmReserve).Quo(p.stockAmmReserve)
+	}
+	return sdk.ZeroInt(), sdk.ZeroInt()
+}

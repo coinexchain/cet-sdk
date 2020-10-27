@@ -10,7 +10,7 @@ import (
 //var
 
 type FactoryInterface interface {
-	CreatePair(ctx sdk.Context, msg types.MsgCreatePair) bool
+	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bool
 	QueryPair(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo
 }
 
@@ -19,7 +19,7 @@ type FactoryKeeper struct {
 	poolKeeper PoolKeeper
 }
 
-func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgCreatePair) bool {
+func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bool {
 	symbol := dex.GetSymbol(msg.Stock, msg.Money)
 	info := f.poolKeeper.GetPoolInfo(ctx, symbol, msg.IsOpenSwap)
 	if info != nil {

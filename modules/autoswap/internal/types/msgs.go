@@ -5,6 +5,8 @@ import (
 )
 
 var _ sdk.Msg = &MsgCreateLimitOrder{}
+var _ sdk.Msg = MsgCreateMarketOrder{}
+var _ sdk.Msg = MsgAddLiquidity{}
 
 type MsgCreateLimitOrder struct {
 	OrderBasic
@@ -61,7 +63,6 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 	limit.Sender = address
 }
 
-var _ sdk.Msg = MsgCreateMarketOrder{}
 
 type MsgCreateMarketOrder struct {
 	OrderBasic
@@ -97,9 +98,7 @@ func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {
 	mkOr.Sender = address
 }
 
-var _ sdk.Msg = MsgCreatePair{}
-
-type MsgCreatePair struct {
+type MsgAddLiquidity struct {
 	Owner      sdk.AccAddress `json:"owner"`
 	Stock      string         `json:"stock"`
 	Money      string         `json:"money"`
@@ -109,15 +108,15 @@ type MsgCreatePair struct {
 	To         sdk.AccAddress `json:"to"`
 }
 
-func (m MsgCreatePair) Route() string {
+func (m MsgAddLiquidity) Route() string {
 	return RouterKey
 }
 
-func (m MsgCreatePair) Type() string {
+func (m MsgAddLiquidity) Type() string {
 	return "create_pair"
 }
 
-func (m MsgCreatePair) ValidateBasic() sdk.Error {
+func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
 	if m.Owner.Empty() {
 		return sdk.ErrInvalidAddress("missing owner address")
 	}
@@ -132,14 +131,14 @@ func (m MsgCreatePair) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (m MsgCreatePair) GetSignBytes() []byte {
+func (m MsgAddLiquidity) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgCreatePair) GetSigners() []sdk.AccAddress {
+func (m MsgAddLiquidity) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Owner}
 }
 
-func (m *MsgCreatePair) SetAccAddress(address sdk.AccAddress) {
+func (m *MsgAddLiquidity) SetAccAddress(address sdk.AccAddress) {
 	m.Owner = address
 }
