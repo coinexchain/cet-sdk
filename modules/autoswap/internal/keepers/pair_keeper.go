@@ -20,6 +20,7 @@ type IPairKeeper interface {
 
 type PairKeeper struct {
 	IPoolKeeper
+	types.SupplyKeeper
 	types.ExpectedBankKeeper
 	types.ExpectedAccountKeeper
 	codec    *codec.Codec
@@ -377,14 +378,21 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		poolInfo.stockAmmReserve = poolInfo.stockAmmReserve.Add(dealInfo.AmountInToPool)
 		poolInfo.moneyAmmReserve = poolInfo.moneyAmmReserve.Sub(outPoolTokenReserve).Add(fee)
 	}
-	// todo. transfer token from pool to order sender
-	moduleAccount, _ := sdk.AccAddressFromHex("moduleAccount")
+	// transfer token from pool to order sender
 	if order.IsBuy {
-		pk.transferToken(ctx, moduleAccount, order.Sender, order.Stock(), outAmount)
-		pk.transferToken(ctx, order.Sender, moduleAccount, order.Money(), dealInfo.AmountInToPool)
+		if err := pk.SendCoinsFromModuleToAccount(ctx, AMMPool, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
+			panic(err)
+		}
+		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, AMMPool, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
+			panic(err)
+		}
 	} else {
-		pk.transferToken(ctx, moduleAccount, order.Sender, order.Money(), outAmount)
-		pk.transferToken(ctx, order.Sender, moduleAccount, order.Stock(), dealInfo.AmountInToPool)
+		if err := pk.SendCoinsFromModuleToAccount(ctx, AMMPool, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
+			panic(err)
+		}
+		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, AMMPool, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
+			panic(err)
+		}
 	}
 	return amountToTaker
 }

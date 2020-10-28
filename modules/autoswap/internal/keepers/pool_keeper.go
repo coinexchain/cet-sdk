@@ -3,8 +3,13 @@ package keepers
 import (
 	"math/big"
 
+	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+const (
+	AMMPool = "auto_swap_amm_pool"
 )
 
 type IPoolKeeper interface {
@@ -22,6 +27,7 @@ var FeeOn bool //todo: parameter it
 type PoolKeeper struct {
 	key   sdk.StoreKey
 	codec *codec.Codec
+	types.SupplyKeeper
 }
 
 func (p PoolKeeper) SetPairInfos(ctx sdk.Context, marketSymbol string, isOpenSwap bool, ammStockAmount, ammMoneyAmount, orderBookStockAmount, orderBookMoneyAmount sdk.Int) {
@@ -123,9 +129,10 @@ func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap
 	return &info
 }
 
-func NewPoolKeeper(key sdk.StoreKey) *PoolKeeper {
+func NewPoolKeeper(key sdk.StoreKey, keeper types.SupplyKeeper) *PoolKeeper {
 	return &PoolKeeper{
-		key: key,
+		key:          key,
+		SupplyKeeper: keeper,
 	}
 }
 
