@@ -63,7 +63,6 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 	limit.Sender = address
 }
 
-
 type MsgCreateMarketOrder struct {
 	OrderBasic
 }

@@ -136,9 +136,9 @@ $ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
 	cmd.Flags().Bool(flagNoSwap, false, "whether this pool support swap function")
 	cmd.Flags().String(flagSide, "", "buy or sell")
 	cmd.Flags().Int64(flagAmount, 0, "the amount of the order")
-	cmd.Flags().Uint64(flagPrice, 0, "the price of the order")
+	cmd.Flags().Int64(flagPrice, 0, "the price of the order")
 	cmd.Flags().Uint8(flagPricePrecision, 0, "the price precision of the order")
-	cmd.Flags().Uint64(flagOrderID, 0, "the order ID")
+	cmd.Flags().Int64(flagOrderID, 0, "the order ID")
 	cmd.Flags().String(flagPrevKey, "", "previous keys, at most 3, separated by comma")
 
 	markRequiredFlags(cmd, flagPair, flagSide, flagAmount,
@@ -184,8 +184,8 @@ func getCreateLimitOrderMsg() (msg *types.MsgCreateLimitOrder, err error) {
 	if msg.OrderBasic, err = getOrderBasic(); err != nil {
 		return
 	}
-	msg.OrderID = viper.GetUint64(flagOrderID)
-	msg.Price = viper.GetUint64(flagPrice)
+	msg.OrderID = viper.GetInt64(flagOrderID)
+	msg.Price = viper.GetInt64(flagPrice)
 	msg.PricePrecision = uint8(viper.GetUint(flagPricePrecision))
 	msg.PrevKey = [3]int64{} // TODO
 	return
@@ -199,10 +199,13 @@ func getOrderBasic() (ob types.OrderBasic, err error) {
 	return
 }
 
-func markRequiredFlags(cmd *cobra.Command, flagNames ...string) {
+func markRequiredFlags(cmd *cobra.Command, flagNames ...string) error {
 	for _, flagName := range flagNames {
-		cmd.MarkFlagRequired(flagName)
+		if err := cmd.MarkFlagRequired(flagName); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 func parseSdkInt(flagName string) (val sdk.Int, err error) {
 	flagVal := viper.GetString(flagName)
