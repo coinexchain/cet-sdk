@@ -13,7 +13,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) 
 }
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
-	r.HandleFunc("/autoswap/pools", createPairHandlerFn(cdc, cliCtx)).Methods("POST")
+	r.HandleFunc("/autoswap/pools", addLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
 	r.HandleFunc("/autoswap/market-orders", createMarketOrderHandlerFn(cdc, cliCtx)).Methods("POST")
 	r.HandleFunc("/autoswap/limit-orders", createLimitOrderHandlerFn(cdc, cliCtx)).Methods("POST")
 }

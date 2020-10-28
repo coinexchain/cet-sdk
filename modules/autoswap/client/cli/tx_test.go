@@ -44,15 +44,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestCreatePairCmd(t *testing.T) {
+func TestAddLiquidityCmd(t *testing.T) {
 	txCmd := GetTxCmd(nil)
 	args := []string{
-		"create-pair",
+		"add-liquidity",
 		"--stock=foo",
 		"--money=bar",
 		"--no-swap",
-		"--init-stock=100000000",
-		"--init-money=200000000",
+		"--stock-in=100000000",
+		"--money-in=200000000",
 		"--to=" + fromAddr.String(),
 		"--from=" + fromAddr.String(),
 		"--generate-only",

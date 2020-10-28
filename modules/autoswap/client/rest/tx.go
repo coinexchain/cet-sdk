@@ -16,27 +16,27 @@ import (
 	"github.com/coinexchain/cosmos-utils/client/restutil"
 )
 
-/* createPairReq */
+/* addLiquidityReq */
 
-type createPairReq struct {
-	BaseReq   rest.BaseReq `json:"base_req"`
-	Stock     string       `json:"stock"`
-	Money     string       `json:"money"`
-	InitStock string       `json:"init_stock"`
-	InitMoney string       `json:"init_money"`
-	NoSwap    bool         `json:"no_swap"`
-	To        string       `json:"to"`
+type addLiquidityReq struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	Stock   string       `json:"stock"`
+	Money   string       `json:"money"`
+	StockIn string       `json:"stock_in"`
+	MoneyIn string       `json:"money_in"`
+	NoSwap  bool         `json:"no_swap"`
+	To      string       `json:"to"`
 }
 
-func (req *createPairReq) New() restutil.RestReq {
-	return new(createPairReq)
+func (req *addLiquidityReq) New() restutil.RestReq {
+	return new(addLiquidityReq)
 }
 
-func (req *createPairReq) GetBaseReq() *rest.BaseReq {
+func (req *addLiquidityReq) GetBaseReq() *rest.BaseReq {
 	return &req.BaseReq
 }
 
-func (req *createPairReq) GetMsg(r *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
+func (req *addLiquidityReq) GetMsg(r *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgAddLiquidity{
 		Owner:      sender,
 		Stock:      req.Stock,
@@ -45,10 +45,10 @@ func (req *createPairReq) GetMsg(r *http.Request, sender sdk.AccAddress) (sdk.Ms
 	}
 
 	var err error
-	if msg.StockIn, err = parseSdkInt("init_stock", req.InitStock); err != nil {
+	if msg.StockIn, err = parseSdkInt("init_stock", req.StockIn); err != nil {
 		return nil, err
 	}
-	if msg.MoneyIn, err = parseSdkInt("init_money", req.InitMoney); err != nil {
+	if msg.MoneyIn, err = parseSdkInt("init_money", req.MoneyIn); err != nil {
 		return nil, err
 	}
 	if msg.To, err = sdk.AccAddressFromBech32(req.To); err != nil {
@@ -143,8 +143,8 @@ func (req *createLimitOrderReq) GetMsg(r *http.Request, sender sdk.AccAddress) (
 }
 
 /* createHandlerFns */
-func createPairHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
-	var req createPairReq
+func addLiquidityHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+	var req addLiquidityReq
 	return restutil.NewRestHandler(cdc, cliCtx, &req)
 }
 func createMarketOrderHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {

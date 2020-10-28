@@ -18,8 +18,8 @@ import (
 const (
 	flagStock          = "stock"
 	flagMoney          = "money"
-	flagInitStock      = "init-stock"
-	flagInitMoney      = "init-money"
+	flagStockIn        = "stock-in"
+	flagMoneyIn        = "money-in"
 	flagNoSwap         = "no-swap"
 	flagTo             = "to"
 	flagPair           = "pair"
@@ -39,7 +39,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	}
 
 	assTxCmd.AddCommand(client.PostCommands(
-		GetCreatePairCmd(cdc),
+		GetAddLiquidityCmd(cdc),
 		GetCreateLimitOrderCmd(cdc),
 		GetCreateMarketOrderCmd(cdc),
 	)...)
@@ -47,21 +47,21 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return assTxCmd
 }
 
-func GetCreatePairCmd(cdc *codec.Codec) *cobra.Command {
+func GetAddLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-pair",
-		Short: "generate tx to create autoswap pair",
+		Use:   "add-liquidity",
+		Short: "generate tx to create autoswap pair and/or add liquidity into it",
 		Long: strings.TrimSpace(
 			`generate a tx and sign it to create autoswap pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap create-pair --stock="foo" --money="bar" \
-	--init-stock=100000000 --init-money=100000000 \
+$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
+	--stock-in=100000000 --money-in=100000000 \
 	--no-swap --to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			msg, err := getCreatePairMsg()
+			msg, err := getAddLiquidityMsg()
 			if err != nil {
 				return err
 			}
@@ -71,11 +71,11 @@ $ cetcli tx autoswap create-pair --stock="foo" --money="bar" \
 
 	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
 	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
-	cmd.Flags().String(flagInitStock, "", "the init stock amount of the pool")
-	cmd.Flags().String(flagInitMoney, "", "the init money amount of the pool")
+	cmd.Flags().String(flagStockIn, "", "the init stock amount of the pool")
+	cmd.Flags().String(flagMoneyIn, "", "the init money amount of the pool")
 	cmd.Flags().Bool(flagNoSwap, false, "disable swap function")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney, flagInitStock, flagInitMoney, flagTo)
+	markRequiredFlags(cmd, flagStock, flagMoney, flagStockIn, flagMoneyIn, flagTo)
 
 	return cmd
 }
@@ -147,17 +147,17 @@ $ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
 	return cmd
 }
 
-func getCreatePairMsg() (msg *types.MsgAddLiquidity, err error) {
+func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 	msg = &types.MsgAddLiquidity{
 		Stock:      viper.GetString(flagStock),
 		Money:      viper.GetString(flagMoney),
 		IsOpenSwap: !viper.GetBool(flagNoSwap),
 	}
 
-	if msg.StockIn, err = parseSdkInt(flagInitStock); err != nil {
+	if msg.StockIn, err = parseSdkInt(flagStockIn); err != nil {
 		return
 	}
-	if msg.MoneyIn, err = parseSdkInt(flagInitMoney); err != nil {
+	if msg.MoneyIn, err = parseSdkInt(flagMoneyIn); err != nil {
 		return
 	}
 	if msg.To, err = sdk.AccAddressFromBech32(viper.GetString(flagTo)); err != nil {
