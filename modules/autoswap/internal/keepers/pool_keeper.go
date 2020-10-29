@@ -148,6 +148,10 @@ type PoolInfo struct {
 	kLast                 sdk.Int
 }
 
+func (p PoolInfo) GetSymbol() string {
+	return p.symbol
+}
+
 func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {
 	if !p.moneyAmmReserve.IsZero() && !p.stockAmmReserve.IsZero() {
 		stockRequired := amountMoneyIn.Mul(p.stockAmmReserve).Quo(p.moneyAmmReserve)
