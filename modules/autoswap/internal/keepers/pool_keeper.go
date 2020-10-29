@@ -162,3 +162,23 @@ func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (am
 	}
 	return sdk.ZeroInt(), sdk.ZeroInt()
 }
+
+type PoolInfoDisplay struct {
+	Symbol                  string  `json:"symbol"`
+	StockReserveInAmm       sdk.Int `json:"stock_reserve_in_amm"`
+	MoneyReserveInAmm       sdk.Int `json:"money_reserve_in_amm"`
+	StockReserveInOrderBook sdk.Int `json:"stock_reserve_in_order_book"`
+	MoneyReserveInOrderBook sdk.Int `json:"money_reserve_in_order_book"`
+	TotalLiquidity          sdk.Int `json:"total_liquidity"`
+}
+
+func NewPoolInfoDisplay(info *PoolInfo) PoolInfoDisplay {
+	return PoolInfoDisplay{
+		Symbol:                  info.symbol,
+		StockReserveInAmm:       info.stockAmmReserve,
+		MoneyReserveInAmm:       info.moneyAmmReserve,
+		StockReserveInOrderBook: info.stockOrderBookReserve,
+		MoneyReserveInOrderBook: info.moneyOrderBookReserve,
+		TotalLiquidity:          info.totalSupply,
+	}
+}

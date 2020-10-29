@@ -2,6 +2,8 @@ package autoswap
 
 import (
 	"encoding/json"
+	"github.com/coinexchain/cet-sdk/modules/autoswap/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/autoswap/client/rest"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -40,17 +42,15 @@ func (AppModuleBasic) ValidateGenesis(data json.RawMessage) error {
 
 // client functionality
 func (amb AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router) {
-	//rest.RegisterRoutes(ctx, rtr, types.ModuleCdc)
+	rest.RegisterRoutes(ctx, rtr, types.ModuleCdc)
 }
 
 func (amb AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	//return cli.GetTxCmd(cdc)
-	return nil
+	return cli.GetTxCmd(cdc)
 }
 
 func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	//return cli.GetQueryCmd(cdc)
-	return nil
+	return cli.GetQueryCmd(cdc)
 }
 
 type AppModule struct {
@@ -81,8 +81,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	//return keepers.NewQuerier(am.blKeeper)
-	return nil
+	return keepers.NewQuerier(am.blKeeper)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {

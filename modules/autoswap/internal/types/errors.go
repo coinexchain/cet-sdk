@@ -17,6 +17,8 @@ const (
 	CodeUnKnownError          = 1205
 	CodeInvalidMarket         = 1206
 	CodeInvalidOrderID        = 1207
+	CodeMarshalFailed         = 1208
+	CodeUnMarshalFailed       = 1209
 )
 
 func ErrInvalidPrice(price int64) sdk.Error {
@@ -44,4 +46,8 @@ func ErrInvalidMarket(market string, isOpenSwap bool) sdk.Error {
 
 func ErrInvalidOrderID() sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderID, "Not found valid orderID")
+}
+
+func ErrMarshalFailed() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeMarshalFailed, "could not marshal result to JSON")
 }
