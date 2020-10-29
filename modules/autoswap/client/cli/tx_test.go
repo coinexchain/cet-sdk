@@ -1,48 +1,15 @@
 package cli
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/coinexchain/cosmos-utils/client/cliutil"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
-
-var resultMsg cliutil.MsgWithAccAddress
-var fromAddr sdk.AccAddress
-
-func cliRunCmdForTest(cdc *codec.Codec, msg cliutil.MsgWithAccAddress) error {
-	cliCtx := context.NewCLIContext().WithCodec(cdc)
-	senderAddr := cliCtx.GetFromAddress()
-	msg.SetAccAddress(senderAddr)
-	if err := msg.ValidateBasic(); err != nil {
-		return err
-	}
-	resultMsg = msg
-	return nil
-}
-
-func setup() {
-	sdk.GetConfig().SetBech32PrefixForAccount("coinex", "coinexpub")
-	cliutil.CliRunCommand = cliRunCmdForTest
-
-	fromAddr, _ = sdk.AccAddressFromHex("01234567890123456789012345678901234abcde")
-
-}
-
-// https://stackoverflow.com/questions/23729790/how-can-i-do-test-setup-using-the-testing-package-in-go
-func TestMain(m *testing.M) {
-	setup()
-	code := m.Run()
-	//shutdown()
-	os.Exit(code)
-}
 
 func TestAddLiquidityCmd(t *testing.T) {
 	txCmd := GetTxCmd(nil)

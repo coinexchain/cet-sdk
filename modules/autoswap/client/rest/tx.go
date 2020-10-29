@@ -124,8 +124,9 @@ func (req *createLimitOrderReq) GetMsg(r *http.Request, sender sdk.AccAddress) (
 			Sender:       sender,
 			MarketSymbol: req.PairSymbol,
 			IsOpenSwap:   !req.NoSwap,
-			IsLimitOrder: false,
+			IsLimitOrder: true,
 		},
+		PricePrecision: req.PricePrecision,
 	}
 	var err error
 	if msg.IsBuy, err = parseIsBuy(req.Side); err != nil {
@@ -136,6 +137,9 @@ func (req *createLimitOrderReq) GetMsg(r *http.Request, sender sdk.AccAddress) (
 	}
 	if msg.OrderID, err = strconv.ParseInt(req.OrderID, 10, 64); err != nil {
 		return nil, errors.New("invalid order_id")
+	}
+	if msg.Price, err = strconv.ParseInt(req.Price, 10, 64); err != nil {
+		return nil, errors.New("invalid price")
 	}
 	// TODO: prevKey
 

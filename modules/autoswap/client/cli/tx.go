@@ -33,18 +33,18 @@ const (
 
 // get the root tx command of this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	assTxCmd := &cobra.Command{
+	txCmd := &cobra.Command{
 		Use:   types.ModuleName,
 		Short: "Asset transactions subcommands",
 	}
 
-	assTxCmd.AddCommand(client.PostCommands(
+	txCmd.AddCommand(client.PostCommands(
 		GetAddLiquidityCmd(cdc),
 		GetCreateLimitOrderCmd(cdc),
 		GetCreateMarketOrderCmd(cdc),
 	)...)
 
-	return assTxCmd
+	return txCmd
 }
 
 func GetAddLiquidityCmd(cdc *codec.Codec) *cobra.Command {

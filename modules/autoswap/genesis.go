@@ -9,17 +9,17 @@ import (
 )
 
 type GenesisState struct {
-	Params         types.Params        `json:"params"`
-	Orders         []*types.Order      `json:"orders"`
-	PoolInfos      []*keepers.PoolInfo `json:"pool_infos"`
+	Params    types.Params        `json:"params"`
+	Orders    []*types.Order      `json:"orders"`
+	PoolInfos []*keepers.PoolInfo `json:"pool_infos"`
 }
 
 // NewGenesisState - Create a new genesis state
 func NewGenesisState(params types.Params, orders []*types.Order, infos []*keepers.PoolInfo) GenesisState {
 	return GenesisState{
-		Params:         params,
-		Orders:         orders,
-		PoolInfos:      infos,
+		Params:    params,
+		Orders:    orders,
+		PoolInfos: infos,
 	}
 }
 
