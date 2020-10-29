@@ -185,3 +185,7 @@ func (m MsgRemoveLiquidity) GetSignBytes() []byte {
 func (m MsgRemoveLiquidity) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
+
+func (m *MsgRemoveLiquidity) SetAccAddress(address sdk.AccAddress) {
+	m.Sender = address
+}

@@ -18,9 +18,11 @@ import (
 const (
 	flagStock          = "stock"
 	flagMoney          = "money"
+	flagNoSwap         = "no-swap"
 	flagStockIn        = "stock-in"
 	flagMoneyIn        = "money-in"
-	flagNoSwap         = "no-swap"
+	flagStockMin       = "stock-min"
+	flagMoneyMin       = "money-min"
 	flagTo             = "to"
 	flagPair           = "pair"
 	flagAmount         = "amount"
@@ -40,6 +42,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 	txCmd.AddCommand(client.PostCommands(
 		GetAddLiquidityCmd(cdc),
+		GetRemoveLiquidityCmd(cdc),
 		GetCreateLimitOrderCmd(cdc),
 		GetCreateMarketOrderCmd(cdc),
 	)...)
@@ -50,14 +53,14 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 func GetAddLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-liquidity",
-		Short: "generate tx to create autoswap pair and/or add liquidity into it",
+		Short: "generate tx to add liquidity into autoswap pair",
 		Long: strings.TrimSpace(
-			`generate a tx and sign it to create autoswap pair in Dex blockchain. 
+			`generate a tx and sign it to add liquidity into autoswap pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
+$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" --no-swap \
 	--stock-in=100000000 --money-in=100000000 \
-	--no-swap --to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
+	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -71,11 +74,45 @@ $ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
 
 	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
 	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
-	cmd.Flags().String(flagStockIn, "", "the init stock amount of the pool")
-	cmd.Flags().String(flagMoneyIn, "", "the init money amount of the pool")
-	cmd.Flags().Bool(flagNoSwap, false, "disable swap function")
+	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	cmd.Flags().String(flagStockIn, "", "the amount of stock to put into the pool")
+	cmd.Flags().String(flagMoneyIn, "", "the amount of money to put into the pool")
 	cmd.Flags().String(flagTo, "", "mint to")
 	markRequiredFlags(cmd, flagStock, flagMoney, flagStockIn, flagMoneyIn, flagTo)
+
+	return cmd
+}
+
+func GetRemoveLiquidityCmd(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "remove-liquidity",
+		Short: "generate tx to remove liquidity from autoswap pair",
+		Long: strings.TrimSpace(
+			`generate a tx and sign it to remove liquidity from autoswap pair in Dex blockchain. 
+
+Example:
+$ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
+	--stock-in=100000000 --money-in=100000000 \
+	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
+	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
+`),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			msg, err := getRemoveLiquidityMsg()
+			if err != nil {
+				return err
+			}
+			return cliutil.CliRunCommand(cdc, msg)
+		},
+	}
+
+	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
+	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
+	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	cmd.Flags().String(flagStockMin, "", "the minimum amount of got stock")
+	cmd.Flags().String(flagMoneyMin, "", "the minimum amount of got money")
+	cmd.Flags().String(flagAmount, "", "the amount of liquidity to be removed")
+	cmd.Flags().String(flagTo, "", "mint to")
+	markRequiredFlags(cmd, flagStock, flagMoney, flagStockMin, flagMoneyMin, flagAmount, flagTo)
 
 	return cmd
 }
@@ -158,6 +195,28 @@ func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 		return
 	}
 	if msg.MoneyIn, err = parseSdkInt(flagMoneyIn); err != nil {
+		return
+	}
+	if msg.To, err = sdk.AccAddressFromBech32(viper.GetString(flagTo)); err != nil {
+		return
+	}
+	return
+}
+
+func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
+	msg = &types.MsgRemoveLiquidity{
+		Stock:   viper.GetString(flagStock),
+		Money:   viper.GetString(flagMoney),
+		AmmOpen: !viper.GetBool(flagNoSwap),
+	}
+
+	if msg.AmountStockMin, err = parseSdkInt(flagStockMin); err != nil {
+		return
+	}
+	if msg.AmountMoneyMin, err = parseSdkInt(flagMoneyMin); err != nil {
+		return
+	}
+	if msg.Amount, err = parseSdkInt(flagAmount); err != nil {
 		return
 	}
 	if msg.To, err = sdk.AccAddressFromBech32(viper.GetString(flagTo)); err != nil {

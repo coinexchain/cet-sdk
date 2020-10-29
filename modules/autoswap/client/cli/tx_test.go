@@ -39,6 +39,36 @@ func TestAddLiquidityCmd(t *testing.T) {
 	}, resultMsg)
 }
 
+func TestRemoveLiquidityCmd(t *testing.T) {
+	txCmd := GetTxCmd(nil)
+	args := []string{
+		"remove-liquidity",
+		"--stock=foo",
+		"--money=bar",
+		"--no-swap",
+		"--stock-min=100000000",
+		"--money-min=200000000",
+		"--amount=12345",
+		"--to=" + fromAddr.String(),
+		"--from=" + fromAddr.String(),
+		"--generate-only",
+	}
+	txCmd.SetArgs(args)
+	cliutil.SetViperWithArgs(args)
+	err := txCmd.Execute()
+	assert.Equal(t, nil, err)
+	assert.Equal(t, &types.MsgRemoveLiquidity{
+		Sender:         fromAddr,
+		To:             fromAddr,
+		Stock:          "foo",
+		Money:          "bar",
+		AmountStockMin: sdk.NewInt(100000000),
+		AmountMoneyMin: sdk.NewInt(200000000),
+		Amount:         sdk.NewInt(12345),
+		//IsOpenSwap: false,
+	}, resultMsg)
+}
+
 func TestCreateMarketOrderCmd(t *testing.T) {
 	txCmd := GetTxCmd(nil)
 	for _, x := range []struct {
