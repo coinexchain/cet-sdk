@@ -2,8 +2,6 @@ package autoswap
 
 import (
 	"encoding/json"
-	"github.com/coinexchain/cet-sdk/modules/autoswap/client/cli"
-	"github.com/coinexchain/cet-sdk/modules/autoswap/client/rest"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -13,6 +11,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/coinexchain/cet-sdk/modules/autoswap/client/cli"
+	"github.com/coinexchain/cet-sdk/modules/autoswap/client/rest"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 )

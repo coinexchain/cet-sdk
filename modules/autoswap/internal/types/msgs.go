@@ -7,6 +7,7 @@ import (
 var _ sdk.Msg = &MsgCreateLimitOrder{}
 var _ sdk.Msg = MsgCreateMarketOrder{}
 var _ sdk.Msg = MsgAddLiquidity{}
+var _ sdk.Msg = MsgRemoveLiquidity{}
 
 type MsgCreateLimitOrder struct {
 	OrderBasic
@@ -112,7 +113,7 @@ func (m MsgAddLiquidity) Route() string {
 }
 
 func (m MsgAddLiquidity) Type() string {
-	return "create_pair"
+	return "add_liquidity"
 }
 
 func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
@@ -140,4 +141,47 @@ func (m MsgAddLiquidity) GetSigners() []sdk.AccAddress {
 
 func (m *MsgAddLiquidity) SetAccAddress(address sdk.AccAddress) {
 	m.Owner = address
+}
+
+type MsgRemoveLiquidity struct {
+	Sender         sdk.AccAddress `json:"sender"`
+	Stock          string         `json:"stock"`
+	Money          string         `json:"money"`
+	AmmOpen        bool           `json:"amm_open"`
+	PoolOpen       bool           `json:"pool_open"`
+	Amount         sdk.Int        `json:"amount"`
+	To             sdk.AccAddress `json:"to"`
+	AmountStockMin sdk.Int        `json:"amount_stock_min"`
+	AmountMoneyMin sdk.Int        `json:"amount_money_min"`
+}
+
+func (m MsgRemoveLiquidity) Route() string {
+	return RouterKey
+}
+
+func (m MsgRemoveLiquidity) Type() string {
+	return "remove_liquidity"
+}
+
+func (m MsgRemoveLiquidity) ValidateBasic() sdk.Error {
+	if m.Sender.Empty() {
+		return sdk.ErrInvalidAddress("missing sender address")
+	}
+	if len(m.Stock) == 0 || len(m.Money) == 0 {
+		//todo:
+		return nil
+	}
+	if !m.Amount.IsPositive() {
+		return ErrInvalidAmount(m.Amount)
+	}
+	//if To is nil, sender => To
+	return nil
+}
+
+func (m MsgRemoveLiquidity) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+}
+
+func (m MsgRemoveLiquidity) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }

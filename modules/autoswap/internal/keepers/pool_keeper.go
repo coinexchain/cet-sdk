@@ -15,7 +15,9 @@ const (
 type IPoolKeeper interface {
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap bool, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo
+	SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int)
 	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int
+	ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress)
 	Mint(ctx sdk.Context, marketSymbol string, isOpenSwap bool, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) sdk.Error
 	Burn(ctx sdk.Context, marketSymbol string, isOpenSwap bool, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error)
 }
@@ -96,6 +98,11 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap bool, 
 	return stockAmount, moneyAmount, nil
 }
 
+func (p PoolKeeper) ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) {
+	store := ctx.KVStore(p.key)
+	store.Delete(getLiquidityKey(marketSymbol, address))
+}
+
 func (p PoolKeeper) SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int) {
 	store := ctx.KVStore(p.key)
 	bytes := p.codec.MustMarshalBinaryBare(liquidity)
@@ -161,6 +168,12 @@ func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (am
 		return amountStockIn, amountStockIn.Mul(p.moneyAmmReserve).Quo(p.stockAmmReserve)
 	}
 	return sdk.ZeroInt(), sdk.ZeroInt()
+}
+
+func (p PoolInfo) GetTokensAmountOut(liquidity sdk.Int) (stockOut, moneyOut sdk.Int) {
+	stockOut = liquidity.Mul(p.stockAmmReserve).Quo(p.totalSupply)
+	moneyOut = liquidity.Mul(p.moneyAmmReserve).Quo(p.totalSupply)
+	return
 }
 
 type PoolInfoDisplay struct {
