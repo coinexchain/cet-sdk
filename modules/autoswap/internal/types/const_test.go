@@ -18,4 +18,6 @@ func TestDec(t *testing.T) {
 	fmt.Println(p.String())
 	fmt.Println(p.TruncateInt().String())
 	fmt.Println(p.TruncateDec().String())
+
+	fmt.Println(sdk.NewInt(-1))
 }

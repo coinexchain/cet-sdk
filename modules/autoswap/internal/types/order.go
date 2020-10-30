@@ -1,32 +1,32 @@
 package types
 
 import (
-	"math"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type OrderBasic struct {
-	MarketSymbol string
-	IsOpenSwap   bool
-	Sender       sdk.AccAddress
-	IsBuy        bool
-	IsLimitOrder bool
+	MarketSymbol    string         `json:"market_symbol"`
+	IsOpenSwap      bool           `json:"is_open_swap"`
+	IsOpenOrderBook bool           `json:"is_open_order_book"`
+	Sender          sdk.AccAddress `json:"sender"`
+	IsBuy           bool           `json:"is_buy"`
+	IsLimitOrder    bool           `json:"is_limit_order"`
 
-	// if the order is market_order, the amount is the actualAmount(ie: buyActualAmount = amount, sellActualAmount = amount)
+	// if the order is market_order, the amount is the actual input amount with special token(
+	// ie: sell order, amount = stockTokenAmount, buy order = moneyTokenAmount)
 	// if the order is limit_order, the amount is the stock amount and orderActualAmount will be calculated
 	// (ie: buyActualAmount = price * amount, sellActualAmount = amount)
-	Amount int64
+	Amount sdk.Int `json:"amount"`
 }
 
 type Order struct {
 	OrderBasic
-	Price          int64
-	PricePrecision int64
-	OrderID        int64
-	NextOrderID    int64
-	PrevKey        [3]int64 `json:"-"`
+	Price       sdk.Dec
+	OrderID     int64
+	NextOrderID int64
+	PrevKey     [3]int64 `json:"-"`
 
 	// cache
 	stock       string
@@ -66,14 +66,7 @@ func (or *Order) Money() string {
 
 func (or *Order) ActualAmount() sdk.Int {
 	if or.IsBuy {
-		return or.actualPrice.Mul(sdk.NewDec(or.Amount)).Ceil().RoundInt()
+		return or.actualPrice.Mul(sdk.NewDecFromInt(or.Amount)).Ceil().RoundInt()
 	}
-	return sdk.NewInt(or.Amount)
-}
-
-func (or *Order) ActualPrice() sdk.Dec {
-	if !or.actualPrice.IsZero() {
-		return or.actualPrice
-	}
-	return sdk.NewDec(or.Price).Quo(sdk.NewDec(int64(math.Pow10(int(or.PricePrecision)))))
+	return or.Amount
 }

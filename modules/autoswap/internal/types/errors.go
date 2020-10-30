@@ -21,8 +21,8 @@ const (
 	CodeUnMarshalFailed       = 1209
 )
 
-func ErrInvalidPrice(price int64) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %d", price))
+func ErrInvalidPrice(price string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %s", price))
 }
 
 func ErrInvalidPricePrecision(pricePrecision int) sdk.Error {
@@ -35,17 +35,24 @@ func ErrInvalidAmount(amount sdk.Int) sdk.Error {
 		"amount: %s, expected: [0: %s]", amount.String(), MaxAmount.String()))
 }
 
+func ErrInvalidOutputAmount(amount sdk.Int) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidAmount, fmt.Sprintf("Invalid order "+
+		"MinOutputAmount: %s, expected: [0: +∞]", amount.String()))
+}
+
 func ErrInvalidSender(sender sdk.AccAddress) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderSender, fmt.Sprintf("Invalid order "+
 		"sender: %s", sender.String()))
 }
 
-func ErrInvalidMarket(market string, isOpenSwap bool) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidMarket, fmt.Sprintf("Invalid market: %s, isOpenSwap: %v", market, isOpenSwap))
+func ErrInvalidMarket(market string, isOpenSwap bool, isOpenOrderBook bool) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidMarket, fmt.Sprintf(
+		"Invalid market: %s, isOpenSwap: %v, isOpenOrderBook: %v", market, isOpenSwap, isOpenOrderBook))
 }
 
-func ErrInvalidOrderID() sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderID, "Not found valid orderID")
+func ErrInvalidOrderID(orderID int64) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderID, "Not found valid orderID in create_limit_order msg or "+
+		"invalid orderID in delete_order msg: %d", orderID)
 }
 
 func ErrMarshalFailed() sdk.Error {

@@ -1,20 +1,22 @@
 package types
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var _ sdk.Msg = &MsgCreateLimitOrder{}
 var _ sdk.Msg = MsgCreateMarketOrder{}
+var _ sdk.Msg = MsgDeleteOrder{}
 var _ sdk.Msg = MsgAddLiquidity{}
 var _ sdk.Msg = MsgRemoveLiquidity{}
 
 type MsgCreateLimitOrder struct {
-	OrderBasic
-	OrderID        int64
-	Price          int64
-	PricePrecision byte
-	PrevKey        [3]int64
+	OrderBasic `json:"order_basic"`
+	OrderID    int64    `json:"order_id"`
+	Price      sdk.Dec  `json:"price"`
+	PrevKey    [3]int64 `json:"prev_key"`
 }
 
 func (limit *MsgCreateLimitOrder) Route() string {
@@ -26,14 +28,14 @@ func (limit *MsgCreateLimitOrder) Type() string {
 }
 
 func (limit *MsgCreateLimitOrder) ValidateBasic() sdk.Error {
+	if len(strings.TrimSpace(limit.MarketSymbol)) == 0 || (!limit.IsOpenSwap && !limit.IsOpenOrderBook) {
+		return ErrInvalidMarket(limit.MarketSymbol, limit.IsOpenSwap, limit.IsOpenOrderBook)
+	}
 	if limit.Sender.Empty() {
 		return ErrInvalidSender(limit.Sender)
 	}
-	if limit.Price <= 0 {
-		return ErrInvalidPrice(limit.Price)
-	}
-	if limit.PricePrecision <= 0 || int(limit.PricePrecision) > MaxPricePrecision {
-		return ErrInvalidPricePrecision(int(limit.PricePrecision))
+	if limit.Price.IsZero() {
+		return ErrInvalidPrice(limit.Price.String())
 	}
 	actualAmount := limit.OrderInfo().ActualAmount()
 	if actualAmount.GT(MaxAmount) || actualAmount.IsZero() {
@@ -44,11 +46,10 @@ func (limit *MsgCreateLimitOrder) ValidateBasic() sdk.Error {
 
 func (limit *MsgCreateLimitOrder) OrderInfo() *Order {
 	return &Order{
-		OrderBasic:     limit.OrderBasic,
-		PricePrecision: int64(limit.PricePrecision),
-		Price:          limit.Price,
-		PrevKey:        limit.PrevKey,
-		OrderID:        limit.OrderID,
+		OrderBasic: limit.OrderBasic,
+		Price:      limit.Price,
+		PrevKey:    limit.PrevKey,
+		OrderID:    limit.OrderID,
 	}
 }
 
@@ -65,7 +66,8 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 }
 
 type MsgCreateMarketOrder struct {
-	OrderBasic
+	OrderBasic      `json:"order_basic"`
+	MinOutputAmount sdk.Int `json:"min_output_amount"`
 }
 
 func (mkOr MsgCreateMarketOrder) Route() string {
@@ -77,11 +79,17 @@ func (mkOr MsgCreateMarketOrder) Type() string {
 }
 
 func (mkOr MsgCreateMarketOrder) ValidateBasic() sdk.Error {
+	if len(strings.TrimSpace(mkOr.MarketSymbol)) == 0 || (!mkOr.IsOpenSwap && !mkOr.IsOpenOrderBook) {
+		return ErrInvalidMarket(mkOr.MarketSymbol, mkOr.IsOpenSwap, mkOr.IsOpenOrderBook)
+	}
 	if mkOr.Sender.Empty() {
 		return ErrInvalidSender(mkOr.Sender)
 	}
-	if mkOr.Amount <= 0 {
-		return ErrInvalidAmount(sdk.NewInt(mkOr.Amount))
+	if mkOr.Amount.IsZero() || mkOr.Amount.IsNegative() {
+		return ErrInvalidAmount(mkOr.Amount)
+	}
+	if mkOr.MinOutputAmount.IsNegative() {
+		return ErrInvalidOutputAmount(mkOr.MinOutputAmount)
 	}
 	return nil
 }
@@ -96,6 +104,49 @@ func (mkOr MsgCreateMarketOrder) GetSigners() []sdk.AccAddress {
 
 func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {
 	mkOr.Sender = address
+}
+
+type MsgDeleteOrder struct {
+	MarketSymbol    string         `json:"market_symbol"`
+	IsOpenSwap      bool           `json:"is_open_swap"`
+	IsOpenOrderBook bool           `json:"is_open_order_book"`
+	Sender          sdk.AccAddress `json:"sender"`
+	IsBuy           bool           `json:"is_buy"`
+	PrevKey         [3]int64       `json:"prev_key"`
+	OrderID         int64          `json:"order_id"`
+}
+
+func (m MsgDeleteOrder) Route() string {
+	return RouterKey
+}
+
+func (m MsgDeleteOrder) Type() string {
+	return "delete_order"
+}
+
+func (m MsgDeleteOrder) ValidateBasic() sdk.Error {
+	if len(strings.TrimSpace(m.MarketSymbol)) == 0 || (!m.IsOpenSwap && !m.IsOpenOrderBook) {
+		return ErrInvalidMarket(m.MarketSymbol, m.IsOpenSwap, m.IsOpenOrderBook)
+	}
+	if m.OrderID <= 0 {
+		return ErrInvalidOrderID(m.OrderID)
+	}
+	if m.Sender.Empty() {
+		return ErrInvalidSender(m.Sender)
+	}
+	return nil
+}
+
+func (m MsgDeleteOrder) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+}
+
+func (m MsgDeleteOrder) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
+}
+
+func (m *MsgDeleteOrder) SetAccAddress(address sdk.AccAddress) {
+	m.Sender = address
 }
 
 type MsgAddLiquidity struct {
