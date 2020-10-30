@@ -18,6 +18,7 @@ func TestAddLiquidityCmd(t *testing.T) {
 		"--stock=foo",
 		"--money=bar",
 		"--no-swap",
+		"--no-order-book",
 		"--stock-in=100000000",
 		"--money-in=200000000",
 		"--to=" + fromAddr.String(),
@@ -46,6 +47,7 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		"--stock=foo",
 		"--money=bar",
 		"--no-swap",
+		"--no-order-book",
 		"--stock-min=100000000",
 		"--money-min=200000000",
 		"--amount=12345",
@@ -65,7 +67,8 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		AmountStockMin: sdk.NewInt(100000000),
 		AmountMoneyMin: sdk.NewInt(200000000),
 		Amount:         sdk.NewInt(12345),
-		//IsOpenSwap: false,
+		AmmOpen:        false,
+		PoolOpen:       false,
 	}, resultMsg)
 }
 
@@ -81,9 +84,11 @@ func TestCreateMarketOrderCmd(t *testing.T) {
 		args := []string{
 			"create-market-order",
 			"--pair=foo/bar",
+			"--no-swap",
+			//"--no-order-book",
 			"--side=" + x.side,
 			"--amount=12345",
-			"--no-swap",
+			"--output-min=54321",
 			"--from=" + fromAddr.String(),
 			"--generate-only",
 		}
@@ -93,26 +98,29 @@ func TestCreateMarketOrderCmd(t *testing.T) {
 		assert.Equal(t, nil, err)
 		assert.Equal(t, &types.MsgCreateMarketOrder{
 			OrderBasic: types.OrderBasic{
-				Sender:       fromAddr,
-				MarketSymbol: "foo/bar",
-				Amount:       12345,
-				IsBuy:        x.isBuy,
-				IsOpenSwap:   false,
+				Sender:          fromAddr,
+				MarketSymbol:    "foo/bar",
+				IsOpenSwap:      false,
+				IsOpenOrderBook: true,
+				IsBuy:           x.isBuy,
+				IsLimitOrder:    false,
+				Amount:          sdk.NewInt(12345),
 			},
+			MinOutputAmount: sdk.NewInt(54321),
 		}, resultMsg)
 	}
 }
 
-func TestGetCreateLimitOrderCmd(t *testing.T) {
+func TestCreateLimitOrderCmd(t *testing.T) {
 	txCmd := GetTxCmd(nil)
 	args := []string{
 		"create-limit-order",
 		"--pair=foo/bar",
+		"--no-swap",
+		//"--no-order-book",
 		"--side=buy",
 		"--amount=12345",
-		"--no-swap",
-		"--price=10000",
-		"--price-precision=8",
+		"--price=678.9",
 		"--order-id=6789",
 		"--from=" + fromAddr.String(),
 		"--generate-only",
@@ -123,14 +131,41 @@ func TestGetCreateLimitOrderCmd(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &types.MsgCreateLimitOrder{
 		OrderBasic: types.OrderBasic{
-			Sender:       fromAddr,
-			MarketSymbol: "foo/bar",
-			Amount:       12345,
-			IsBuy:        true,
-			IsOpenSwap:   false,
+			Sender:          fromAddr,
+			MarketSymbol:    "foo/bar",
+			IsOpenSwap:      false,
+			IsOpenOrderBook: true,
+			IsBuy:           true,
+			IsLimitOrder:    true,
+			Amount:          sdk.NewInt(12345),
 		},
-		Price:          10000,
-		PricePrecision: 8,
-		OrderID:        6789,
+		Price:   sdk.MustNewDecFromStr("678.9"),
+		OrderID: 6789,
+	}, resultMsg)
+}
+
+func TestDeleteOrderCmd(t *testing.T) {
+	txCmd := GetTxCmd(nil)
+	args := []string{
+		"delete-order",
+		"--pair=foo/bar",
+		"--no-swap",
+		//"--no-order-book",
+		"--side=buy",
+		"--order-id=6789",
+		"--from=" + fromAddr.String(),
+		"--generate-only",
+	}
+	txCmd.SetArgs(args)
+	cliutil.SetViperWithArgs(args)
+	err := txCmd.Execute()
+	assert.Equal(t, nil, err)
+	assert.Equal(t, &types.MsgDeleteOrder{
+		Sender:          fromAddr,
+		MarketSymbol:    "foo/bar",
+		IsOpenSwap:      false,
+		IsOpenOrderBook: true,
+		IsBuy:           true,
+		OrderID:         6789,
 	}, resultMsg)
 }

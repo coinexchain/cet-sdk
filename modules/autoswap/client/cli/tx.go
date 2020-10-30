@@ -16,21 +16,22 @@ import (
 )
 
 const (
-	flagStock          = "stock"
-	flagMoney          = "money"
-	flagNoSwap         = "no-swap"
-	flagStockIn        = "stock-in"
-	flagMoneyIn        = "money-in"
-	flagStockMin       = "stock-min"
-	flagMoneyMin       = "money-min"
-	flagTo             = "to"
-	flagPair           = "pair"
-	flagAmount         = "amount"
-	flagSide           = "side"
-	flagOrderID        = "order-id"
-	flagPrice          = "price"
-	flagPricePrecision = "price-precision"
-	flagPrevKey        = "prev-key"
+	flagStock       = "stock"
+	flagMoney       = "money"
+	flagNoSwap      = "no-swap"
+	flagNoOrderBook = "no-order-book"
+	flagStockIn     = "stock-in"
+	flagMoneyIn     = "money-in"
+	flagStockMin    = "stock-min"
+	flagMoneyMin    = "money-min"
+	flagOutputMin   = "output-min"
+	flagTo          = "to"
+	flagPairSymbol  = "pair"
+	flagAmount      = "amount"
+	flagSide        = "side"
+	flagOrderID     = "order-id"
+	flagPrice       = "price"
+	flagPrevKey     = "prev-key"
 )
 
 // get the root tx command of this module
@@ -45,6 +46,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 		GetRemoveLiquidityCmd(cdc),
 		GetCreateLimitOrderCmd(cdc),
 		GetCreateMarketOrderCmd(cdc),
+		GetDeleteOrderCmd(cdc),
 	)...)
 
 	return txCmd
@@ -72,13 +74,12 @@ $ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" --no-swap \
 		},
 	}
 
-	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
-	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
-	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	addBasicPairFlags(cmd)
 	cmd.Flags().String(flagStockIn, "", "the amount of stock to put into the pool")
 	cmd.Flags().String(flagMoneyIn, "", "the amount of money to put into the pool")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney, flagStockIn, flagMoneyIn, flagTo)
+	markRequiredFlags(cmd, flagStock, flagMoney,
+		flagStockIn, flagMoneyIn, flagTo)
 
 	return cmd
 }
@@ -105,14 +106,13 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
 		},
 	}
 
-	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
-	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
-	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	addBasicPairFlags(cmd)
 	cmd.Flags().String(flagStockMin, "", "the minimum amount of got stock")
 	cmd.Flags().String(flagMoneyMin, "", "the minimum amount of got money")
 	cmd.Flags().String(flagAmount, "", "the amount of liquidity to be removed")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney, flagStockMin, flagMoneyMin, flagAmount, flagTo)
+	markRequiredFlags(cmd, flagStock, flagMoney,
+		flagStockMin, flagMoneyMin, flagAmount, flagTo)
 
 	return cmd
 }
@@ -138,11 +138,10 @@ $ cetcli tx autoswap create-market-order --pair="foo/bar" --no-swap \
 		},
 	}
 
-	cmd.Flags().String(flagPair, "", "the symbol of the autoswap pair")
-	cmd.Flags().Bool(flagNoSwap, false, "whether this pool support swap function")
-	cmd.Flags().String(flagSide, "", "buy or sell")
-	cmd.Flags().Int64(flagAmount, 0, "the amount of the order")
-	markRequiredFlags(cmd, flagPair, flagSide, flagAmount)
+	addBasicOrderFlags(cmd)
+	cmd.Flags().String(flagAmount, "", "the amount of the order")
+	cmd.Flags().String(flagOutputMin, "", "the minimum output")
+	markRequiredFlags(cmd, flagPairSymbol, flagSide, flagAmount)
 
 	return cmd
 }
@@ -169,19 +168,61 @@ $ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
 		},
 	}
 
-	cmd.Flags().String(flagPair, "", "the symbol of the autoswap pair")
-	cmd.Flags().Bool(flagNoSwap, false, "whether this pool support swap function")
-	cmd.Flags().String(flagSide, "", "buy or sell")
-	cmd.Flags().Int64(flagAmount, 0, "the amount of the order")
-	cmd.Flags().Int64(flagPrice, 0, "the price of the order")
-	cmd.Flags().Uint8(flagPricePrecision, 0, "the price precision of the order")
+	addBasicOrderFlags(cmd)
+	cmd.Flags().String(flagAmount, "", "the amount of the order")
+	cmd.Flags().String(flagPrice, "", "the price of the order")
 	cmd.Flags().Int64(flagOrderID, 0, "the order ID")
 	cmd.Flags().String(flagPrevKey, "", "previous keys, at most 3, separated by comma")
 
-	markRequiredFlags(cmd, flagPair, flagSide, flagAmount,
-		flagPrice, flagPricePrecision, flagOrderID)
+	markRequiredFlags(cmd, flagPairSymbol, flagSide,
+		flagAmount, flagPrice, flagOrderID)
 
 	return cmd
+}
+
+func GetDeleteOrderCmd(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "delete-order",
+		Short: "generate tx to delete autoswap order",
+		Long: strings.TrimSpace(
+			`generate a tx and sign it to delete autoswap order in Dex blockchain. 
+
+Example:
+$ cetcli tx autoswap delete-order --pool="foo/bar" --no-swap \
+	--side=buy --amount=12345 \
+	--price=10000 --price-precision=8 --order-id=123 --prev-key="4,5,6"
+	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
+`),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			msg, err := getDeleteOrderMsg()
+			if err != nil {
+				return err
+			}
+			return cliutil.CliRunCommand(cdc, msg)
+		},
+	}
+
+	addBasicOrderFlags(cmd)
+	cmd.Flags().Int64(flagOrderID, 0, "the order ID")
+	cmd.Flags().String(flagPrevKey, "", "previous keys, at most 3, separated by comma")
+
+	markRequiredFlags(cmd, flagPairSymbol, flagSide, flagOrderID)
+
+	return cmd
+}
+
+func addBasicPairFlags(cmd *cobra.Command) {
+	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
+	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
+	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	cmd.Flags().Bool(flagNoOrderBook, false, "whether order book is disabled")
+}
+
+func addBasicOrderFlags(cmd *cobra.Command) {
+	cmd.Flags().String(flagPairSymbol, "", "the symbol of the autoswap pair")
+	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
+	cmd.Flags().Bool(flagNoOrderBook, false, "whether order book is disabled")
+	cmd.Flags().String(flagSide, "", "buy or sell")
 }
 
 func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
@@ -205,9 +246,10 @@ func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 
 func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	msg = &types.MsgRemoveLiquidity{
-		Stock:   viper.GetString(flagStock),
-		Money:   viper.GetString(flagMoney),
-		AmmOpen: !viper.GetBool(flagNoSwap),
+		Stock:    viper.GetString(flagStock),
+		Money:    viper.GetString(flagMoney),
+		AmmOpen:  !viper.GetBool(flagNoSwap),
+		PoolOpen: !viper.GetBool(flagNoOrderBook),
 	}
 
 	if msg.AmountStockMin, err = parseSdkInt(flagStockMin); err != nil {
@@ -227,11 +269,11 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 
 func getCreateMarketOrderMsg() (msg *types.MsgCreateMarketOrder, err error) {
 	msg = &types.MsgCreateMarketOrder{}
-	msg.IsLimitOrder = false
 	if msg.OrderBasic, err = getOrderBasic(); err != nil {
 		return
 	}
-	if msg.IsBuy, err = parseIsBuy(); err != nil {
+	msg.IsLimitOrder = false
+	if msg.MinOutputAmount, err = parseSdkInt(flagOutputMin); err != nil {
 		return
 	}
 	return
@@ -239,22 +281,42 @@ func getCreateMarketOrderMsg() (msg *types.MsgCreateMarketOrder, err error) {
 
 func getCreateLimitOrderMsg() (msg *types.MsgCreateLimitOrder, err error) {
 	msg = &types.MsgCreateLimitOrder{}
-	msg.IsLimitOrder = true
 	if msg.OrderBasic, err = getOrderBasic(); err != nil {
 		return
 	}
+	msg.IsLimitOrder = true
+	if msg.Price, err = parseSdkDec(flagPrice); err != nil {
+		return
+	}
 	msg.OrderID = viper.GetInt64(flagOrderID)
-	msg.Price = viper.GetInt64(flagPrice)
-	msg.PricePrecision = uint8(viper.GetUint(flagPricePrecision))
-	msg.PrevKey = [3]int64{} // TODO
+	// TODO: PrevKey
 	return
 }
 
+func getDeleteOrderMsg() (msg *types.MsgDeleteOrder, err error) {
+	msg = &types.MsgDeleteOrder{
+		MarketSymbol:    viper.GetString(flagPairSymbol),
+		IsOpenSwap:      !viper.GetBool(flagNoSwap),
+		IsOpenOrderBook: !viper.GetBool(flagNoOrderBook),
+		OrderID:         viper.GetInt64(flagOrderID),
+	}
+	if msg.IsBuy, err = parseIsBuy(); err != nil {
+		return
+	}
+	// TODO: PrevKey
+	return msg, nil
+}
+
 func getOrderBasic() (ob types.OrderBasic, err error) {
-	ob.MarketSymbol = viper.GetString(flagPair)
+	ob.MarketSymbol = viper.GetString(flagPairSymbol)
 	ob.IsOpenSwap = !viper.GetBool(flagNoSwap)
-	ob.Amount = viper.GetInt64(flagAmount)
-	ob.IsBuy, err = parseIsBuy()
+	ob.IsOpenOrderBook = !viper.GetBool(flagNoOrderBook)
+	if ob.Amount, err = parseSdkInt(flagAmount); err != nil {
+		return
+	}
+	if ob.IsBuy, err = parseIsBuy(); err != nil {
+		return
+	}
 	return
 }
 
@@ -271,7 +333,14 @@ func parseSdkInt(flagName string) (val sdk.Int, err error) {
 
 	ok := false
 	if val, ok = sdk.NewIntFromString(flagVal); !ok {
-		err = fmt.Errorf("%s must be a valid integer", flagName)
+		err = fmt.Errorf("%s must be a valid integer number", flagName)
+	}
+	return
+}
+func parseSdkDec(flagName string) (val sdk.Dec, err error) {
+	flagVal := viper.GetString(flagName)
+	if val, err = sdk.NewDecFromStr(flagVal); err != nil {
+		err = fmt.Errorf("%s must be a valid decimal number", flagName)
 	}
 	return
 }
