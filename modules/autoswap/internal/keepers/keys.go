@@ -15,10 +15,12 @@ var (
 )
 
 var (
-	BUY      = []byte{0x01}
-	SELL     = []byte{0x02}
-	NonSwap  = []byte{0x03}
-	OpenSwap = []byte{0x04}
+	BUY           = []byte{0x01}
+	SELL          = []byte{0x02}
+	NonSwap       = []byte{0x03}
+	OpenSwap      = []byte{0x04}
+	NonOpenBook   = []byte{0x05}
+	OpenOrderBook = []byte{0x06}
 )
 
 func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {
@@ -35,32 +37,41 @@ func getPairKey(symbol string, isOpenSwap bool) []byte {
 	return append(append(MarketKey, []byte(symbol)...), swapByte...)
 }
 
-// getOrderKey key = prefix | swapFlag | side | symbol | orderID
+// getOrderKey key = prefix | swapFlag | isOpenOrderBook | side | symbol | orderID
 // value = pair info
 func getOrderKey(order *types.Order) []byte {
 	swapByte := OpenSwap
 	if !order.IsOpenSwap {
 		swapByte = NonSwap
 	}
+	orderBookByte := NonOpenBook
+	if order.IsOpenOrderBook {
+		orderBookByte = OpenOrderBook
+	}
 	side := BUY
 	if !order.IsBuy {
 		side = SELL
 	}
 	orderID := strconv.Itoa(int(order.OrderID))
-	return append(append(append(append(OrderKey, swapByte...),
-		side...), order.MarketSymbol...), orderID...)
+	return append(append(append(append(append(OrderKey, swapByte...),
+		orderBookByte...), side...), order.MarketSymbol...), orderID...)
 }
 
-// getBestOrderPriceKey key = prefix | isOpenSwap | side | symbol
+// getBestOrderPriceKey key = prefix | isOpenSwap | isOpenOrderBook | side | symbol
 // value = orderID
-func getBestOrderPriceKey(symbol string, isOpenSwap, isBuy bool) []byte {
+func getBestOrderPriceKey(symbol string, isOpenSwap, isOpenOrderBook, isBuy bool) []byte {
 	swapByte := OpenSwap
 	if !isOpenSwap {
 		swapByte = NonSwap
+	}
+	orderBookByte := NonOpenBook
+	if isOpenOrderBook {
+		orderBookByte = OpenOrderBook
 	}
 	side := BUY
 	if !isBuy {
 		side = SELL
 	}
-	return append(append(append(BestOrderPriceKey, swapByte...), side...), symbol...)
+	return append(append(append(append(BestOrderPriceKey,
+		swapByte...), orderBookByte...), side...), symbol...)
 }

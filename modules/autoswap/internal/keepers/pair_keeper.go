@@ -51,10 +51,10 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err err
 
 	var poolInfo *PoolInfo
 	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap); poolInfo == nil {
-		return types.ErrInvalidMarket(order.MarketSymbol, order.IsOpenSwap)
+		return types.ErrInvalidMarket(order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
 	}
 	if order.OrderID = pk.getUnusedOrderID(ctx, order); order.OrderID <= 0 {
-		return types.ErrInvalidOrderID()
+		return types.ErrInvalidOrderID(order.OrderID)
 	}
 
 	//1. will calculate and check order amount
@@ -139,15 +139,15 @@ func (pk PairKeeper) insertOrder(ctx sdk.Context, order, prevOrder *types.Order)
 	prevOrderId := prevOrder.OrderID
 	var nextOrder *types.Order
 	for prevOrderId > 0 {
-		canFollow := (order.IsBuy && (order.Price <= prevOrder.Price)) ||
-			(!order.IsBuy && (order.Price >= prevOrder.Price))
+		canFollow := (order.IsBuy && (order.Price.LTE(prevOrder.Price))) ||
+			(!order.IsBuy && (order.Price.GTE(prevOrder.Price)))
 		if !canFollow {
 			break
 		}
 		if prevOrder.NextOrderID > 0 {
 			nextOrder = pk.GetOrder(ctx, prevOrder.MarketSymbol, prevOrder.IsOpenSwap, prevOrder.IsBuy, prevOrder.NextOrderID)
-			canPrecede := (order.IsBuy && (order.Price > nextOrder.Price)) ||
-				(!order.IsBuy && (order.Price < nextOrder.Price))
+			canPrecede := (order.IsBuy && (order.Price.GT(nextOrder.Price))) ||
+				(!order.IsBuy && (order.Price.LT(nextOrder.Price)))
 			canFollow = canFollow && canPrecede
 		}
 		if canFollow {
@@ -166,25 +166,25 @@ func (pk PairKeeper) insertOrder(ctx sdk.Context, order, prevOrder *types.Order)
 // dealOrderAndAddRemainedOrder Deal the order and
 // insert the remainder order into the order book
 func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.Order, poolInfo *PoolInfo) (sdk.Int, sdk.Error) {
-	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy)
+	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy)
 	if firstOrderID <= 0 {
-		return sdk.Int{}, types.ErrInvalidOrderID()
+		return sdk.Int{}, types.ErrInvalidOrderID(firstOrderID)
 	}
 	currOrderID := firstOrderID
 	dealInfo := &types.DealInfo{RemainAmount: order.ActualAmount()}
 	if !order.IsLimitOrder {
-		dealInfo.RemainAmount = sdk.NewInt(order.Amount)
+		dealInfo.RemainAmount = order.Amount
 	}
 	for currOrderID > 0 {
 		orderInBook := pk.GetOrder(ctx, order.MarketSymbol, order.IsOpenSwap, !order.IsBuy, currOrderID)
-		canDealInBook := (order.IsBuy && order.Price >= orderInBook.Price) ||
-			(!order.IsBuy && order.Price <= orderInBook.Price)
+		canDealInBook := (order.IsBuy && order.Price.GTE(orderInBook.Price)) ||
+			(!order.IsBuy && order.Price.LTE(orderInBook.Price))
 		// can't deal with order book
 		if !canDealInBook {
 			break
 		}
 		// full deal in pool
-		if allDeal := pk.tryDealInPool(dealInfo, orderInBook.ActualPrice(), order.IsBuy, poolInfo); allDeal {
+		if allDeal := pk.tryDealInPool(dealInfo, orderInBook.Price, order.IsBuy, poolInfo); allDeal {
 			break
 		}
 		// deal in order book
@@ -192,7 +192,7 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 
 		// the order in order book didn't fully deal, then the new order did fully deal.
 		// update remained order info to order book.
-		if orderInBook.Amount > 0 {
+		if orderInBook.Amount.IsPositive() {
 			pk.SetOrder(ctx, orderInBook)
 			break
 		}
@@ -203,7 +203,7 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 	}
 
 	if order.IsLimitOrder {
-		pk.tryDealInPool(dealInfo, order.ActualPrice(), order.IsBuy, poolInfo)
+		pk.tryDealInPool(dealInfo, order.Price, order.IsBuy, poolInfo)
 		pk.insertOrderToBook(ctx, order, dealInfo, poolInfo)
 	} else {
 		dealInfo.AmountInToPool.Add(order.ActualAmount())
@@ -216,7 +216,7 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 		poolInfo.moneyOrderBookReserve.Sub(dealInfo.DealMoneyInBook)
 	}
 	if firstOrderID != currOrderID {
-		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, !order.IsBuy, currOrderID)
+		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, !order.IsBuy, currOrderID)
 	}
 	pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, poolInfo)
 	return amountToTaker, nil
@@ -256,23 +256,23 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	// will calculate stock amount
 	if currOrder.IsBuy {
 		//the stock amount might be smaller than actual
-		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(currOrder.ActualPrice()).TruncateInt()
+		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(currOrder.Price).TruncateInt()
 	} else {
 		stockAmount = dealInfo.RemainAmount
 	}
 	if orderInBook.ActualAmount().LTE(stockAmount) {
 		stockAmount = orderInBook.ActualAmount()
-		orderInBook.Amount = 0
+		orderInBook.Amount = sdk.ZeroInt()
 	} else {
 		if orderInBook.IsBuy {
-			orderInBook.Amount -= stockAmount.ToDec().Mul(orderInBook.ActualPrice()).TruncateInt().Int64()
+			orderInBook.Amount.Sub((stockAmount.ToDec().Mul(orderInBook.Price).TruncateInt()))
 		} else {
-			orderInBook.Amount -= stockAmount.Int64()
+			orderInBook.Amount.Sub(stockAmount)
 		}
 	}
 
 	stockTrans := stockAmount
-	moneyTrans := sdk.NewDecFromInt(stockAmount).Mul(orderInBook.ActualPrice()).TruncateInt()
+	moneyTrans := sdk.NewDecFromInt(stockAmount).Mul(orderInBook.Price).TruncateInt()
 	if currOrder.IsBuy {
 		dealInfo.RemainAmount.Sub(moneyTrans)
 	} else {
@@ -312,12 +312,12 @@ func (pk PairKeeper) insertOrderToBook(ctx sdk.Context, order *types.Order, deal
 	)
 	if order.IsBuy {
 		moneyAmount = dealInfo.RemainAmount
-		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(order.ActualPrice()).TruncateInt()
+		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(order.Price).TruncateInt()
 	} else {
 		stockAmount = dealInfo.RemainAmount
 	}
 	if stockAmount.IsPositive() {
-		order.Amount = stockAmount.Int64()
+		order.Amount = stockAmount
 		if dealInfo.HasDealInOrderBook {
 			pk.insertOrderAtHead(ctx, order)
 		} else {
@@ -332,26 +332,26 @@ func (pk PairKeeper) insertOrderToBook(ctx sdk.Context, order *types.Order, deal
 }
 
 func (pk PairKeeper) insertOrderAtHead(ctx sdk.Context, order *types.Order) {
-	order.NextOrderID = pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy)
+	order.NextOrderID = pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy)
 	pk.SetOrder(ctx, order)
-	pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy, order.OrderID)
+	pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy, order.OrderID)
 }
 
 func (pk PairKeeper) insertOrderFromHead(ctx sdk.Context, order *types.Order) {
-	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy)
+	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy)
 	var (
 		firstOrder *types.Order
 		canBeFirst = firstOrderID <= 0
 	)
 	if !canBeFirst {
 		firstOrder = pk.GetOrder(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy, firstOrderID)
-		canBeFirst = (order.IsBuy && order.Price > firstOrder.Price) ||
-			(!order.IsBuy && order.Price < firstOrder.Price)
+		canBeFirst = (order.IsBuy && order.Price.GT(firstOrder.Price)) ||
+			(!order.IsBuy && order.Price.LT(firstOrder.Price))
 	}
 	if canBeFirst {
 		order.NextOrderID = firstOrderID
 		pk.SetOrder(ctx, order)
-		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsBuy, order.OrderID)
+		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy, order.OrderID)
 		return
 	}
 	pk.insertOrder(ctx, order, firstOrder)
@@ -398,9 +398,9 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 }
 
 func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) error {
-	order.Price = 0
+	order.Price = sdk.ZeroDec()
 	if order.IsBuy {
-		order.Price = math.MaxInt64
+		order.Price = sdk.NewDec(math.MaxInt64)
 	}
 	order.IsLimitOrder = false
 	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap)
@@ -445,9 +445,9 @@ func (pk PairKeeper) DeleteOrder(ctx sdk.Context, order *types.Order) {
 	store.Delete(key)
 }
 
-func (pk PairKeeper) GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isBuy bool) int64 {
+func (pk PairKeeper) GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool) int64 {
 	store := ctx.KVStore(pk.storeKey)
-	key := getBestOrderPriceKey(symbol, isOpenSwap, isBuy)
+	key := getBestOrderPriceKey(symbol, isOpenSwap, isOpenOrderBook, isBuy)
 	val := store.Get(key)
 	if len(val) == 0 {
 		return -1
@@ -455,9 +455,9 @@ func (pk PairKeeper) GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap,
 	return int64(binary.BigEndian.Uint64(val))
 }
 
-func (pk PairKeeper) SetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isBuy bool, orderID int64) {
+func (pk PairKeeper) SetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) {
 	store := ctx.KVStore(pk.storeKey)
-	key := getBestOrderPriceKey(symbol, isOpenSwap, isBuy)
+	key := getBestOrderPriceKey(symbol, isOpenSwap, isOpenOrderBook, isBuy)
 	val := strconv.Itoa(int(orderID))
 	store.Set(key, []byte(val))
 }
