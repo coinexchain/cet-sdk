@@ -27,8 +27,10 @@ type PairKeeper struct {
 	IPoolKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
-	codec    *codec.Codec
-	storeKey sdk.StoreKey
+	codec       *codec.Codec
+	storeKey    sdk.StoreKey
+	GetTakerFee func(ctx sdk.Context) sdk.Dec
+	GetMakerFee func(ctx sdk.Context) sdk.Dec
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, bnk types.ExpectedBankKeeper, codec *codec.Codec, storeKey sdk.StoreKey) *PairKeeper {

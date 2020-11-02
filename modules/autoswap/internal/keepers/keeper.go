@@ -42,14 +42,18 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 		poolKeeper: poolK,
 	}
 
-	return Keeper{
+	k := Keeper{
 		storeKey:         storeKey,
 		paramSubspace:    paramSubspace,
 		sk:               sk,
 		FactoryInterface: factoryK,
 		//IPoolKeeper:      poolK,
-		IPairKeeper: pairK,
+		//IPairKeeper: pairK,
 	}
+	pairK.GetMakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetMakerFee(ctx) }
+	pairK.GetTakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetTakerFee(ctx) }
+	k.IPairKeeper = pairK
+	return k
 }
 
 func (keeper *Keeper) SetParams(ctx sdk.Context, params types.Params) {
