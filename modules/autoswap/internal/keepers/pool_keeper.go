@@ -23,7 +23,6 @@ type IPoolKeeper interface {
 }
 
 //todo: _mintFee is not support
-//todo: skim and sync no need
 var FeeOn bool //todo: parameter it
 
 type PoolKeeper struct {
@@ -63,8 +62,7 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 		}
 	}
 	if !liquidity.IsPositive() {
-		//todo: error type
-		return nil
+		return types.ErrInvalidLiquidityAmount()
 	}
 	info.totalSupply = info.totalSupply.Add(liquidity)
 	totalLiq := p.GetLiquidity(ctx, marketSymbol, to)
@@ -79,9 +77,11 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	return nil
 }
 
-//todo: param check
 func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error) {
 	info := p.GetPoolInfo(ctx, marketSymbol, isOpenSwap, isOpenOrderBook)
+	if info == nil {
+		return sdk.ZeroInt(), sdk.ZeroInt(), types.ErrPairIsNotExist()
+	}
 	stockAmount := liquidity.Mul(info.stockAmmReserve).Quo(info.totalSupply)
 	moneyAmount := liquidity.Mul(info.moneyAmmReserve).Quo(info.totalSupply)
 	info.stockAmmReserve = info.stockAmmReserve.Sub(stockAmount)
@@ -89,7 +89,7 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	info.totalSupply = info.totalSupply.Sub(liquidity)
 	l := p.GetLiquidity(ctx, marketSymbol, from)
 	if l.LT(liquidity) {
-		return sdk.ZeroInt(), sdk.ZeroInt(), nil
+		return sdk.ZeroInt(), sdk.ZeroInt(), types.ErrInvalidLiquidityAmount()
 	}
 	p.SetLiquidity(ctx, marketSymbol, from, l.Sub(liquidity))
 	if FeeOn {
@@ -134,13 +134,6 @@ func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap
 	}
 	p.codec.MustUnmarshalBinaryBare(bytes, &info)
 	return &info
-}
-
-func NewPoolKeeper(key sdk.StoreKey, keeper types.SupplyKeeper) *PoolKeeper {
-	return &PoolKeeper{
-		key:          key,
-		SupplyKeeper: keeper,
-	}
 }
 
 var _ IPoolKeeper = PoolKeeper{}

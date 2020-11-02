@@ -42,7 +42,7 @@ func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.
 		Owner:      sender,
 		Stock:      req.Stock,
 		Money:      req.Money,
-		IsOpenSwap: !req.NoSwap,
+		IsSwapOpen: !req.NoSwap,
 	}
 
 	var err error
@@ -83,11 +83,11 @@ func (req *removeLiquidityReq) GetBaseReq() *rest.BaseReq {
 
 func (req *removeLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgRemoveLiquidity{
-		Sender:   sender,
-		Stock:    req.Stock,
-		Money:    req.Money,
-		AmmOpen:  !req.NoSwap,
-		PoolOpen: !req.NoOrderBook,
+		Sender:          sender,
+		Stock:           req.Stock,
+		Money:           req.Money,
+		IsSwapOpen:      !req.NoSwap,
+		IsOrderBookOpen: !req.NoOrderBook,
 	}
 
 	var err error

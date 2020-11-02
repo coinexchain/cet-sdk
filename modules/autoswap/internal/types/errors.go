@@ -10,17 +10,23 @@ const (
 	CodeSpaceAutoSwap sdk.CodespaceType = "autoswap"
 
 	// codes
-	CodeInvalidAmount      = 1201
-	CodeNotFundOrder       = 1202
-	CodeInvalidPrice       = 1203
-	CodeInvalidOrderSender = 1204
-	CodeUnKnownError       = 1205
-	CodeInvalidMarket      = 1206
-	CodeInvalidOrderID     = 1207
-	CodeMarshalFailed      = 1208
-	CodeUnMarshalFailed    = 1209
-	CodeInvalidPrevKey     = 1210
-	CodeInvalidOrderNews   = 1211
+	CodeInvalidAmount          = 1201
+	CodeNotFundOrder           = 1202
+	CodeInvalidPrice           = 1203
+	CodeInvalidOrderSender     = 1204
+	CodeUnKnownError           = 1205
+	CodeInvalidMarket          = 1206
+	CodeInvalidOrderID         = 1207
+	CodeMarshalFailed          = 1208
+	CodeUnMarshalFailed        = 1209
+	CodeInvalidPrevKey         = 1210
+	CodeInvalidOrderNews       = 1211
+	CodeInvalidToken           = 1212
+	CodeInvalidPairFlag        = 1213
+	CodePairAlreadyExist       = 1214
+	CodePairIsNotExist         = 1215
+	CodeInvalidLiquidityAmount = 1216
+	CodeAmountOutIsSmall       = 1217
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
@@ -67,4 +73,28 @@ func ErrInvalidOrderNews(orderInfo string) sdk.Error {
 
 func ErrNotFoundOrder(reason string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeNotFundOrder, fmt.Sprintf("reason: %s", reason))
+}
+
+func ErrInvalidToken(reason string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidToken, fmt.Sprintf("reason:%s", reason))
+}
+
+func ErrInvalidPairFlag(reason string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPairFlag, fmt.Sprintf("reason:%s", reason))
+}
+
+func ErrPairAlreadyExist() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodePairAlreadyExist, "pair already exist")
+}
+
+func ErrPairIsNotExist() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodePairIsNotExist, "pari is not exist")
+}
+
+func ErrInvalidLiquidityAmount() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidLiquidityAmount, "invalid liquidity amount")
+}
+
+func ErrAmountOutIsSmallerThanExpected() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeAmountOutIsSmall, "amount out is smaller than expected")
 }

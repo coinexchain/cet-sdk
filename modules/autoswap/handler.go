@@ -25,43 +25,32 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsOpenSwap, false)
+	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
 	if info == nil {
-		if !k.CreatePair(ctx, msg) {
-			//todo:
-			return sdk.Result{}
+		if err := k.CreatePair(ctx, msg); err != nil {
+			return err.Result()
 		}
-		return sdk.Result{}
-	}
-	stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
-	//transfer token
-	err := k.IPairKeeper.Mint(ctx, marKey, msg.IsOpenSwap, false, stockR, moneyR, msg.To)
-	if err != nil {
-		return sdk.Result{}
+	} else {
+		stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
+		//transfer token
+		err := k.IPairKeeper.Mint(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, stockR, moneyR, msg.To)
+		if err != nil {
+			return err.Result()
+		}
 	}
 	return sdk.Result{}
 }
 
 func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.AmmOpen, false)
-	if info == nil {
-		return sdk.Result{}
+	stockOut, moneyOut, err := k.Burn(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, msg.Sender, msg.Amount)
+	if err != nil {
+		return err.Result()
 	}
-	liquidity := k.IPairKeeper.GetLiquidity(ctx, marKey, msg.Sender)
-	if liquidity.LT(msg.Amount) {
-		return sdk.Result{}
-	}
-	liquidity = liquidity.Sub(msg.Amount)
-	stockOut, moneyOut := info.GetTokensAmountOut(msg.Amount)
 	if stockOut.LT(msg.AmountStockMin) || moneyOut.LT(msg.AmountMoneyMin) {
-		return sdk.Result{}
+		return types.ErrAmountOutIsSmallerThanExpected().Result()
 	}
 	//transfer token
-	if liquidity.IsPositive() {
-		k.IPairKeeper.SetLiquidity(ctx, marKey, msg.Sender, liquidity)
-	} else {
-		k.IPairKeeper.ClearLiquidity(ctx, marKey, msg.Sender)
-	}
+	//todo: move clear liquidity in burn
 	return sdk.Result{}
 }

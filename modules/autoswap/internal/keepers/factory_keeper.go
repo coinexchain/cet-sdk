@@ -10,8 +10,8 @@ import (
 //var
 
 type FactoryInterface interface {
-	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bool
-	QueryPair(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo
+	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sdk.Error
+	QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo
 }
 
 type FactoryKeeper struct {
@@ -19,11 +19,11 @@ type FactoryKeeper struct {
 	poolKeeper PoolKeeper
 }
 
-func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bool {
+func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sdk.Error {
 	symbol := dex.GetSymbol(msg.Stock, msg.Money)
-	info := f.poolKeeper.GetPoolInfo(ctx, symbol, msg.IsOpenSwap, false)
+	info := f.poolKeeper.GetPoolInfo(ctx, symbol, msg.IsSwapOpen, msg.IsOrderBookOpen)
 	if info != nil {
-		return false
+		return types.ErrPairAlreadyExist()
 	}
 	p := &PoolInfo{
 		symbol:                symbol,
@@ -34,17 +34,17 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bo
 		totalSupply:           sdk.ZeroInt(),
 		kLast:                 sdk.ZeroInt(),
 	}
-	f.poolKeeper.SetPoolInfo(ctx, symbol, msg.IsOpenSwap, false, p)
+	f.poolKeeper.SetPoolInfo(ctx, symbol, msg.IsSwapOpen, msg.IsOrderBookOpen, p)
 	//vanity check in handler
 	if msg.StockIn.IsPositive() {
-		err := f.poolKeeper.Mint(ctx, symbol, msg.IsOpenSwap, false, msg.StockIn, msg.MoneyIn, msg.To)
+		err := f.poolKeeper.Mint(ctx, symbol, msg.IsSwapOpen, msg.IsOrderBookOpen, msg.StockIn, msg.MoneyIn, msg.To)
 		if err != nil {
-			return false
+			return err
 		}
 	}
-	return true
+	return nil
 }
 
-func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo {
-	return f.poolKeeper.GetPoolInfo(ctx, marketSymbol, isOpenSwap, false)
+func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo {
+	return f.poolKeeper.GetPoolInfo(ctx, marketSymbol, isSwapOpen, isOrderBookOpen)
 }

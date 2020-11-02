@@ -171,13 +171,14 @@ func (m MsgDeleteOrder) OrderInfo() *Order {
 }
 
 type MsgAddLiquidity struct {
-	Owner      sdk.AccAddress `json:"owner"`
-	Stock      string         `json:"stock"`
-	Money      string         `json:"money"`
-	StockIn    sdk.Int        `json:"stock_in"`
-	MoneyIn    sdk.Int        `json:"money_in"`
-	IsOpenSwap bool           `json:"is_open_swap"`
-	To         sdk.AccAddress `json:"to"`
+	Owner           sdk.AccAddress `json:"owner"`
+	Stock           string         `json:"stock"`
+	Money           string         `json:"money"`
+	StockIn         sdk.Int        `json:"stock_in"`
+	MoneyIn         sdk.Int        `json:"money_in"`
+	IsSwapOpen      bool           `json:"is_swap_open"`
+	IsOrderBookOpen bool           `json:"is_order_book_open"`
+	To              sdk.AccAddress `json:"to"`
 }
 
 func (m MsgAddLiquidity) Route() string {
@@ -193,11 +194,13 @@ func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress("missing owner address")
 	}
 	if len(m.Stock) == 0 || len(m.Money) == 0 {
-		//todo:
-		return nil
+		return ErrInvalidToken("token is empty")
 	}
 	if m.StockIn.IsZero() && m.MoneyIn.IsPositive() || m.MoneyIn.IsZero() && m.StockIn.IsPositive() {
 		return nil
+	}
+	if !m.IsOrderBookOpen && !m.IsSwapOpen {
+		return ErrInvalidPairFlag("IsOrderBookOpen and IsSwapOpen cannot both false")
 	}
 	//if To is nil, Owner => To
 	return nil
@@ -216,15 +219,15 @@ func (m *MsgAddLiquidity) SetAccAddress(address sdk.AccAddress) {
 }
 
 type MsgRemoveLiquidity struct {
-	Sender         sdk.AccAddress `json:"sender"`
-	Stock          string         `json:"stock"`
-	Money          string         `json:"money"`
-	AmmOpen        bool           `json:"amm_open"`
-	PoolOpen       bool           `json:"pool_open"`
-	Amount         sdk.Int        `json:"amount"`
-	To             sdk.AccAddress `json:"to"`
-	AmountStockMin sdk.Int        `json:"amount_stock_min"`
-	AmountMoneyMin sdk.Int        `json:"amount_money_min"`
+	Sender          sdk.AccAddress `json:"sender"`
+	Stock           string         `json:"stock"`
+	Money           string         `json:"money"`
+	IsSwapOpen      bool           `json:"amm_open"`
+	IsOrderBookOpen bool           `json:"pool_open"`
+	Amount          sdk.Int        `json:"amount"`
+	To              sdk.AccAddress `json:"to"`
+	AmountStockMin  sdk.Int        `json:"amount_stock_min"`
+	AmountMoneyMin  sdk.Int        `json:"amount_money_min"`
 }
 
 func (m MsgRemoveLiquidity) Route() string {
@@ -240,8 +243,10 @@ func (m MsgRemoveLiquidity) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress("missing sender address")
 	}
 	if len(m.Stock) == 0 || len(m.Money) == 0 {
-		//todo:
-		return nil
+		return ErrInvalidToken("token is empty")
+	}
+	if !m.IsOrderBookOpen && !m.IsSwapOpen {
+		return ErrInvalidPairFlag("IsOrderBookOpen and IsSwapOpen cannot both false")
 	}
 	if !m.Amount.IsPositive() {
 		return ErrInvalidAmount(m.Amount)

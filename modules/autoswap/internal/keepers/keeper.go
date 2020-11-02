@@ -18,7 +18,6 @@ type Keeper struct {
 	paramSubspace params.Subspace
 	sk            types.SupplyKeeper
 	FactoryInterface
-	//IPoolKeeper
 	IPairKeeper
 }
 

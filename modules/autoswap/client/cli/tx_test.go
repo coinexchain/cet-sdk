@@ -67,8 +67,8 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		AmountStockMin: sdk.NewInt(100000000),
 		AmountMoneyMin: sdk.NewInt(200000000),
 		Amount:         sdk.NewInt(12345),
-		AmmOpen:        false,
-		PoolOpen:       false,
+		IsSwapOpen:        false,
+		IsOrderBookOpen:       false,
 	}, resultMsg)
 }
 

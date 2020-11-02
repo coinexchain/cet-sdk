@@ -43,7 +43,7 @@ func queryParameters(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 
 type QueryPoolInfoParam struct {
 	Symbol        string `json:"symbol"`
-	AmmOpen       bool   `json:"amm_open"`
+	IsSwapOpen       bool   `json:"amm_open"`
 	OrderBookOpen bool   `json:"order_book_open"`
 }
 
