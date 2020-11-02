@@ -46,7 +46,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 
 	k := Keeper{
 		storeKey:         storeKey,
-		paramSubspace:    paramSubspace,
+		paramSubspace:    paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		sk:               sk,
 		FactoryInterface: factoryK,
 		//IPoolKeeper:      poolK,

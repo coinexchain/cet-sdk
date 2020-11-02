@@ -44,10 +44,10 @@ func DefaultParams() Params {
 
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{Key: keyTakerFeeRateRate, Value: p.TakerFeeRateRate},
-		{Key: keyMakerFeeRate, Value: p.MakerFeeRateRate},
-		{Key: keyFeeToPool, Value: p.FeeToPool},
-		{Key: keyFeeToValidator, Value: p.FeeToValidator},
+		{Key: keyTakerFeeRateRate, Value: &p.TakerFeeRateRate},
+		{Key: keyMakerFeeRate, Value: &p.MakerFeeRateRate},
+		{Key: keyFeeToPool, Value: &p.FeeToPool},
+		{Key: keyFeeToValidator, Value: &p.FeeToValidator},
 	}
 }
 
