@@ -155,6 +155,17 @@ type PoolInfo struct {
 	kLast                 sdk.Int
 }
 
+func NewPoolInfo(symbol string, stockAmmReserve sdk.Int, moneyAmmReserve sdk.Int, totalSupply sdk.Int) PoolInfo {
+	poolInfo := PoolInfo{
+		symbol:          symbol,
+		stockAmmReserve: stockAmmReserve,
+		moneyAmmReserve: moneyAmmReserve,
+		totalSupply:     totalSupply,
+		kLast:           stockAmmReserve.Mul(moneyAmmReserve),
+	}
+	return poolInfo
+}
+
 func (p PoolInfo) GetSymbol() string {
 	return p.symbol
 }
