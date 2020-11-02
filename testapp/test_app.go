@@ -29,6 +29,7 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/alias"
 	"github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/coinexchain/cet-sdk/modules/authx"
+	"github.com/coinexchain/cet-sdk/modules/autoswap"
 	"github.com/coinexchain/cet-sdk/modules/bancorlite"
 	"github.com/coinexchain/cet-sdk/modules/bankx"
 	"github.com/coinexchain/cet-sdk/modules/comment"
@@ -75,6 +76,7 @@ type TestApp struct {
 	keyIncentive *sdk.KVStoreKey
 	keyAlias     *sdk.KVStoreKey
 	keyComment   *sdk.KVStoreKey
+	keyAutoSwap  *sdk.KVStoreKey
 
 	// Manage getting and setting accounts
 	AccountKeeper   auth.AccountKeeper
@@ -98,6 +100,7 @@ type TestApp struct {
 	MsgQueProducer  msgqueue.MsgSender
 	AliasKeeper     alias.Keeper
 	CommentKeeper   comment.Keeper
+	AutoSwapKeeper  autoswap.Keeper
 }
 
 func NewTestApp() *TestApp {
@@ -117,6 +120,7 @@ func makeCodec() *codec.Codec {
 		comment.AppModuleBasic{},
 		incentive.AppModuleBasic{},
 		market.AppModuleBasic{},
+		autoswap.AppModuleBasic{},
 
 		//modules wraps those of cosmos
 		authx.AppModuleBasic{}, //before `bank` to override `/bank/balances/{address}`
@@ -168,6 +172,7 @@ func newTestApp(Cdc *codec.Codec) *TestApp {
 		keyIncentive: sdk.NewKVStoreKey(incentive.StoreKey),
 		keyAlias:     sdk.NewKVStoreKey(alias.StoreKey),
 		keyComment:   sdk.NewKVStoreKey(comment.StoreKey),
+		keyAutoSwap:  sdk.NewKVStoreKey(autoswap.StoreKey),
 	}
 }
 
@@ -344,6 +349,11 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.BankxKeeper,
 		app.AssetKeeper,
 		app.ParamsKeeper.Subspace(alias.StoreKey),
+	)
+
+	app.AutoSwapKeeper = autoswap.NewKeeper(app.Cdc, app.keyAutoSwap,
+		app.ParamsKeeper.Subspace(autoswap.StoreKey),
+		app.AccountKeeper, app.BankxKeeper, app.SupplyKeeper,
 	)
 }
 

@@ -1,9 +1,11 @@
 package keepers
 
 import (
+	"math/big"
+
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"math/big"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 )
@@ -15,6 +17,39 @@ type Keeper struct {
 	FactoryInterface
 	IPoolKeeper
 	IPairKeeper
+}
+
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
+	ak types.ExpectedAccountKeeper, bk types.ExpectedBankKeeper, sk types.SupplyKeeper) Keeper {
+
+	poolK := PoolKeeper{
+		key:          storeKey,
+		codec:        cdc,
+		SupplyKeeper: sk,
+	}
+
+	pairK := PairKeeper{
+		IPoolKeeper:           poolK,
+		SupplyKeeper:          sk,
+		ExpectedBankKeeper:    bk,
+		ExpectedAccountKeeper: ak,
+		codec:                 cdc,
+		storeKey:              storeKey,
+	}
+
+	factoryK := FactoryKeeper{
+		storeKey:   storeKey,
+		poolKeeper: poolK,
+	}
+
+	return Keeper{
+		storeKey:         storeKey,
+		paramSubspace:    paramSubspace,
+		sk:               sk,
+		FactoryInterface: factoryK,
+		IPoolKeeper:      poolK,
+		IPairKeeper:      pairK,
+	}
 }
 
 func (keeper *Keeper) SetParams(ctx sdk.Context, params types.Params) {
