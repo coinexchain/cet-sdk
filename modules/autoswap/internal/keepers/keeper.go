@@ -30,12 +30,11 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 	}
 
 	pairK := PairKeeper{
-		IPoolKeeper:           poolK,
-		SupplyKeeper:          sk,
-		ExpectedBankKeeper:    bk,
-		ExpectedAccountKeeper: ak,
-		codec:                 cdc,
-		storeKey:              storeKey,
+		IPoolKeeper:        poolK,
+		SupplyKeeper:       sk,
+		ExpectedBankKeeper: bk,
+		codec:              cdc,
+		storeKey:           storeKey,
 	}
 
 	factoryK := FactoryKeeper{

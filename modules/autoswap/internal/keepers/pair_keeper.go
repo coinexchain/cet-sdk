@@ -27,19 +27,16 @@ type PairKeeper struct {
 	IPoolKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
-	types.ExpectedAccountKeeper
 	codec    *codec.Codec
 	storeKey sdk.StoreKey
 }
 
-func NewPairKeeper(poolKeeper IPoolKeeper, bnk types.ExpectedBankKeeper,
-	acck types.ExpectedAccountKeeper, codec *codec.Codec, storeKey sdk.StoreKey) *PairKeeper {
+func NewPairKeeper(poolKeeper IPoolKeeper, bnk types.ExpectedBankKeeper, codec *codec.Codec, storeKey sdk.StoreKey) *PairKeeper {
 	return &PairKeeper{
-		codec:                 codec,
-		storeKey:              storeKey,
-		IPoolKeeper:           poolKeeper,
-		ExpectedBankKeeper:    bnk,
-		ExpectedAccountKeeper: acck,
+		codec:              codec,
+		storeKey:           storeKey,
+		IPoolKeeper:        poolKeeper,
+		ExpectedBankKeeper: bnk,
 	}
 }
 
