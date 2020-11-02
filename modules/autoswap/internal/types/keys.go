@@ -18,4 +18,7 @@ const (
 
 	// Kafka topic name
 	Topic = ModuleName
+
+	// Pool's module account
+	PoolModuleAcc = "autoswap-pool"
 )

@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	StoreKey   = types.StoreKey
-	ModuleName = types.ModuleName
+	StoreKey      = types.StoreKey
+	ModuleName    = types.ModuleName
+	PoolModuleAcc = types.PoolModuleAcc
 )
 
 var (

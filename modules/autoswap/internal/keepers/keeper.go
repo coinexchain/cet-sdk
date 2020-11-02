@@ -1,6 +1,7 @@
 package keepers
 
 import (
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	"math/big"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -9,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type Keeper struct {
@@ -78,7 +80,11 @@ func (keeper *Keeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 }
-func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info PoolInfo) {
+func (keeper Keeper) SendCoinsFromPoolAccountToModule(ctx sdk.Context, recipientModule string, amt sdk.Coins) sdk.Error {
+	poolAddr := keeper.sk.GetModuleAddress(types.PoolModuleAcc)
+	return keeper.sk.SendCoinsFromAccountToModule(ctx, poolAddr, recipientModule, amt)
+}
+func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info PoolInfo) error {
 	if !lastK.IsZero() {
 		k := info.moneyAmmReserve.Mul(info.stockAmmReserve).BigInt()
 		var rootK, rootLastK *big.Int
@@ -93,13 +99,20 @@ func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, in
 				Add(sdk.NewIntFromBigInt(rootLastK).MulRaw(param.FeeToValidator))
 			moneyToValidator := info.moneyAmmReserve.Mul(numerator).Quo(denominator)
 			stockToValidator := info.stockAmmReserve.Mul(numerator).Quo(denominator)
-			// todo: stock,money := parseSymbol(info.symbol)
+			stock, money := dex.SplitSymbol(info.symbol)
 			if moneyToValidator.IsPositive() {
-				// todo: transfer money to auth.feecollector
+				if err := keeper.SendCoinsFromPoolAccountToModule(ctx, auth.FeeCollectorName,
+					sdk.NewCoins(sdk.NewCoin(money, moneyToValidator))); err != nil {
+					return err
+				}
 			}
 			if stockToValidator.IsPositive() {
-				// todo: transfer stock to auth.feecollector
+				if err := keeper.SendCoinsFromPoolAccountToModule(ctx, auth.FeeCollectorName,
+					sdk.NewCoins(sdk.NewCoin(stock, stockToValidator))); err != nil {
+					return err
+				}
 			}
 		}
 	}
+	return nil
 }

@@ -51,6 +51,7 @@ var (
 		gov.ModuleName:            {supply.Burner},
 		authx.ModuleName:          nil,
 		asset.ModuleName:          {supply.Burner, supply.Minter},
+		autoswap.PoolModuleAcc:    nil,
 	}
 )
 
