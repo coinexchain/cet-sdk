@@ -21,7 +21,7 @@ type FactoryKeeper struct {
 
 func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bool {
 	symbol := dex.GetSymbol(msg.Stock, msg.Money)
-	info := f.poolKeeper.GetPoolInfo(ctx, symbol, msg.IsOpenSwap)
+	info := f.poolKeeper.GetPoolInfo(ctx, symbol, msg.IsOpenSwap, false)
 	if info != nil {
 		return false
 	}
@@ -34,10 +34,10 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bo
 		totalSupply:           sdk.ZeroInt(),
 		kLast:                 sdk.ZeroInt(),
 	}
-	f.poolKeeper.SetPoolInfo(ctx, symbol, msg.IsOpenSwap, p)
+	f.poolKeeper.SetPoolInfo(ctx, symbol, msg.IsOpenSwap, false, p)
 	//vanity check in handler
 	if msg.StockIn.IsPositive() {
-		err := f.poolKeeper.Mint(ctx, symbol, msg.IsOpenSwap, msg.StockIn, msg.MoneyIn, msg.To)
+		err := f.poolKeeper.Mint(ctx, symbol, msg.IsOpenSwap, false, msg.StockIn, msg.MoneyIn, msg.To)
 		if err != nil {
 			return false
 		}
@@ -46,5 +46,5 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) bo
 }
 
 func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string, isOpenSwap bool) *PoolInfo {
-	return f.poolKeeper.GetPoolInfo(ctx, marketSymbol, isOpenSwap)
+	return f.poolKeeper.GetPoolInfo(ctx, marketSymbol, isOpenSwap, false)
 }

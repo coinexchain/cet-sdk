@@ -25,7 +25,7 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPoolKeeper.GetPoolInfo(ctx, marKey, msg.IsOpenSwap)
+	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsOpenSwap, false)
 	if info == nil {
 		if !k.CreatePair(ctx, msg) {
 			//todo:
@@ -35,7 +35,7 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 	}
 	stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
 	//transfer token
-	err := k.IPoolKeeper.Mint(ctx, marKey, msg.IsOpenSwap, stockR, moneyR, msg.To)
+	err := k.IPairKeeper.Mint(ctx, marKey, msg.IsOpenSwap, false, stockR, moneyR, msg.To)
 	if err != nil {
 		return sdk.Result{}
 	}
@@ -44,11 +44,11 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 
 func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPoolKeeper.GetPoolInfo(ctx, marKey, msg.AmmOpen)
+	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.AmmOpen, false)
 	if info == nil {
 		return sdk.Result{}
 	}
-	liquidity := k.IPoolKeeper.GetLiquidity(ctx, marKey, msg.Sender)
+	liquidity := k.IPairKeeper.GetLiquidity(ctx, marKey, msg.Sender)
 	if liquidity.LT(msg.Amount) {
 		return sdk.Result{}
 	}
@@ -59,9 +59,9 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	}
 	//transfer token
 	if liquidity.IsPositive() {
-		k.IPoolKeeper.SetLiquidity(ctx, marKey, msg.Sender, liquidity)
+		k.IPairKeeper.SetLiquidity(ctx, marKey, msg.Sender, liquidity)
 	} else {
-		k.IPoolKeeper.ClearLiquidity(ctx, marKey, msg.Sender)
+		k.IPairKeeper.ClearLiquidity(ctx, marKey, msg.Sender)
 	}
 	return sdk.Result{}
 }
