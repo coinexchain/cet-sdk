@@ -17,6 +17,7 @@ type IPairKeeper interface {
 	IPoolKeeper
 	AddMarketOrder(ctx sdk.Context, order *types.Order) sdk.Error
 	AddLimitOrder(ctx sdk.Context, order *types.Order) sdk.Error
+	GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool) int64
 	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
 	HasOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) bool
 	GetOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) *types.Order
@@ -54,7 +55,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	}()
 
 	var poolInfo *PoolInfo
-	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap); poolInfo == nil {
+	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook); poolInfo == nil {
 		return types.ErrInvalidMarket(order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
 	}
 	if order.OrderID = pk.getUnusedOrderID(ctx, order); order.OrderID <= 0 {
@@ -77,7 +78,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 			} else {
 				poolInfo.stockOrderBookReserve.Add(actualAmount)
 			}
-			pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, poolInfo)
+			pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, poolInfo)
 			return nil
 		}
 	}
@@ -222,7 +223,7 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 	if firstOrderID != currOrderID {
 		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, !order.IsBuy, currOrderID)
 	}
-	pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, poolInfo)
+	pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, poolInfo)
 	return amountToTaker, nil
 }
 
@@ -407,7 +408,7 @@ func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) sdk.Err
 		order.Price = sdk.NewDec(math.MaxInt64)
 	}
 	order.IsLimitOrder = false
-	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap)
+	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
 	if _, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo); err != nil {
 		return err
 	}
@@ -460,8 +461,8 @@ func (pk PairKeeper) DeleteOrder(ctx sdk.Context, delOrder *types.MsgDeleteOrder
 	if !order.HasPrevKey() {
 		firstOrderID := pk.GetFirstOrderID(ctx, delOrder.MarketSymbol, delOrder.IsOpenSwap, delOrder.IsOpenOrderBook, delOrder.IsBuy)
 		if firstOrderID != order.OrderID {
-			return types.ErrInvalidOrderNews(fmt.Sprintf("the delete order is not the first: currentID: %d, firstOrderID: %d",
-				delOrder.OrderID, firstOrderID))
+			return types.ErrNotFoundOrder(fmt.Sprintf("the delete order is not the first in the orderBook: currentID: %d, "+
+				"firstOrderID: %d, shoule fill the prev_key in MsgDeleteOrder", delOrder.OrderID, firstOrderID))
 		}
 		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy, order.NextOrderID)
 	} else {
@@ -471,15 +472,39 @@ func (pk PairKeeper) DeleteOrder(ctx sdk.Context, delOrder *types.MsgDeleteOrder
 		}
 		currentOrderID := orderInBook.OrderID
 		for currentOrderID > 0 {
-
+			if orderInBook.NextOrderID == order.OrderID {
+				orderInBook.NextOrderID = order.NextOrderID
+				pk.SetOrder(ctx, orderInBook)
+				break
+			}
+			orderInBook = pk.GetOrder(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy, orderInBook.NextOrderID)
+			if orderInBook == nil {
+				return types.ErrNotFoundOrder(fmt.Sprintf("the delete order not found by prev_key in MsgDeleteOrder, receive"+
+					" data is: %v", delOrder.PrevKey))
+			}
+			currentOrderID = orderInBook.OrderID
 		}
 	}
-
-	return nil
+	return pk.updateOrderBookReserveByOrderDel(ctx, order)
 }
 
-func (pk PairKeeper) updateOrderBookReserveByOrderDel() {
-
+func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder *types.Order) sdk.Error {
+	info := pk.GetPoolInfo(ctx, delOrder.MarketSymbol, delOrder.IsOpenSwap, delOrder.IsOpenOrderBook)
+	amount := delOrder.Amount
+	if delOrder.IsBuy {
+		amount = delOrder.ActualAmount()
+		info.moneyOrderBookReserve = info.moneyOrderBookReserve.Sub(amount)
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Money(), delOrder.Amount)); err != nil {
+			return err
+		}
+	} else {
+		info.stockOrderBookReserve = info.stockOrderBookReserve.Sub(delOrder.Amount)
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Stock(), delOrder.Amount)); err != nil {
+			return err
+		}
+	}
+	pk.SetPoolInfo(ctx, delOrder.MarketSymbol, delOrder.IsOpenSwap, delOrder.IsOpenOrderBook, info)
+	return nil
 }
 
 func (pk PairKeeper) deleteOrder(ctx sdk.Context, order *types.Order) {

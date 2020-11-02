@@ -23,10 +23,11 @@ type OrderBasic struct {
 
 type Order struct {
 	OrderBasic
-	Price       sdk.Dec
-	OrderID     int64
-	NextOrderID int64
-	PrevKey     [3]int64 `json:"-"`
+	Price           sdk.Dec
+	OrderID         int64
+	NextOrderID     int64
+	PrevKey         [3]int64 `json:"-"`
+	MinOutputAmount sdk.Int  `json:"-"`
 
 	// cache
 	stock       string

@@ -10,26 +10,21 @@ const (
 	CodeSpaceAutoSwap sdk.CodespaceType = "autoswap"
 
 	// codes
-	CodeInvalidAmount         = 1201
-	CodeInvalidPricePrecision = 1202
-	CodeInvalidPrice          = 1203
-	CodeInvalidOrderSender    = 1204
-	CodeUnKnownError          = 1205
-	CodeInvalidMarket         = 1206
-	CodeInvalidOrderID        = 1207
-	CodeMarshalFailed         = 1208
-	CodeUnMarshalFailed       = 1209
-	CodeInvalidPrevKey        = 1210
-	CodeInvalidOrderNews      = 1211
+	CodeInvalidAmount      = 1201
+	CodeNotFundOrder       = 1202
+	CodeInvalidPrice       = 1203
+	CodeInvalidOrderSender = 1204
+	CodeUnKnownError       = 1205
+	CodeInvalidMarket      = 1206
+	CodeInvalidOrderID     = 1207
+	CodeMarshalFailed      = 1208
+	CodeUnMarshalFailed    = 1209
+	CodeInvalidPrevKey     = 1210
+	CodeInvalidOrderNews   = 1211
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %s", price))
-}
-
-func ErrInvalidPricePrecision(pricePrecision int) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPricePrecision, fmt.Sprintf("Invalid "+
-		"order price precision: %d, expected: []", pricePrecision))
 }
 
 func ErrInvalidAmount(amount sdk.Int) sdk.Error {
@@ -68,4 +63,8 @@ func ErrMarshalFailed() sdk.Error {
 
 func ErrInvalidOrderNews(orderInfo string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderNews, fmt.Sprintf("received order news: %s", orderInfo))
+}
+
+func ErrNotFoundOrder(reason string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeNotFundOrder, fmt.Sprintf("reason: %s", reason))
 }
