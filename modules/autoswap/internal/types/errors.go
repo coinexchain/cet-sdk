@@ -19,6 +19,8 @@ const (
 	CodeInvalidOrderID        = 1207
 	CodeMarshalFailed         = 1208
 	CodeUnMarshalFailed       = 1209
+	CodeInvalidPrevKey        = 1210
+	CodeInvalidOrderNews      = 1211
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
@@ -50,6 +52,11 @@ func ErrInvalidMarket(market string, isOpenSwap bool, isOpenOrderBook bool) sdk.
 		"Invalid market: %s, isOpenSwap: %v, isOpenOrderBook: %v", market, isOpenSwap, isOpenOrderBook))
 }
 
+func ErrInvalidPrevKey(prevKey [3]int64) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrevKey, fmt.Sprintf(""+
+		"prevKey: [%d, %d, %d]", prevKey[0], prevKey[1], prevKey[2]))
+}
+
 func ErrInvalidOrderID(orderID int64) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderID, "Not found valid orderID in create_limit_order msg or "+
 		"invalid orderID in delete_order msg: %d", orderID)
@@ -57,4 +64,8 @@ func ErrInvalidOrderID(orderID int64) sdk.Error {
 
 func ErrMarshalFailed() sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeMarshalFailed, "could not marshal result to JSON")
+}
+
+func ErrInvalidOrderNews(orderInfo string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderNews, fmt.Sprintf("received order news: %s", orderInfo))
 }

@@ -106,6 +106,13 @@ func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {
 	mkOr.Sender = address
 }
 
+func (mkOr *MsgCreateMarketOrder) OrderInfo() *Order {
+	return &Order{
+		OrderBasic:      mkOr.OrderBasic,
+		MinOutputAmount: mkOr.MinOutputAmount,
+	}
+}
+
 type MsgDeleteOrder struct {
 	MarketSymbol    string         `json:"market_symbol"`
 	IsOpenSwap      bool           `json:"is_open_swap"`
@@ -147,6 +154,20 @@ func (m MsgDeleteOrder) GetSigners() []sdk.AccAddress {
 
 func (m *MsgDeleteOrder) SetAccAddress(address sdk.AccAddress) {
 	m.Sender = address
+}
+
+func (m MsgDeleteOrder) OrderInfo() *Order {
+	return &Order{
+		OrderBasic: OrderBasic{
+			Sender:          m.Sender,
+			MarketSymbol:    m.MarketSymbol,
+			IsOpenSwap:      m.IsOpenSwap,
+			IsOpenOrderBook: m.IsOpenOrderBook,
+			IsBuy:           m.IsBuy,
+		},
+		OrderID: m.OrderID,
+		PrevKey: m.PrevKey,
+	}
 }
 
 type MsgAddLiquidity struct {
