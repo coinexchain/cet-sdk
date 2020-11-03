@@ -25,7 +25,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case QueryPools:
 			return queryPoolList(ctx, req, keeper)
 		default:
-			return nil, sdk.ErrUnknownRequest("query symbol : " + path[0])
+			return nil, sdk.ErrUnknownRequest("query Symbol : " + path[0])
 		}
 	}
 }
@@ -42,7 +42,7 @@ func queryParameters(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 }
 
 type QueryPoolInfoParam struct {
-	Symbol        string `json:"symbol"`
+	Symbol        string `json:"Symbol"`
 	IsSwapOpen       bool   `json:"amm_open"`
 	OrderBookOpen bool   `json:"order_book_open"`
 }

@@ -84,7 +84,7 @@ func (keeper Keeper) SendCoinsFromPoolAccountToModule(ctx sdk.Context, recipient
 }
 func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info PoolInfo) error {
 	if !lastK.IsZero() {
-		k := info.moneyAmmReserve.Mul(info.stockAmmReserve).BigInt()
+		k := info.MoneyAmmReserve.Mul(info.StockAmmReserve).BigInt()
 		var rootK, rootLastK big.Int
 		rootK.Sqrt(k)
 		rootLastK.Sqrt(lastK.BigInt())
@@ -97,9 +97,9 @@ func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, in
 			numerator := subK.MulRaw(param.FeeToValidator)
 			denominator := sdk.NewIntFromBigInt(&rootK).MulRaw(param.FeeToPool).
 				Add(sdk.NewIntFromBigInt(&rootLastK).MulRaw(param.FeeToValidator))
-			moneyToValidator := info.moneyAmmReserve.Mul(numerator).Quo(denominator)
-			stockToValidator := info.stockAmmReserve.Mul(numerator).Quo(denominator)
-			stock, money := dex.SplitSymbol(info.symbol)
+			moneyToValidator := info.MoneyAmmReserve.Mul(numerator).Quo(denominator)
+			stockToValidator := info.StockAmmReserve.Mul(numerator).Quo(denominator)
+			stock, money := dex.SplitSymbol(info.Symbol)
 
 			if moneyToValidator.IsPositive() {
 				if err := keeper.SendCoinsFromPoolAccountToModule(ctx, auth.FeeCollectorName,

@@ -26,13 +26,13 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sd
 		return types.ErrPairAlreadyExist()
 	}
 	p := &PoolInfo{
-		symbol:                symbol,
-		stockAmmReserve:       msg.StockIn,
-		moneyAmmReserve:       msg.MoneyIn,
-		stockOrderBookReserve: sdk.ZeroInt(),
-		moneyOrderBookReserve: sdk.ZeroInt(),
-		totalSupply:           sdk.ZeroInt(),
-		kLast:                 sdk.ZeroInt(),
+		Symbol:                symbol,
+		StockAmmReserve:       msg.StockIn,
+		MoneyAmmReserve:       msg.MoneyIn,
+		StockOrderBookReserve: sdk.ZeroInt(),
+		MoneyOrderBookReserve: sdk.ZeroInt(),
+		TotalSupply:           sdk.ZeroInt(),
+		KLast:                 sdk.ZeroInt(),
 	}
 	f.poolKeeper.SetPoolInfo(ctx, symbol, msg.IsSwapOpen, msg.IsOrderBookOpen, p)
 	//vanity check in handler

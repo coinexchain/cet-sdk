@@ -106,7 +106,7 @@ async function initializeTokenWithETHAsStock(boss) {
     pair = await pairCon.at(pairAddr)
     stock = await pair.stock.call()
     money = await pair.money.call()
-    assert.equal(await pair.symbol.call(), "usd/ETH");
+    assert.equal(await pair.Symbol.call(), "usd/ETH");
     console.log("stock and money: ", stock, money)
 }
 
@@ -126,7 +126,7 @@ async function initializeTokenWithETH(boss) {
     pair = await pairCon.at(pairAddr)
     stock = await pair.stock.call()
     money = await pair.money.call()
-    assert.equal(await pair.symbol.call(), "ETH/usd");
+    assert.equal(await pair.Symbol.call(), "ETH/usd");
     console.log("stock and money: ", stock, money)
 }
 
@@ -210,7 +210,7 @@ contract("pair", async accounts => {
         await initializeToken(boss);
         assert.equal(await pair.name.call(), "OneSwap-Share");
         assert.equal(await pair.decimals.call(), 18);
-        assert.equal(await pair.symbol.call(), "btc/usd");
+        assert.equal(await pair.Symbol.call(), "btc/usd");
     });
 
    // it("test emitEvents", async () => {
@@ -1201,7 +1201,7 @@ contract("OneSwapPair/addMarketOrder", async (accounts) => {
 
     before(async () => {
         await initializeToken(boss);
-        // assert.equal((await pair.totalSupply.call()), 0, "pair.totalSupply");
+        // assert.equal((await pair.TotalSupply.call()), 0, "pair.TotalSupply");
     });
 
     it('addMarketOrder failed: INVALID_TOKEN', async () => {
@@ -1244,7 +1244,7 @@ contract("OneSwapPair/addMarketOrder/emptyAMM", async (accounts) => {
 
     beforeEach(async () => {
         await initializeToken(boss);
-        assert.equal((await pair.totalSupply.call()), 0, "pair.totalSupply");
+        assert.equal((await pair.TotalSupply.call()), 0, "pair.TotalSupply");
     });
 
     it('addMarketOrder/buy: deal with empty AMM pool', async () => {
@@ -1284,11 +1284,11 @@ contract("OneSwapPair/addMarketOrder/eat", async (accounts) => {
 
     before(async () => {
         await initializeToken(boss);
-        assert.equal((await pair.totalSupply.call()), 0, "pair.totalSupply");
+        assert.equal((await pair.TotalSupply.call()), 0, "pair.TotalSupply");
         await btc.transfer(pair.address, 100, {from: boss});
         await usd.transfer(pair.address, 4000000, {from: boss});
         await pair.mint(lp);
-        assert.equal(await pair.totalSupply.call(), 20000);
+        assert.equal(await pair.TotalSupply.call(), 20000);
     });
 
     it('buy eat sell', async () => {
