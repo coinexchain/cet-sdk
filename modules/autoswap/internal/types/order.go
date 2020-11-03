@@ -30,9 +30,8 @@ type Order struct {
 	MinOutputAmount sdk.Int  `json:"-"`
 
 	// cache
-	stock       string
-	money       string
-	actualPrice sdk.Dec
+	stock string
+	money string
 }
 
 func (or Order) HasPrevKey() bool {
@@ -48,6 +47,7 @@ func (or *Order) Stock() string {
 	if or.stock != "" {
 		return or.stock
 	}
+	or.parseStockAndMoney()
 	return or.stock
 }
 
@@ -67,7 +67,7 @@ func (or *Order) Money() string {
 
 func (or *Order) ActualAmount() sdk.Int {
 	if or.IsBuy {
-		return or.actualPrice.Mul(sdk.NewDecFromInt(or.Amount)).Ceil().RoundInt()
+		return or.Price.Mul(sdk.NewDecFromInt(or.Amount)).Ceil().RoundInt()
 	}
 	return or.Amount
 }
