@@ -89,7 +89,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 }
 
 func (pk PairKeeper) getUnusedOrderID(ctx sdk.Context, order *types.Order) int64 {
-	var id int64 = 0
+	var id = order.OrderID
 	if order.OrderID == 0 {
 		id = int64(binary.BigEndian.Uint64(ctx.BlockHeader().AppHash[:8]) ^
 			binary.BigEndian.Uint64(order.Sender[:8]))
