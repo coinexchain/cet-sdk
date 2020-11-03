@@ -47,15 +47,15 @@ func TestRemoveLiquidityReq(t *testing.T) {
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgRemoveLiquidity{
-		Sender:         addr,
-		Stock:          "foo",
-		Money:          "bar",
-		IsSwapOpen:        false,
-		IsOrderBookOpen:       true,
-		AmountStockMin: sdk.NewInt(123),
-		AmountMoneyMin: sdk.NewInt(456),
-		Amount:         sdk.NewInt(789),
-		To:             addr,
+		Sender:          addr,
+		Stock:           "foo",
+		Money:           "bar",
+		IsSwapOpen:      false,
+		IsOrderBookOpen: true,
+		AmountStockMin:  sdk.NewInt(123),
+		AmountMoneyMin:  sdk.NewInt(456),
+		Amount:          sdk.NewInt(789),
+		To:              addr,
 	}, msg)
 }
 

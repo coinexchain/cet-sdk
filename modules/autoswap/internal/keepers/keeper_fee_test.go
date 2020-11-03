@@ -82,8 +82,8 @@ func TestKeeper_AllocateFeeToValidator(t *testing.T) {
 	testCases := []testCase{
 		// klast is 1/10 of k
 		{
-			Klast:          sdk.NewInt(4 * 10000 * 10000),
-			Pool:           info,
+			Klast: sdk.NewInt(4 * 10000 * 10000),
+			Pool:  info,
 			// stock = 18*4/(20*6+2*4)*10000 = 5625
 			// money = stock * 400 = 2250000
 			tokenAllocated: newStockMoneyCoins(5625, 2250000),

@@ -259,12 +259,12 @@ func TestMint(t *testing.T) {
 func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	owner sdk.AccAddress, stock, money string) {
 	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
-		Owner: owner,
-		Stock: stock,
-		Money: money,
-		IsSwapOpen: true,
+		Owner:           owner,
+		Stock:           stock,
+		Money:           money,
+		IsSwapOpen:      true,
 		IsOrderBookOpen: true,
-		To: to,
+		To:              to,
 	})
 	require.NoError(t, err)
 }

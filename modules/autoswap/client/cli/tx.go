@@ -246,9 +246,9 @@ func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 
 func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	msg = &types.MsgRemoveLiquidity{
-		Stock:    viper.GetString(flagStock),
-		Money:    viper.GetString(flagMoney),
-		IsSwapOpen:  !viper.GetBool(flagNoSwap),
+		Stock:           viper.GetString(flagStock),
+		Money:           viper.GetString(flagMoney),
+		IsSwapOpen:      !viper.GetBool(flagNoSwap),
 		IsOrderBookOpen: !viper.GetBool(flagNoOrderBook),
 	}
 
