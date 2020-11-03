@@ -248,12 +248,14 @@ func TestMint(t *testing.T) {
 	addr := sdk.AccAddress("add123")
 	app := testapp.NewTestApp()
 	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	ask := app.AutoSwapKeeper
 
-	createPair(t, app.AutoSwapKeeper, ctx, addr, "foo", "bar")
-
-	err := app.AutoSwapKeeper.Mint(ctx, "foo/bar", true, true,
-		sdk.NewInt(10000), sdk.NewInt(1000000), addr)
-	require.NoError(t, err)
+	createPair(t, ask, ctx, addr, "foo", "bar")
+	mint(t, ask, ctx, "foo/bar", sdk.NewInt(10000), sdk.NewInt(1000000), addr)
+	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", addr))
+	pi := ask.GetPoolInfo(ctx, "foo/bar", true, true)
+	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
+	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
 }
 
 func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
@@ -264,8 +266,17 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 		Money:           money,
 		IsSwapOpen:      true,
 		IsOrderBookOpen: true,
-		To:              to,
+		StockIn:         sdk.NewInt(0),
+		MoneyIn:         sdk.NewInt(0),
+		To:              nil,
 	})
+	require.NoError(t, err)
+}
+
+func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
+	err := ask.Mint(ctx, pair, true, true,
+		stockIn, moneyIn, to)
 	require.NoError(t, err)
 }
 
