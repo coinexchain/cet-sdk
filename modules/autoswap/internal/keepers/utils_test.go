@@ -5,14 +5,36 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/supply"
+
+	"github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/coinexchain/cet-sdk/modules/autoswap"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cet-sdk/testapp"
 )
+
+func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
+	app = testapp.NewTestApp()
+	ctx = sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
+	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
+	return
+}
+
+func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
+	sym string, totalSupply sdk.Int, owner sdk.AccAddress) {
+
+	err := ak.IssueToken(ctx, sym, sym, totalSupply, owner, false, false, false, false, sym, sym, sym)
+	require.NoError(t, err)
+}
 
 func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	owner sdk.AccAddress, stock, money string) {
+
 	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
 		Owner:           owner,
 		Stock:           stock,
@@ -28,6 +50,7 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 
 func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
+
 	err := ask.Mint(ctx, pair, true, true,
 		stockIn, moneyIn, to)
 	require.NoError(t, err)
@@ -35,6 +58,7 @@ func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 
 func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, sender sdk.AccAddress, amt sdk.Int, price sdk.Dec, id int64, prevKey [3]int64) {
+
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		OrderBasic: types.OrderBasic{
 			MarketSymbol:    pair,

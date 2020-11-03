@@ -5,21 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
-	"github.com/coinexchain/cet-sdk/testapp"
 )
-
-func TestSmoke(t *testing.T) {
-	app := testapp.NewTestApp()
-	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
-	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
-	app.AutoSwapKeeper.GetParams(ctx)
-}
 
 // onwswap/test/OneSwapPair.js
 /*
@@ -245,8 +232,7 @@ contract("pair", async accounts => {
 */
 func TestMint(t *testing.T) {
 	addr := sdk.AccAddress("add123")
-	app := testapp.NewTestApp()
-	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	app, ctx := newTestApp()
 	ask := app.AutoSwapKeeper
 
 	createPair(t, ask, ctx, addr, "foo", "bar")
@@ -321,11 +307,12 @@ func TestMint(t *testing.T) {
 
 func TestInsertSellOrder(t *testing.T) {
 	maker := sdk.AccAddress("maker")
-	app := testapp.NewTestApp()
-	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	app, ctx := newTestApp()
 	ask := app.AutoSwapKeeper
 	pair := "foo/bar"
 
+	issueToken(t, app.AssetKeeper, ctx, "foo", sdk.NewInt(100000000000000), maker)
+	issueToken(t, app.AssetKeeper, ctx, "bar", sdk.NewInt(100000000000000), maker)
 	createPair(t, ask, ctx, maker, "foo", "bar")
 	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10000000, 18), 1, merge3(0, 0, 0))
 	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10300000, 18), 2, merge3(0, 0, 0))
