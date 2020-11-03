@@ -15,9 +15,9 @@ const (
 type IPoolKeeper interface {
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool) *PoolInfo
-	SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int)
-	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int
-	ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress)
+	SetLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress, liquidity sdk.Int)
+	GetLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress) sdk.Int
+	ClearLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress)
 	Mint(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) sdk.Error
 	Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error)
 }
@@ -29,23 +29,6 @@ type PoolKeeper struct {
 	key   sdk.StoreKey
 	codec *codec.Codec
 	types.SupplyKeeper
-}
-
-func (p PoolKeeper) SetPairInfos(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, ammStockAmount, ammMoneyAmount, orderBookStockAmount, orderBookMoneyAmount sdk.Int) {
-	store := ctx.KVStore(p.key)
-	info := PoolInfo{
-		StockAmmReserve:       ammStockAmount,
-		MoneyAmmReserve:       ammMoneyAmount,
-		StockOrderBookReserve: orderBookStockAmount,
-		MoneyOrderBookReserve: orderBookMoneyAmount,
-	}
-	bytes := p.codec.MustMarshalBinaryBare(info)
-	store.Set(getPairKey(marketSymbol, isOpenSwap, isOpenOrderBook), bytes)
-}
-
-func (p PoolKeeper) GetPairInfos(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool) (ammStockAmount, ammMoneyAmount, orderBookStockAmount, orderBookMoneyAmount sdk.Int) {
-	info := p.GetPoolInfo(ctx, marketSymbol, isOpenSwap, isOpenOrderBook)
-	return info.StockAmmReserve, info.MoneyAmmReserve, info.StockOrderBookReserve, info.MoneyOrderBookReserve
 }
 
 func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) sdk.Error {
@@ -65,9 +48,9 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 		return types.ErrInvalidLiquidityAmount()
 	}
 	info.TotalSupply = info.TotalSupply.Add(liquidity)
-	totalLiq := p.GetLiquidity(ctx, marketSymbol, to)
+	totalLiq := p.GetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, to)
 	totalLiq = totalLiq.Add(liquidity)
-	p.SetLiquidity(ctx, marketSymbol, to, totalLiq)
+	p.SetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, to, totalLiq)
 	info.StockAmmReserve = info.StockAmmReserve.Add(stockAmountIn)
 	info.MoneyAmmReserve = info.MoneyAmmReserve.Add(moneyAmountIn)
 	if FeeOn {
@@ -87,11 +70,11 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	info.StockAmmReserve = info.StockAmmReserve.Sub(stockAmount)
 	info.MoneyAmmReserve = info.MoneyAmmReserve.Sub(moneyAmount)
 	info.TotalSupply = info.TotalSupply.Sub(liquidity)
-	l := p.GetLiquidity(ctx, marketSymbol, from)
+	l := p.GetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from)
 	if l.LT(liquidity) {
 		return sdk.ZeroInt(), sdk.ZeroInt(), types.ErrInvalidLiquidityAmount()
 	}
-	p.SetLiquidity(ctx, marketSymbol, from, l.Sub(liquidity))
+	p.SetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from, l.Sub(liquidity))
 	if FeeOn {
 		info.KLast = info.StockAmmReserve.Mul(info.MoneyAmmReserve)
 	}
@@ -99,21 +82,21 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	return stockAmount, moneyAmount, nil
 }
 
-func (p PoolKeeper) ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) {
+func (p PoolKeeper) ClearLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress) {
 	store := ctx.KVStore(p.key)
-	store.Delete(getLiquidityKey(marketSymbol, address))
+	store.Delete(getLiquidityKey(marketSymbol, isOpenSwap, isOpenOrderBook, address))
 }
 
-func (p PoolKeeper) SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int) {
+func (p PoolKeeper) SetLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress, liquidity sdk.Int) {
 	store := ctx.KVStore(p.key)
 	bytes := p.codec.MustMarshalBinaryBare(liquidity)
-	store.Set(getLiquidityKey(marketSymbol, address), bytes)
+	store.Set(getLiquidityKey(marketSymbol, isOpenSwap, isOpenOrderBook, address), bytes)
 }
 
-func (p PoolKeeper) GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int {
+func (p PoolKeeper) GetLiquidity(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress) sdk.Int {
 	store := ctx.KVStore(p.key)
 	liquidity := sdk.ZeroInt()
-	bytes := store.Get(getLiquidityKey(marketSymbol, address))
+	bytes := store.Get(getLiquidityKey(marketSymbol, isOpenSwap, isOpenOrderBook, address))
 	if bytes != nil {
 		p.codec.MustUnmarshalBinaryBare(bytes, &liquidity)
 	}
