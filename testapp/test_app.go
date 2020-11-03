@@ -387,6 +387,7 @@ func (app *TestApp) mountStores() {
 	cms.MountStoreWithDB(app.keyComment, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(app.keyStakingX, sdk.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(app.tkeyStaking, sdk.StoreTypeTransient, db)
+	cms.MountStoreWithDB(app.keyAutoSwap, sdk.StoreTypeIAVL, db)
 	_ = cms.LoadLatestVersion()
 	app.Cms = cms
 }

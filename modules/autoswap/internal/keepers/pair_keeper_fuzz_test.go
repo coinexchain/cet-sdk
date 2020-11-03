@@ -1,4 +1,4 @@
-package keepers
+package keepers_test
 
 import (
 	"fmt"
@@ -56,8 +56,8 @@ func issueAbbToBob(ctx sdk.Context, app *testapp.TestApp, t *testing.T) {
 	assert.Nil(t, err)
 
 	bobAcc := app.AccountKeeper.NewAccountWithAddress(ctx, from)
-	_ = bobAcc.SetCoins(newCoins(tokenNameOne, tokenAmount))
-	_ = bobAcc.SetCoins(newCoins(tokenNameTwo, tokenAmount))
+	//_ = bobAcc.SetCoins(newCoins(tokenNameOne, tokenAmount))
+	//_ = bobAcc.SetCoins(newCoins(tokenNameTwo, tokenAmount))
 	app.AccountKeeper.SetAccount(ctx, bobAcc)
 }
 

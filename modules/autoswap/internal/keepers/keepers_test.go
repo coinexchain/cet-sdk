@@ -3,17 +3,19 @@ package keepers_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/coinexchain/cet-sdk/modules/autoswap"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/testapp"
 )
 
 func TestSmoke(t *testing.T) {
-	// TODO
 	app := testapp.NewTestApp()
 	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
 	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
@@ -241,7 +243,33 @@ contract("pair", async accounts => {
         balance = await pair.balanceOf.call("0x0000000000000000000000000000000000000000");
         assert.equal(balance, 1000, "locked liquidity is not correct");
     });
+*/
+func TestMint(t *testing.T) {
+	addr := sdk.AccAddress("add123")
+	app := testapp.NewTestApp()
+	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
 
+	createPair(t, app.AutoSwapKeeper, ctx, addr, "foo", "bar")
+
+	err := app.AutoSwapKeeper.Mint(ctx, "foo/bar", true, true,
+		sdk.NewInt(10000), sdk.NewInt(1000000), addr)
+	require.NoError(t, err)
+}
+
+func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+	owner sdk.AccAddress, stock, money string) {
+	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
+		Owner: owner,
+		Stock: stock,
+		Money: money,
+		IsSwapOpen: true,
+		IsOrderBookOpen: true,
+		To: to,
+	})
+	require.NoError(t, err)
+}
+
+/*
     it("insert sell order with 0 deal", async () => {
         await btc.approve(boss, 1000000000, {from: maker});
         await usd.approve(boss, 1000000000, {from: maker});
