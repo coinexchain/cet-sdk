@@ -27,6 +27,8 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sd
 	}
 	p := &PoolInfo{
 		Symbol:                symbol,
+		IsSwapOpen:            msg.IsSwapOpen,
+		IsOrderBookOpen:       msg.IsOrderBookOpen,
 		StockAmmReserve:       msg.StockIn,
 		MoneyAmmReserve:       msg.MoneyIn,
 		StockOrderBookReserve: sdk.ZeroInt(),

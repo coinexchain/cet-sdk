@@ -237,7 +237,7 @@ func TestMint(t *testing.T) {
 
 	createPair(t, ask, ctx, addr, "foo", "bar")
 	mint(t, ask, ctx, "foo/bar", sdk.NewInt(10000), sdk.NewInt(1000000), addr)
-	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", true, true, addr))
+	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", true,true, addr))
 	pi := ask.GetPoolInfo(ctx, "foo/bar", true, true)
 	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
 	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)

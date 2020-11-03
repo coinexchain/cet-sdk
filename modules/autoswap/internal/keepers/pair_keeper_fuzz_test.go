@@ -145,7 +145,7 @@ func getExpectedLiquidity(stockAmount, moneyAmount sdk.Int, info *keepers.PoolIn
 func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
 	// get random liquidity to burn
 	burnLiquidityAmount := getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9))
-	if app.AutoSwapKeeper.GetLiquidity(ctx, market, true, true, to).LT(burnLiquidityAmount) {
+	if app.AutoSwapKeeper.GetLiquidity(ctx, market, isOpenSwap, isOpenOrderBook, to).LT(burnLiquidityAmount) {
 		fmt.Println("The random liquidity amount is larger than the user's balance")
 		return
 	}

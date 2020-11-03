@@ -124,6 +124,8 @@ var _ IPoolKeeper = PoolKeeper{}
 
 type PoolInfo struct {
 	Symbol                string
+	IsSwapOpen            bool
+	IsOrderBookOpen       bool
 	StockAmmReserve       sdk.Int
 	MoneyAmmReserve       sdk.Int
 	StockOrderBookReserve sdk.Int
