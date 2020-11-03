@@ -10,7 +10,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/coinexchain/cet-sdk/modules/autoswap"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/testapp"
 )
@@ -258,89 +257,110 @@ func TestMint(t *testing.T) {
 	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
 }
 
-func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
-	owner sdk.AccAddress, stock, money string) {
-	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
-		Owner:           owner,
-		Stock:           stock,
-		Money:           money,
-		IsSwapOpen:      true,
-		IsOrderBookOpen: true,
-		StockIn:         sdk.NewInt(0),
-		MoneyIn:         sdk.NewInt(0),
-		To:              nil,
-	})
-	require.NoError(t, err)
-}
+/*
+   it("insert sell order with 0 deal", async () => {
+       await btc.approve(boss, 1000000000, {from: maker});
+       await usd.approve(boss, 1000000000, {from: maker});
+       await btc.transferFrom(maker, pair.address, 100, {from: boss});
+       let result = await pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0), {from: maker})
+       console.log("gas on first insert: ", result.receipt.gasUsed);
 
-func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
-	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
-	err := ask.Mint(ctx, pair, true, true,
-		stockIn, moneyIn, to)
-	require.NoError(t, err)
+       await btc.transferFrom(maker, pair.address, 100, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0), {from: maker})
+       console.log("gas on second insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 100, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0), {from: maker})
+       console.log("gas on third insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 100, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 100, makePrice32(10700000, 18), 4, merge3(3, 0, 0), {from: maker})
+       console.log("gas on forth insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 100, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 100, makePrice32(10900000, 18), 5, merge3(4, 0, 0), {from: maker})
+       console.log("gas on fifth insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 1, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 1, makePrice32(10200000, 18), 6, merge3(1, 0, 0), {from: maker})
+       console.log("gas on 6th insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 1, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0), {from: maker})
+       console.log("gas on 7th insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 1, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0), {from: maker})
+       console.log("gas on 8th insert: ", result.receipt.gasUsed);
+
+       await btc.transferFrom(maker, pair.address, 1, {from: boss});
+       result = await pair.addLimitOrder(false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0), {from: maker})
+       console.log("gas on 9th insert: ", result.receipt.gasUsed);
+
+       let balance = await btc.balanceOf.call(maker);
+       assert.equal(balance.toNumber(), 9496, "btc balance of maker is not correct");
+       balance = await usd.balanceOf.call(maker);
+       assert.equal(balance.toNumber(), 0, "usd balance of maker is not correct");
+
+       let reserves = await pair.getReserves.call();
+       assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
+       assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
+       assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
+       let booked = await pair.getBooked.call();
+       assert.equal(booked.bookedStock.toNumber(), 504, "booked stock balance is not correct");
+       assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
+       assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+
+       result = await pair.getOrderList.call(false, 0, 10);
+       //console.log("========result ", result);
+       //for(let i=0; i < result.logs.length; i++) {
+       //    console.log("========orderlist ", i, result.logs[i].event, result.logs[i].args);
+       //}
+   });
+*/
+
+func TestInsertSellOrder(t *testing.T) {
+	maker := sdk.AccAddress("maker")
+	app := testapp.NewTestApp()
+	ctx := sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
+	ask := app.AutoSwapKeeper
+	pair := "foo/bar"
+
+	createPair(t, ask, ctx, maker, "foo", "bar")
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10000000, 18), 1, merge3(0, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10300000, 18), 2, merge3(0, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10500000, 18), 3, merge3(2, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10700000, 18), 4, merge3(3, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10900000, 18), 5, merge3(4, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10200000, 18), 6, merge3(1, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10400000, 18), 7, merge3(2, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10600000, 18), 8, merge3(3, 0, 0))
+	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10800000, 18), 9, merge3(4, 0, 0))
+	/*
+
+		let balance = await btc.balanceOf.call(maker);
+		assert.equal(balance.toNumber(), 9496, "btc balance of maker is not correct");
+		balance = await usd.balanceOf.call(maker);
+		assert.equal(balance.toNumber(), 0, "usd balance of maker is not correct");
+
+		let reserves = await pair.getReserves.call();
+		assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
+		assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
+		assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
+		let booked = await pair.getBooked.call();
+		assert.equal(booked.bookedStock.toNumber(), 504, "booked stock balance is not correct");
+		assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
+		assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+
+		result = await pair.getOrderList.call(false, 0, 10);
+		//console.log("========result ", result);
+		//for(let i=0; i < result.logs.length; i++) {
+		//    console.log("========orderlist ", i, result.logs[i].event, result.logs[i].args);
+		//}
+	*/
 }
 
 /*
-    it("insert sell order with 0 deal", async () => {
-        await btc.approve(boss, 1000000000, {from: maker});
-        await usd.approve(boss, 1000000000, {from: maker});
-        await btc.transferFrom(maker, pair.address, 100, {from: boss});
-        let result = await pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0), {from: maker})
-        console.log("gas on first insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 100, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0), {from: maker})
-        console.log("gas on second insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 100, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0), {from: maker})
-        console.log("gas on third insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 100, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 100, makePrice32(10700000, 18), 4, merge3(3, 0, 0), {from: maker})
-        console.log("gas on forth insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 100, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 100, makePrice32(10900000, 18), 5, merge3(4, 0, 0), {from: maker})
-        console.log("gas on fifth insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 1, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 1, makePrice32(10200000, 18), 6, merge3(1, 0, 0), {from: maker})
-        console.log("gas on 6th insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 1, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0), {from: maker})
-        console.log("gas on 7th insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 1, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0), {from: maker})
-        console.log("gas on 8th insert: ", result.receipt.gasUsed);
-
-        await btc.transferFrom(maker, pair.address, 1, {from: boss});
-        result = await pair.addLimitOrder(false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0), {from: maker})
-        console.log("gas on 9th insert: ", result.receipt.gasUsed);
-
-        let balance = await btc.balanceOf.call(maker);
-        assert.equal(balance.toNumber(), 9496, "btc balance of maker is not correct");
-        balance = await usd.balanceOf.call(maker);
-        assert.equal(balance.toNumber(), 0, "usd balance of maker is not correct");
-
-        let reserves = await pair.getReserves.call();
-        assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
-        assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
-        assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
-        let booked = await pair.getBooked.call();
-        assert.equal(booked.bookedStock.toNumber(), 504, "booked stock balance is not correct");
-        assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
-        assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
-
-        result = await pair.getOrderList.call(false, 0, 10);
-        //console.log("========result ", result);
-        //for(let i=0; i < result.logs.length; i++) {
-        //    console.log("========orderlist ", i, result.logs[i].event, result.logs[i].args);
-        //}
-    });
-
     it("insert buy order with only 1 incomplete deal with orderbook", async () => {
         await btc.approve(boss, 1000000000, {from: taker});
         await usd.approve(boss, 1000000000, {from: taker});
