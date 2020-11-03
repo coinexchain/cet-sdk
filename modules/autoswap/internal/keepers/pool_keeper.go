@@ -95,6 +95,7 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	if FeeOn {
 		info.KLast = info.StockAmmReserve.Mul(info.MoneyAmmReserve)
 	}
+	p.SetPoolInfo(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, info)
 	return stockAmount, moneyAmount, nil
 }
 
