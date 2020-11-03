@@ -61,6 +61,10 @@ func issueAbbToBob(ctx sdk.Context, app *testapp.TestApp, t *testing.T) {
 	app.AccountKeeper.SetAccount(ctx, bobAcc)
 }
 
+func newCoins(token string, amount sdk.Int) sdk.Coins {
+	return sdk.NewCoins(sdk.NewCoin(token, amount))
+}
+
 func TestLiquidity(t *testing.T) {
 	var (
 		market          = fmt.Sprintf("%s/%s", tokenNameOne, tokenNameTwo)
@@ -119,8 +123,4 @@ func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		require.EqualValues(t, moneyOut, expectedMoneyOut, "get money amount is not equal in burn liquidity")
 		// check liquidity balance in to address
 	}
-}
-
-func TestHello(t *testing.T) {
-	fmt.Println("hello")
 }
