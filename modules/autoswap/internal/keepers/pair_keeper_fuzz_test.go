@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 
 	"github.com/coinexchain/cet-sdk/modules/asset"
 	"github.com/cosmos/cosmos-sdk/x/supply"
@@ -25,6 +26,7 @@ var (
 	moneySymbol          = "tokentwo"
 	moduleAcc            = "autoswap-pool"
 	maxTokenAmount int64 = 1000000
+	maxPrice       int64 = 1e10
 	from                 = testutil.ToAccAddress("bob")
 	to                   = testutil.ToAccAddress("alice")
 	tokenAmount          = sdk.NewInt(1e18).Mul(sdk.NewInt(1e18))
@@ -76,7 +78,8 @@ func TestLiquidity(t *testing.T) {
 	app := prepareTestApp(t)
 	app.AutoSwapKeeper.SetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook, &keepers.PoolInfo{Symbol: market})
 	mintLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
-	//burnLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
+	burnLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
+	addLimitOrderTest(t, app, market, isOpenSwap, isOpenOrderBook)
 }
 
 func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
@@ -140,10 +143,16 @@ func getExpectedLiquidity(stockAmount, moneyAmount sdk.Int, info *keepers.PoolIn
 }
 
 func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
-	// todo. burn liqudity
+	// get random liquidity to burn
 	burnLiquidityAmount := getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9))
+	if app.AutoSwapKeeper.GetLiquidity(ctx, market, to).LT(burnLiquidityAmount) {
+		fmt.Println("The random liquidity amount is larger than the user's balance")
+		return
+	}
 	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
 	expectedStockOut, expectedMoneyOut := info.GetTokensAmountOut(burnLiquidityAmount)
+
+	// burn liquidity
 	stockOut, moneyOut, err := app.AutoSwapKeeper.Burn(app.ctx, market, isOpenSwap, isOpenOrderBook, from, burnLiquidityAmount)
 	require.Nil(t, err, "init liquidity burn failed")
 	// check outToken is correct
@@ -164,4 +173,41 @@ func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		require.EqualValues(t, moneyOut, expectedMoneyOut, "get money amount is not equal in burn liquidity")
 		// check liquidity balance in to address
 	}
+}
+
+func addLimitOrderTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
+	stockBalance := app.AccountKeeper.GetAccount(app.ctx, from).GetCoins().AmountOf(stockSymbol)
+	moneyBalance := app.AccountKeeper.GetAccount(app.ctx, to).GetCoins().AmountOf(moneySymbol)
+	require.Nil(t, app.BankKeeper.SendCoins(app.ctx, from, to, newCoins(stockSymbol, stockBalance.Quo(sdk.NewInt(2)))), "transfer stock token failed")
+	require.Nil(t, app.BankKeeper.SendCoins(app.ctx, from, to, newCoins(stockSymbol, moneyBalance.Quo(sdk.NewInt(2)))), "transfer money token failed")
+	for i := 0; i < testNum; i++ {
+		order := &types.Order{
+			OrderBasic: types.OrderBasic{
+				IsLimitOrder:    true,
+				Sender:          from,
+				IsOpenOrderBook: isOpenOrderBook,
+				IsOpenSwap:      isOpenSwap,
+				MarketSymbol:    market,
+				Amount:          getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
+			},
+			OrderID: int64(i) + 1,
+			Price:   getRandomPrice(maxPrice),
+			PrevKey: [3]int64{int64(i), 0, 0},
+		}
+		token := order.Stock()
+		if i%2 == 0 {
+			order.IsBuy = true
+			token = order.Money()
+		}
+
+		if !app.AccountKeeper.GetAccount(app.ctx, order.Sender).GetCoins().IsAllGT(newCoins(token, order.ActualAmount())) {
+			fmt.Println("order required amount is too large than user balance")
+			continue
+		}
+		require.Nil(t, app.AutoSwapKeeper.AddLimitOrder(app.ctx, order), "AddLimitOrder failed")
+	}
+}
+
+func getRandomPrice(max int64) sdk.Dec {
+	return sdk.NewDec(rand.Int63n(max)).Quo(sdk.NewDec(1e5))
 }
