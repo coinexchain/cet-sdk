@@ -27,6 +27,7 @@ const (
 	CodePairIsNotExist         = 1215
 	CodeInvalidLiquidityAmount = 1216
 	CodeAmountOutIsSmall       = 1217
+	CodeInvalidSwap            = 1218
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
@@ -51,6 +52,10 @@ func ErrInvalidSender(sender sdk.AccAddress) sdk.Error {
 func ErrInvalidMarket(market string, isOpenSwap bool, isOpenOrderBook bool) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidMarket, fmt.Sprintf(
 		"Invalid market: %s, isOpenSwap: %v, isOpenOrderBook: %v", market, isOpenSwap, isOpenOrderBook))
+}
+
+func ErrInvalidSwap(pairs []MarketInfo) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidSwap, fmt.Sprintf("invalid swap: %v", pairs))
 }
 
 func ErrInvalidPrevKey(prevKey [3]int64) sdk.Error {
@@ -95,6 +100,7 @@ func ErrInvalidLiquidityAmount() sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidLiquidityAmount, "invalid liquidity amount")
 }
 
-func ErrAmountOutIsSmallerThanExpected() sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeAmountOutIsSmall, "amount out is smaller than expected")
+func ErrAmountOutIsSmallerThanExpected(expected, actual sdk.Int) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeAmountOutIsSmall, fmt.Sprintf("amount out is smaller than "+
+		"expected; actual:%s, expected: %s", actual.String(), expected.String()))
 }

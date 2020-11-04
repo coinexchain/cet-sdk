@@ -21,7 +21,7 @@ type Pair struct {
 
 type IPairKeeper interface {
 	IPoolKeeper
-	AddMarketOrder(ctx sdk.Context, order *types.Order) sdk.Error
+	AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error)
 	AddLimitOrder(ctx sdk.Context, order *types.Order) sdk.Error
 	GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool) int64
 	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
@@ -437,17 +437,21 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	return amountToTaker
 }
 
-func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) sdk.Error {
+func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error) {
 	order.Price = sdk.ZeroDec()
 	if order.IsBuy {
 		order.Price = sdk.NewDec(math.MaxInt64)
 	}
 	order.IsLimitOrder = false
 	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
-	if _, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo); err != nil {
-		return err
+	amountToTaker, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo)
+	if err != nil {
+		return sdk.Int{}, err
 	}
-	return nil
+	if amountToTaker.LT(order.MinOutputAmount) {
+		return sdk.Int{}, types.ErrAmountOutIsSmallerThanExpected(order.MinOutputAmount, amountToTaker)
+	}
+	return amountToTaker, nil
 }
 
 func (pk PairKeeper) HasOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) bool {

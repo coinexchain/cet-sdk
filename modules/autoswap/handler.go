@@ -17,6 +17,12 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 			return handleMsgAddLiquidity(ctx, k, msg)
 		case types.MsgRemoveLiquidity:
 			return handleMsgRemoveLiquidity(ctx, k, msg)
+		case types.MsgCreateLimitOrder:
+			return handleMsgCreateLimitOrder(ctx, k, msg)
+		case types.MsgSwapTokens:
+			return handlerMsgSwapTokens(ctx, k, msg)
+		case types.MsgDeleteOrder:
+			return handlerMsgDeleteOrder(ctx, k, msg)
 		default:
 			return dex.ErrUnknownRequest(types.ModuleName, msg)
 		}
@@ -47,10 +53,41 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	if err != nil {
 		return err.Result()
 	}
-	if stockOut.LT(msg.AmountStockMin) || moneyOut.LT(msg.AmountMoneyMin) {
-		return types.ErrAmountOutIsSmallerThanExpected().Result()
+	if stockOut.LT(msg.AmountStockMin) {
+		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountStockMin, stockOut).Result()
+	}
+	if moneyOut.LT(msg.AmountMoneyMin) {
+		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountMoneyMin, moneyOut).Result()
 	}
 	//transfer token
 	//todo: move clear liquidity in burn
+	return sdk.Result{}
+}
+
+func handleMsgCreateLimitOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateLimitOrder) sdk.Result {
+	if err := k.AddLimitOrder(ctx, msg.OrderInfo()); err != nil {
+		return err.Result()
+	}
+	return sdk.Result{}
+}
+
+func handlerMsgSwapTokens(ctx sdk.Context, k keepers.Keeper, msg types.MsgSwapTokens) sdk.Result {
+	orders := msg.GetOrderInfos()
+	for i := 0; i < len(orders); i++ {
+		outAmount, err := k.AddMarketOrder(ctx, orders[i])
+		if err != nil {
+			return err.Result()
+		}
+		if i < len(orders)-1 {
+			orders[i+1].Amount = outAmount
+		}
+	}
+	return sdk.Result{}
+}
+
+func handlerMsgDeleteOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgDeleteOrder) sdk.Result {
+	if err := k.DeleteOrder(ctx, &msg); err != nil {
+		return err.Result()
+	}
 	return sdk.Result{}
 }

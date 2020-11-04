@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgCreateLimitOrder{}
-var _ sdk.Msg = MsgCreateMarketOrder{}
+var _ sdk.Msg = MsgCreateLimitOrder{}
+var _ sdk.Msg = MsgSwapTokens{}
 var _ sdk.Msg = MsgDeleteOrder{}
 var _ sdk.Msg = MsgAddLiquidity{}
 var _ sdk.Msg = MsgRemoveLiquidity{}
@@ -19,15 +19,15 @@ type MsgCreateLimitOrder struct {
 	PrevKey    [3]int64 `json:"prev_key"`
 }
 
-func (limit *MsgCreateLimitOrder) Route() string {
+func (limit MsgCreateLimitOrder) Route() string {
 	return RouterKey
 }
 
-func (limit *MsgCreateLimitOrder) Type() string {
+func (limit MsgCreateLimitOrder) Type() string {
 	return "create_limit_order"
 }
 
-func (limit *MsgCreateLimitOrder) ValidateBasic() sdk.Error {
+func (limit MsgCreateLimitOrder) ValidateBasic() sdk.Error {
 	if len(strings.TrimSpace(limit.MarketSymbol)) == 0 || (!limit.IsOpenSwap && !limit.IsOpenOrderBook) {
 		return ErrInvalidMarket(limit.MarketSymbol, limit.IsOpenSwap, limit.IsOpenOrderBook)
 	}
@@ -53,11 +53,11 @@ func (limit *MsgCreateLimitOrder) OrderInfo() *Order {
 	}
 }
 
-func (limit *MsgCreateLimitOrder) GetSignBytes() []byte {
+func (limit MsgCreateLimitOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(limit))
 }
 
-func (limit *MsgCreateLimitOrder) GetSigners() []sdk.AccAddress {
+func (limit MsgCreateLimitOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{limit.Sender}
 }
 
@@ -65,22 +65,37 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 	limit.Sender = address
 }
 
-type MsgCreateMarketOrder struct {
-	OrderBasic      `json:"order_basic"`
+type MarketInfo struct {
+	MarketSymbol    string // stock/money
+	IsOpenSwap      bool
+	IsOpenOrderBook bool
+}
+
+type MsgSwapTokens struct {
+	Pairs        []MarketInfo
+	Sender       sdk.AccAddress `json:"sender"`
+	IsBuy        bool           `json:"is_buy"`
+	IsLimitOrder bool           `json:"is_limit_order"`
+
+	// if the order is market_order, the amount is the actual input amount with special token(
+	// ie: sell order, amount = stockTokenAmount, buy order = moneyTokenAmount)
+	// if the order is limit_order, the amount is the stock amount and orderActualAmount will be calculated
+	// (ie: buyActualAmount = price * amount, sellActualAmount = amount)
+	Amount          sdk.Int `json:"amount"`
 	MinOutputAmount sdk.Int `json:"min_output_amount"`
 }
 
-func (mkOr MsgCreateMarketOrder) Route() string {
+func (mkOr MsgSwapTokens) Route() string {
 	return RouterKey
 }
 
-func (mkOr MsgCreateMarketOrder) Type() string {
+func (mkOr MsgSwapTokens) Type() string {
 	return "create_market_order"
 }
 
-func (mkOr MsgCreateMarketOrder) ValidateBasic() sdk.Error {
-	if len(strings.TrimSpace(mkOr.MarketSymbol)) == 0 || (!mkOr.IsOpenSwap && !mkOr.IsOpenOrderBook) {
-		return ErrInvalidMarket(mkOr.MarketSymbol, mkOr.IsOpenSwap, mkOr.IsOpenOrderBook)
+func (mkOr MsgSwapTokens) ValidateBasic() sdk.Error {
+	if isValidSwapChain(mkOr.Pairs) {
+		return ErrInvalidSwap(mkOr.Pairs)
 	}
 	if mkOr.Sender.Empty() {
 		return ErrInvalidSender(mkOr.Sender)
@@ -94,23 +109,56 @@ func (mkOr MsgCreateMarketOrder) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (mkOr MsgCreateMarketOrder) GetSignBytes() []byte {
+func isValidSwapChain(pairs []MarketInfo) bool {
+	index := 0
+	tokenLists := make([][]string, len(pairs))
+	if len(pairs) == 0 {
+		return false
+	}
+	for _, v := range pairs {
+		tokenLists = append(tokenLists, strings.Split(v.MarketSymbol, "/"))
+		index = len(tokenLists) - 1
+		if len(tokenLists[index]) != 2 || (tokenLists[index][0] == tokenLists[index][1]) {
+			return false
+		}
+	}
+	// swap pairs should be : a/b, b/c, c/d ....
+	for i := 0; i < len(tokenLists)-1; i++ {
+		if tokenLists[i][1] != tokenLists[i+1][0] {
+			return false
+		}
+	}
+	return true
+}
+
+func (mkOr MsgSwapTokens) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(mkOr))
 }
 
-func (mkOr MsgCreateMarketOrder) GetSigners() []sdk.AccAddress {
+func (mkOr MsgSwapTokens) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{mkOr.Sender}
 }
 
-func (mkOr *MsgCreateMarketOrder) SetAccAddress(address sdk.AccAddress) {
+func (mkOr *MsgSwapTokens) SetAccAddress(address sdk.AccAddress) {
 	mkOr.Sender = address
 }
 
-func (mkOr *MsgCreateMarketOrder) OrderInfo() *Order {
-	return &Order{
-		OrderBasic:      mkOr.OrderBasic,
-		MinOutputAmount: mkOr.MinOutputAmount,
+func (mkOr *MsgSwapTokens) GetOrderInfos() []*Order {
+	orders := make([]*Order, 0, len(mkOr.Pairs))
+	for _, v := range mkOr.Pairs {
+		orders = append(orders, &Order{
+			OrderBasic: OrderBasic{
+				Sender:          mkOr.Sender,
+				MarketSymbol:    v.MarketSymbol,
+				IsOpenSwap:      v.IsOpenSwap,
+				IsOpenOrderBook: v.IsOpenOrderBook,
+				Amount:          mkOr.Amount,
+			},
+			MinOutputAmount: sdk.ZeroInt(),
+		})
 	}
+	orders[len(orders)-1].MinOutputAmount = mkOr.MinOutputAmount
+	return orders
 }
 
 type MsgDeleteOrder struct {
