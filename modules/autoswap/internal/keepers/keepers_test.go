@@ -305,23 +305,58 @@ func TestMint(t *testing.T) {
 */
 
 func TestInsertSellOrders(t *testing.T) {
+	boss := sdk.AccAddress("boss")
+	shareReceiver := sdk.AccAddress("shareReceiver")
 	maker := sdk.AccAddress("maker")
-	app, ctx := newTestApp()
-	ask := app.AutoSwapKeeper
-	pair := "foo/bar"
+	taker := sdk.AccAddress("taker")
+	pair := "btc0/usd0"
+	th := newTestHelper(t)
 
-	issueToken(t, app.AssetKeeper, ctx, "foo", sdk.NewInt(100000000000000), maker)
-	issueToken(t, app.AssetKeeper, ctx, "bar", sdk.NewInt(100000000000000), maker)
-	createPair(t, ask, ctx, maker, "foo", "bar")
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10000000, 18), 1, merge3(0, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10300000, 18), 2, merge3(0, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10500000, 18), 3, merge3(2, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10700000, 18), 4, merge3(3, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(100), makePrice32(10900000, 18), 5, merge3(4, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10200000, 18), 6, merge3(1, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10400000, 18), 7, merge3(2, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10600000, 18), 8, merge3(3, 0, 0))
-	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10800000, 18), 9, merge3(4, 0, 0))
+	th.issueToken("btc0", 100000000000000, boss)
+	th.issueToken("usd0", 100000000000000, boss)
+	th.createPair(maker, "btc0", "usd0")
+
+	th.mint(pair, 10000, 1000000, shareReceiver)
+	pi := th.getPoolInfo(pair)
+	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
+	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
+
+	th.transfer("btc0", 10000, boss, maker)
+	th.transfer("usd0", 1000000, boss, taker)
+	th.addLimitOrder(pair, false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
+	th.addLimitOrder(pair, false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0))
+	th.addLimitOrder(pair, false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0))
+	th.addLimitOrder(pair, false, maker, 100, makePrice32(10700000, 18), 4, merge3(3, 0, 0))
+	th.addLimitOrder(pair, false, maker, 100, makePrice32(10900000, 18), 5, merge3(4, 0, 0))
+	th.addLimitOrder(pair, false, maker, 1, makePrice32(10200000, 18), 6, merge3(1, 0, 0))
+	th.addLimitOrder(pair, false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0))
+	th.addLimitOrder(pair, false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0))
+	th.addLimitOrder(pair, false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0))
+	require.Equal(t, sdk.NewInt(9496), th.balanceOf("btc0", maker))
+	require.Equal(t, sdk.NewInt(0), th.balanceOf("usd0", maker))
+	pi = th.getPoolInfo(pair)
+	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
+	//require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve) // TODO
+	//require.Equal(t, sdk.NewInt(504), pi.StockOrderBookReserve) // TODO
+	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
+	require.Equal(t, 1, th.getFirstSellID(pair)) // TODO
+	require.Equal(t, 0, th.getFirstBuyID(pair)) // TODO
+	/*
+	   let reserves = await pair.getReserves.call();
+	   assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
+	   assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
+	   assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
+	   let booked = await pair.getBooked.call();
+	   assert.equal(booked.bookedStock.toNumber(), 504, "booked stock balance is not correct");
+	   assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
+	   assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+
+	   result = await pair.getOrderList.call(false, 0, 10);
+	   //console.log("========result ", result);
+	   //for(let i=0; i < result.logs.length; i++) {
+	   //    console.log("========orderlist ", i, result.logs[i].event, result.logs[i].args);
+	   //}
+	*/
 	// TODO
 }
 

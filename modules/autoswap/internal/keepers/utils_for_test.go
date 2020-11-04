@@ -34,6 +34,10 @@ func (h TestHelper) issueToken(sym string, totalSupply int64, owner sdk.AccAddre
 func (h TestHelper) balanceOf(sym string, addr sdk.AccAddress) sdk.Int {
 	return h.app.BankxKeeper.GetCoins(h.ctx, addr).AmountOf(sym)
 }
+func (h TestHelper) transfer(sym string, amt int64, from, to sdk.AccAddress) {
+	err := h.app.BankxKeeper.SendCoins(h.ctx, from, to, sdk.NewCoins(sdk.NewCoin(sym, sdk.NewInt(amt))))
+	require.NoError(h.t, err)
+}
 func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string) {
 	createPair(h.t, h.app.AutoSwapKeeper, h.ctx, owner, stock, money)
 }
@@ -51,6 +55,12 @@ func (h TestHelper) getLiquidity(pair string, addr sdk.AccAddress) sdk.Int {
 }
 func (h TestHelper) getPoolInfo(pair string) *autoswap.PoolInfo {
 	return h.app.AutoSwapKeeper.GetPoolInfo(h.ctx, pair, true, true)
+}
+func (h TestHelper) getFirstBuyID(pair string) int64 {
+	return h.app.AutoSwapKeeper.GetFirstOrderID(h.ctx, pair, true, true, true)
+}
+func (h TestHelper) getFirstSellID(pair string) int64 {
+	return h.app.AutoSwapKeeper.GetFirstOrderID(h.ctx, pair, true, true, false)
 }
 
 /* helper functions */
