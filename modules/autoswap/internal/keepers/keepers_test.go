@@ -232,13 +232,12 @@ contract("pair", async accounts => {
 */
 func TestMint(t *testing.T) {
 	addr := sdk.AccAddress("add123")
-	app, ctx := newTestApp()
-	ask := app.AutoSwapKeeper
+	th := newTestHelper(t)
 
-	createPair(t, ask, ctx, addr, "foo", "bar")
-	mint(t, ask, ctx, "foo/bar", sdk.NewInt(10000), sdk.NewInt(1000000), addr)
-	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", true, true, addr))
-	pi := ask.GetPoolInfo(ctx, "foo/bar", true, true)
+	th.createPair(addr, "foo", "bar")
+	th.mint("foo/bar", 10000, 1000000, addr)
+	require.Equal(t, sdk.NewInt(100000), th.getLiquidity("foo/bar", addr))
+	pi := th.getPoolInfo("foo/bar")
 	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
 	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
 }

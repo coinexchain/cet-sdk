@@ -17,6 +17,7 @@ var (
 
 type (
 	Keeper               = keepers.Keeper
+	PoolInfo             = keepers.PoolInfo
 	MsgAddLiquidity      = types.MsgAddLiquidity
 	MsgRemoveLiquidity   = types.MsgRemoveLiquidity
 	MsgCreateMarketOrder = types.MsgCreateMarketOrder

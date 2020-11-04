@@ -17,6 +17,44 @@ import (
 	"github.com/coinexchain/cet-sdk/testapp"
 )
 
+/* TestHelper */
+type TestHelper struct {
+	t   *testing.T
+	app *testapp.TestApp
+	ctx sdk.Context
+}
+
+func newTestHelper(t *testing.T) TestHelper {
+	app, ctx := newTestApp()
+	return TestHelper{t, app, ctx}
+}
+func (h TestHelper) issueToken(sym string, totalSupply int64, owner sdk.AccAddress) {
+	issueToken(h.t, h.app.AssetKeeper, h.ctx, sym, sdk.NewInt(totalSupply), owner)
+}
+func (h TestHelper) balanceOf(sym string, addr sdk.AccAddress) sdk.Int {
+	return h.app.BankxKeeper.GetCoins(h.ctx, addr).AmountOf(sym)
+}
+func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string) {
+	createPair(h.t, h.app.AutoSwapKeeper, h.ctx, owner, stock, money)
+}
+func (h TestHelper) mint(pair string, stockIn, moneyIn int64, to sdk.AccAddress) {
+	mint(h.t, h.app.AutoSwapKeeper, h.ctx, pair, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
+}
+func (h TestHelper) addLimitOrder(pair string, isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
+	addLimitOrder(h.t, h.app.AutoSwapKeeper, h.ctx, pair, isBuy, sender, sdk.NewInt(amt), price, id, prevKey)
+}
+func (h TestHelper) removeOrder(pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
+	removeOrder(h.t, h.app.AutoSwapKeeper, h.ctx, pair, isBuy, id, prevKey, sender)
+}
+func (h TestHelper) getLiquidity(pair string, addr sdk.AccAddress) sdk.Int {
+	return h.app.AutoSwapKeeper.GetLiquidity(h.ctx, pair, true, true, addr)
+}
+func (h TestHelper) getPoolInfo(pair string) *autoswap.PoolInfo {
+	return h.app.AutoSwapKeeper.GetPoolInfo(h.ctx, pair, true, true)
+}
+
+/* helper functions */
+
 func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
 	app = testapp.NewTestApp()
 	ctx = sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
