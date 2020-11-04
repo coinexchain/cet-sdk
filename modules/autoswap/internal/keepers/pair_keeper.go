@@ -13,6 +13,12 @@ import (
 
 var _ IPairKeeper = PairKeeper{}
 
+type Pair struct {
+	Symbol          string
+	IsSwapOpen      bool
+	IsOrderBookOpen bool
+}
+
 type IPairKeeper interface {
 	IPoolKeeper
 	AddMarketOrder(ctx sdk.Context, order *types.Order) sdk.Error
@@ -21,6 +27,8 @@ type IPairKeeper interface {
 	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
 	HasOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) bool
 	GetOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) *types.Order
+	GetPairList(ctx sdk.Context) map[Pair]bool
+	ClearPairList(ctx sdk.Context)
 }
 
 type FeeFunc func(sdk.Context) sdk.Dec
@@ -54,6 +62,14 @@ func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types
 
 		DealPairs: make(map[string]map[bool]bool),
 	}
+}
+
+func (pk PairKeeper) GetPairList(ctx sdk.Context) map[Pair]bool {
+	//todo
+	return nil
+}
+func (pk PairKeeper) ClearPairList(ctx sdk.Context) {
+	//todo
 }
 
 func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
