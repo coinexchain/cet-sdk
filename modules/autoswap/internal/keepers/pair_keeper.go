@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"strconv"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -565,6 +564,7 @@ func (pk PairKeeper) GetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap,
 func (pk PairKeeper) SetFirstOrderID(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) {
 	store := ctx.KVStore(pk.storeKey)
 	key := getBestOrderPriceKey(symbol, isOpenSwap, isOpenOrderBook, isBuy)
-	val := strconv.Itoa(int(orderID))
-	store.Set(key, []byte(val))
+	val := make([]byte, 8)
+	binary.BigEndian.PutUint64(val, uint64(orderID))
+	store.Set(key, val)
 }
