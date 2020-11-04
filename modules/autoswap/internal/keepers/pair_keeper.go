@@ -171,11 +171,13 @@ func (pk PairKeeper) insertOrder(ctx sdk.Context, order, prevOrder *types.Order)
 // insert the remainder order into the order book
 func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.Order, poolInfo *PoolInfo) (sdk.Int, sdk.Error) {
 	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy)
-	if firstOrderID <= 0 {
-		return sdk.Int{}, types.ErrInvalidOrderID(firstOrderID)
-	}
 	currOrderID := firstOrderID
-	dealInfo := &types.DealInfo{RemainAmount: order.ActualAmount()}
+	dealInfo := &types.DealInfo{
+		RemainAmount:    order.ActualAmount(),
+		AmountInToPool:  sdk.ZeroInt(),
+		DealMoneyInBook: sdk.ZeroInt(),
+		DealStockInBook: sdk.ZeroInt(),
+	}
 	if !order.IsLimitOrder {
 		dealInfo.RemainAmount = order.Amount
 	}
