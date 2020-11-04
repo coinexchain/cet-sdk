@@ -336,11 +336,11 @@ func TestInsertSellOrders(t *testing.T) {
 	require.Equal(t, sdk.NewInt(0), th.balanceOf("usd0", maker))
 	pi = th.getPoolInfo(pair)
 	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
-	//require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve) // TODO
-	//require.Equal(t, sdk.NewInt(504), pi.StockOrderBookReserve) // TODO
+	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)   // TODO
+	require.Equal(t, sdk.NewInt(504), pi.StockOrderBookReserve) // TODO
 	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
 	require.Equal(t, 1, th.getFirstSellID(pair)) // TODO
-	require.Equal(t, 0, th.getFirstBuyID(pair)) // TODO
+	require.Equal(t, 0, th.getFirstBuyID(pair))  // TODO
 	/*
 	   let reserves = await pair.getReserves.call();
 	   assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
