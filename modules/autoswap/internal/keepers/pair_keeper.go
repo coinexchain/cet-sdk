@@ -23,23 +23,36 @@ type IPairKeeper interface {
 	GetOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) *types.Order
 }
 
+type FeeFunc func(sdk.Context) sdk.Dec
+
 type PairKeeper struct {
 	IPoolKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
 	codec              *codec.Codec
 	storeKey           sdk.StoreKey
-	GetTakerFee        func(ctx sdk.Context) sdk.Dec
-	GetMakerFee        func(ctx sdk.Context) sdk.Dec
-	GetDealWithPoolFee func(ctx sdk.Context) sdk.Dec
+	GetTakerFee        FeeFunc
+	GetMakerFee        FeeFunc
+	GetDealWithPoolFee FeeFunc
+
+	// record deal pairs in one block.
+	// map[market][isOpenSwap][isOpenOrderBook]
+	DealPairs map[string]map[bool]bool
 }
 
-func NewPairKeeper(poolKeeper IPoolKeeper, bnk types.ExpectedBankKeeper, codec *codec.Codec, storeKey sdk.StoreKey) *PairKeeper {
-	return &PairKeeper{
+func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
+	codec *codec.Codec, storeKey sdk.StoreKey, takerFee, makerFee, poolFee FeeFunc) PairKeeper {
+	return PairKeeper{
 		codec:              codec,
 		storeKey:           storeKey,
 		IPoolKeeper:        poolKeeper,
+		SupplyKeeper:       supplyK,
 		ExpectedBankKeeper: bnk,
+		GetTakerFee:        takerFee,
+		GetMakerFee:        makerFee,
+		GetDealWithPoolFee: poolFee,
+
+		DealPairs: make(map[string]map[bool]bool),
 	}
 }
 

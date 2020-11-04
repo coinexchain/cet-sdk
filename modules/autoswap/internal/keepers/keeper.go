@@ -21,20 +21,12 @@ type Keeper struct {
 }
 
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
-	ak types.ExpectedAccountKeeper, bk types.ExpectedBankKeeper, sk types.SupplyKeeper) Keeper {
+	bk types.ExpectedBankKeeper, sk types.SupplyKeeper) Keeper {
 
 	poolK := PoolKeeper{
 		key:          storeKey,
 		codec:        cdc,
 		SupplyKeeper: sk,
-	}
-
-	pairK := PairKeeper{
-		IPoolKeeper:        poolK,
-		SupplyKeeper:       sk,
-		ExpectedBankKeeper: bk,
-		codec:              cdc,
-		storeKey:           storeKey,
 	}
 
 	factoryK := FactoryKeeper{
@@ -47,13 +39,8 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 		paramSubspace:    paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		sk:               sk,
 		FactoryInterface: factoryK,
-		//IPoolKeeper:      poolK,
-		//IPairKeeper: pairK,
 	}
-	pairK.GetMakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetMakerFee(ctx) }
-	pairK.GetTakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetTakerFee(ctx) }
-	pairK.GetDealWithPoolFee = func(ctx sdk.Context) sdk.Dec { return k.GetDealWithPoolFee(ctx) }
-	k.IPairKeeper = pairK
+	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, cdc, storeKey, k.GetTakerFee, k.GetMakerFee, k.GetDealWithPoolFee)
 	return k
 }
 

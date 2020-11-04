@@ -1,12 +1,13 @@
 package keepers_test
 
 import (
+	"testing"
+
 	"github.com/coinexchain/cet-sdk/modules/autoswap"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -55,7 +56,7 @@ func TestKeeper_GetFee(t *testing.T) {
 
 type testCase struct {
 	Klast          sdk.Int
-	Pool           keepers.PoolInfo
+	Pool           *keepers.PoolInfo
 	tokenAllocated sdk.Coins
 }
 
@@ -83,7 +84,7 @@ func TestKeeper_AllocateFeeToValidator(t *testing.T) {
 		// klast is 1/10 of k
 		{
 			Klast: sdk.NewInt(4 * 10000 * 10000),
-			Pool:  info,
+			Pool:  &info,
 			// stock = 18*4/(20*6+2*4)*10000 = 5625
 			// money = stock * 400 = 2250000
 			tokenAllocated: newStockMoneyCoins(5625, 2250000),
@@ -91,12 +92,12 @@ func TestKeeper_AllocateFeeToValidator(t *testing.T) {
 		// klast is 0
 		{
 			Klast: sdk.NewInt(0),
-			Pool:  info,
+			Pool:  &info,
 		},
 		// klast is larger than k
 		{
 			Klast: sdk.NewInt(4000 * 10000 * 10000),
-			Pool:  info,
+			Pool:  &info,
 		},
 	}
 
