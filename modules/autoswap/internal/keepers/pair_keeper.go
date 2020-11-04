@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ IPairKeeper = PairKeeper{}
+var _ IPairKeeper = &PairKeeper{}
 
 type Pair struct {
 	Symbol          string
@@ -27,8 +27,9 @@ type IPairKeeper interface {
 	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
 	HasOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) bool
 	GetOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpenOrderBook, isBuy bool, orderID int64) *types.Order
-	GetPairList(ctx sdk.Context) map[Pair]bool
-	ClearPairList(ctx sdk.Context)
+
+	GetPairList() map[Pair]struct{}
+	ClearPairList()
 }
 
 type FeeFunc func(sdk.Context) sdk.Dec
@@ -44,13 +45,12 @@ type PairKeeper struct {
 	GetDealWithPoolFee FeeFunc
 
 	// record deal pairs in one block.
-	// map[market][isOpenSwap][isOpenOrderBook]
-	DealPairs map[string]map[bool]bool
+	DealPairs map[Pair]struct{}
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
-	codec *codec.Codec, storeKey sdk.StoreKey, takerFee, makerFee, poolFee FeeFunc) PairKeeper {
-	return PairKeeper{
+	codec *codec.Codec, storeKey sdk.StoreKey, takerFee, makerFee, poolFee FeeFunc) *PairKeeper {
+	return &PairKeeper{
 		codec:              codec,
 		storeKey:           storeKey,
 		IPoolKeeper:        poolKeeper,
@@ -60,16 +60,15 @@ func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types
 		GetMakerFee:        makerFee,
 		GetDealWithPoolFee: poolFee,
 
-		DealPairs: make(map[string]map[bool]bool),
+		DealPairs: make(map[Pair]struct{}),
 	}
 }
 
-func (pk PairKeeper) GetPairList(ctx sdk.Context) map[Pair]bool {
-	//todo
-	return nil
+func (pk *PairKeeper) GetPairList() map[Pair]struct{} {
+	return pk.DealPairs
 }
-func (pk PairKeeper) ClearPairList(ctx sdk.Context) {
-	//todo
+func (pk *PairKeeper) ClearPairList() {
+	pk.DealPairs = make(map[Pair]struct{})
 }
 
 func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
