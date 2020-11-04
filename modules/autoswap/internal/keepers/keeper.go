@@ -71,6 +71,10 @@ func (keeper *Keeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
 func (keeper *Keeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
 	return sdk.NewDec(keeper.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
 }
+func (keeper *Keeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(keeper.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
+}
+
 func (keeper *Keeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 	param := keeper.GetParams(ctx)
 	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
@@ -82,7 +86,7 @@ func (keeper Keeper) SendCoinsFromPoolAccountToModule(ctx sdk.Context, recipient
 	poolAddr := keeper.sk.GetModuleAddress(types.PoolModuleAcc)
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, poolAddr, recipientModule, amt)
 }
-func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info PoolInfo) error {
+func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info *PoolInfo) sdk.Error {
 	if !lastK.IsZero() {
 		k := info.MoneyAmmReserve.Mul(info.StockAmmReserve).BigInt()
 		var rootK, rootLastK big.Int
