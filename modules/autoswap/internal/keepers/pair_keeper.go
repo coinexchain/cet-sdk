@@ -370,7 +370,10 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	if order.IsBuy {
 		outPoolTokenReserve, inPoolTokenReserve, otherToTaker = poolInfo.StockAmmReserve, poolInfo.MoneyAmmReserve, dealInfo.DealStockInBook
 	}
-	outAmount := outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
+	outAmount := sdk.ZeroInt()
+	if !dealInfo.AmountInToPool.IsZero() {
+		outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
+	}
 	if dealInfo.AmountInToPool.IsPositive() {
 		// todo emit deal with pool log
 	}
@@ -388,17 +391,18 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	}
 	// transfer token from pool to order sender
 	if order.IsBuy {
-		if err := pk.SendCoinsFromModuleToAccount(ctx, AMMPool, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
+		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, AMMPool, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
+		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
 	} else {
-		if err := pk.SendCoinsFromModuleToAccount(ctx, AMMPool, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
+		fmt.Println(newCoins(order.Money(), outAmount).String())
+		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, AMMPool, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
+		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
 	}

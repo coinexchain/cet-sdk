@@ -8,10 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const (
-	AMMPool = "auto_swap_amm_pool"
-)
-
 type IPoolKeeper interface {
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpenOrderBook bool) *PoolInfo
