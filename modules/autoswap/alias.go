@@ -16,11 +16,11 @@ var (
 )
 
 type (
-	Keeper               = keepers.Keeper
-	PoolInfo             = keepers.PoolInfo
-	MsgAddLiquidity      = types.MsgAddLiquidity
-	MsgRemoveLiquidity   = types.MsgRemoveLiquidity
-	MsgCreateMarketOrder = types.MsgCreateMarketOrder
-	MsgCreateLimitOrder  = types.MsgCreateLimitOrder
-	MsgDeleteOrder       = types.MsgDeleteOrder
+	Keeper              = keepers.Keeper
+	PoolInfo            = keepers.PoolInfo
+	MsgAddLiquidity     = types.MsgAddLiquidity
+	MsgRemoveLiquidity  = types.MsgRemoveLiquidity
+	MsgSwapTokens       = types.MsgSwapTokens
+	MsgCreateLimitOrder = types.MsgCreateLimitOrder
+	MsgDeleteOrder      = types.MsgDeleteOrder
 )

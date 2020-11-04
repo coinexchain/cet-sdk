@@ -128,14 +128,14 @@ func (req *createMarketOrderReq) GetBaseReq() *rest.BaseReq {
 }
 
 func (req *createMarketOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
-	msg := &types.MsgCreateMarketOrder{
-		OrderBasic: types.OrderBasic{
-			Sender:          sender,
-			MarketSymbol:    req.PairSymbol,
-			IsOpenSwap:      !req.NoSwap,
-			IsOpenOrderBook: !req.NoOrderBook,
-			IsLimitOrder:    false,
-		},
+	msg := &types.MsgSwapTokens{
+		//OrderBasic: types.OrderBasic{
+		//	Sender:          sender,
+		//	MarketSymbol:    req.PairSymbol,
+		//	IsOpenSwap:      !req.NoSwap,
+		//	IsOpenOrderBook: !req.NoOrderBook,
+		//	IsLimitOrder:    false,
+		//},
 	}
 	var err error
 	if msg.IsBuy, err = parseIsBuy(req.Side); err != nil {

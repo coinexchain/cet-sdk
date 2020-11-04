@@ -267,11 +267,12 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	return
 }
 
-func getCreateMarketOrderMsg() (msg *types.MsgCreateMarketOrder, err error) {
-	msg = &types.MsgCreateMarketOrder{}
-	if msg.OrderBasic, err = getOrderBasic(); err != nil {
-		return
-	}
+// todo. will adapter MsgSwapTokens later.
+func getCreateMarketOrderMsg() (msg *types.MsgSwapTokens, err error) {
+	msg = &types.MsgSwapTokens{}
+	//if msg.OrderBasic, err = getOrderBasic(); err != nil {
+	//	return
+	//}
 	msg.IsLimitOrder = false
 	if msg.MinOutputAmount, err = parseSdkInt(flagOutputMin); err != nil {
 		return
