@@ -237,7 +237,7 @@ func TestMint(t *testing.T) {
 
 	createPair(t, ask, ctx, addr, "foo", "bar")
 	mint(t, ask, ctx, "foo/bar", sdk.NewInt(10000), sdk.NewInt(1000000), addr)
-	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", true,true, addr))
+	require.Equal(t, sdk.NewInt(100000), ask.GetLiquidity(ctx, "foo/bar", true, true, addr))
 	pi := ask.GetPoolInfo(ctx, "foo/bar", true, true)
 	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
 	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
@@ -305,7 +305,7 @@ func TestMint(t *testing.T) {
    });
 */
 
-func TestInsertSellOrder(t *testing.T) {
+func TestInsertSellOrders(t *testing.T) {
 	maker := sdk.AccAddress("maker")
 	app, ctx := newTestApp()
 	ask := app.AutoSwapKeeper
@@ -323,153 +323,196 @@ func TestInsertSellOrder(t *testing.T) {
 	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10400000, 18), 7, merge3(2, 0, 0))
 	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10600000, 18), 8, merge3(3, 0, 0))
 	addLimitOrder(t, ask, ctx, pair, false, maker, sdk.NewInt(1), makePrice32(10800000, 18), 9, merge3(4, 0, 0))
-	/*
-
-		let balance = await btc.balanceOf.call(maker);
-		assert.equal(balance.toNumber(), 9496, "btc balance of maker is not correct");
-		balance = await usd.balanceOf.call(maker);
-		assert.equal(balance.toNumber(), 0, "usd balance of maker is not correct");
-
-		let reserves = await pair.getReserves.call();
-		assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");
-		assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
-		assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
-		let booked = await pair.getBooked.call();
-		assert.equal(booked.bookedStock.toNumber(), 504, "booked stock balance is not correct");
-		assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
-		assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
-
-		result = await pair.getOrderList.call(false, 0, 10);
-		//console.log("========result ", result);
-		//for(let i=0; i < result.logs.length; i++) {
-		//    console.log("========orderlist ", i, result.logs[i].event, result.logs[i].args);
-		//}
-	*/
+	// TODO
 }
 
 /*
-    it("insert buy order with only 1 incomplete deal with orderbook", async () => {
-        await btc.approve(boss, 1000000000, {from: taker});
-        await usd.approve(boss, 1000000000, {from: taker});
-        await usd.transferFrom(taker, pair.address, 5000, {from: boss});
-        result = await pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11, [0, 0, 0], {from: taker})
-        console.log("gas on only 1 incomplete deal: ", result.receipt.gasUsed);
-        //for(let i=0; i < result.logs.length; i++) {
-        //    console.log("------log ", i, result.logs[i].args);
-        //}
+   it("insert buy order with only 1 incomplete deal with orderbook", async () => {
+       await btc.approve(boss, 1000000000, {from: taker});
+       await usd.approve(boss, 1000000000, {from: taker});
+       await usd.transferFrom(taker, pair.address, 5000, {from: boss});
+       result = await pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11, [0, 0, 0], {from: taker})
+       console.log("gas on only 1 incomplete deal: ", result.receipt.gasUsed);
+       //for(let i=0; i < result.logs.length; i++) {
+       //    console.log("------log ", i, result.logs[i].args);
+       //}
 
-        let balance = await usd.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 9995000, "usd balance of taker is not correct");
-        balance = await btc.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 49, "btc balance of taker is not correct");
+       let balance = await usd.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 9995000, "usd balance of taker is not correct");
+       balance = await btc.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 49, "btc balance of taker is not correct");
 
-        let reserves = await pair.getReserves.call();
-        let booked = await pair.getBooked.call();
-        console.log("reserveStock", reserves.reserveStock.toNumber())
-        console.log("reserveMoney", reserves.reserveMoney.toNumber())
-        console.log("firstSellID", reserves.firstSellID.toNumber())
-        console.log("bookedStock", booked.bookedStock.toNumber())
-        console.log("bookedMoney", booked.bookedMoney.toNumber())
-        console.log("firstBuyID", booked.firstBuyID.toNumber())
-        assert.equal(reserves.reserveStock.toNumber(), 10001, "reserve stock balance is not correct");
-        assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
-        assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
-        assert.equal(booked.bookedStock.toNumber(), 454, "booked stock balance is not correct");
-        assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
-        assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+       let reserves = await pair.getReserves.call();
+       let booked = await pair.getBooked.call();
+       console.log("reserveStock", reserves.reserveStock.toNumber())
+       console.log("reserveMoney", reserves.reserveMoney.toNumber())
+       console.log("firstSellID", reserves.firstSellID.toNumber())
+       console.log("bookedStock", booked.bookedStock.toNumber())
+       console.log("bookedMoney", booked.bookedMoney.toNumber())
+       console.log("firstBuyID", booked.firstBuyID.toNumber())
+       assert.equal(reserves.reserveStock.toNumber(), 10001, "reserve stock balance is not correct");
+       assert.equal(reserves.reserveMoney.toNumber(), 1000000, "reserve money balance is not correct");
+       assert.equal(reserves.firstSellID.toNumber(), 1, "firstSellID is not correct");
+       assert.equal(booked.bookedStock.toNumber(), 454, "booked stock balance is not correct");
+       assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
+       assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
 
-    });
+   });
+*/
+func TestInsertBuyOrder1(t *testing.T) {
+	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	taker := maker
+	app, ctx := newTestApp()
+	ask := app.AutoSwapKeeper
+	pair := "foo/bar"
 
-    it("insert buy order with only 1 complete deal with orderbook", async () => {
-        await usd.transferFrom(taker, pair.address, 5100, {from: boss});
-        result = await pair.addLimitOrder(true, taker, 51, makePrice32(10000000, 18), 12, [0, 0, 0], {from: taker})
-        console.log("gas on only 1 complete deal: ", result.receipt.gasUsed);
-        for(let i=0; i < result.logs.length; i++) {
-            console.log("------: ", i, result.logs[i].event, result.logs[i].args);
-        }
+	issueToken(t, app.AssetKeeper, ctx, "foo", sdk.NewInt(100000000000000), maker)
+	issueToken(t, app.AssetKeeper, ctx, "bar", sdk.NewInt(100000000000000), maker)
+	createPair(t, ask, ctx, maker, "foo", "bar")
 
-        let reserves = await pair.getReserves.call();
-        let booked = await pair.getBooked.call();
-        console.log("reserveStock", reserves.reserveStock.toNumber())
-        console.log("reserveMoney", reserves.reserveMoney.toNumber())
-        console.log("firstSellID", reserves.firstSellID.toNumber())
-        console.log("bookedStock", booked.bookedStock.toNumber())
-        console.log("bookedMoney", booked.bookedMoney.toNumber())
-        console.log("firstBuyID", booked.firstBuyID.toNumber())
-        assert.equal(reserves.reserveStock.toNumber(), 10001, "reserve stock balance is not correct");
-        assert.equal(reserves.reserveMoney.toNumber(), 1000100, "reserve money balance is not correct");
-        assert.equal(reserves.firstSellID.toNumber(), 6, "firstSellID is not correct");
-        assert.equal(booked.bookedStock.toNumber(), 404, "booked stock balance is not correct");
-        assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
-        assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+	addLimitOrder(t, ask, ctx, pair, true, taker, sdk.NewInt(51), makePrice32(10000000, 18), 12, merge3(0, 0, 0))
+	// TODO
+}
 
-        let balance = await usd.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 9989900, "usd balance of taker is not correct");
-        balance = await btc.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 99, "btc balance of taker is not correct");
-    });
+/*
+   it("insert buy order with only 1 complete deal with orderbook", async () => {
+       await usd.transferFrom(taker, pair.address, 5100, {from: boss});
+       result = await pair.addLimitOrder(true, taker, 51, makePrice32(10000000, 18), 12, [0, 0, 0], {from: taker})
+       console.log("gas on only 1 complete deal: ", result.receipt.gasUsed);
+       for(let i=0; i < result.logs.length; i++) {
+           console.log("------: ", i, result.logs[i].event, result.logs[i].args);
+       }
 
-    it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
-        await usd.transferFrom(taker, pair.address, 99000, {from: boss});
-        result = await pair.addLimitOrder(true, taker, 900, makePrice32(11000000, 18), 12, [0, 0, 0], {from: taker})
-        //for(let i=0; i < result.logs.length; i++) {
-        //    console.log("========log ", i, result.logs[i].event, result.logs[i].args);
-        //}
-        console.log("gas on complete 7 buy: ", result.receipt.gasUsed);
+       let reserves = await pair.getReserves.call();
+       let booked = await pair.getBooked.call();
+       console.log("reserveStock", reserves.reserveStock.toNumber())
+       console.log("reserveMoney", reserves.reserveMoney.toNumber())
+       console.log("firstSellID", reserves.firstSellID.toNumber())
+       console.log("bookedStock", booked.bookedStock.toNumber())
+       console.log("bookedMoney", booked.bookedMoney.toNumber())
+       console.log("firstBuyID", booked.firstBuyID.toNumber())
+       assert.equal(reserves.reserveStock.toNumber(), 10001, "reserve stock balance is not correct");
+       assert.equal(reserves.reserveMoney.toNumber(), 1000100, "reserve money balance is not correct");
+       assert.equal(reserves.firstSellID.toNumber(), 6, "firstSellID is not correct");
+       assert.equal(booked.bookedStock.toNumber(), 404, "booked stock balance is not correct");
+       assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct");
+       assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
 
-        let reserves = await pair.getReserves.call();
-        let booked = await pair.getBooked.call();
-        console.log("reserveStock", reserves.reserveStock.toNumber())
-        console.log("reserveMoney", reserves.reserveMoney.toNumber())
-        console.log("firstSellID", reserves.firstSellID.toNumber())
-        console.log("bookedStock", booked.bookedStock.toNumber())
-        console.log("bookedMoney", booked.bookedMoney.toNumber())
-        console.log("firstBuyID", booked.firstBuyID.toNumber())
-        // 1048809/9537 = 109.97
-        // 1048809*9537 = 10002491433.0
-        assert.equal(reserves.reserveStock.toNumber(), 9538, "reserve stock balance is not correct");
-        assert.equal(reserves.reserveMoney.toNumber(), 1049020, "reserve money balance is not correct");
-        assert.equal(reserves.firstSellID.toNumber(), 0, "firstSellID is not correct");
-        assert.equal(booked.bookedStock.toNumber(), 0, "booked stock balance is not correct");
-        assert.equal(booked.bookedMoney.toNumber(), 7260, "booked money balance is not correct"); // 33*110=3630 < 7371
-        assert.equal(booked.firstBuyID.toNumber(), 12, "firstBuyID is not correct");
+       let balance = await usd.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 9989900, "usd balance of taker is not correct");
+       balance = await btc.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 99, "btc balance of taker is not correct");
+   });
+*/
+func TestInsertBuyOrder2(t *testing.T) {
+	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	taker := maker
+	app, ctx := newTestApp()
+	ask := app.AutoSwapKeeper
+	pair := "foo/bar"
 
-        let balance = await usd.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 9890900, "usd balance of taker is not correct"); // 9990000-99000=9891000
-        balance = await btc.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 966, "btc balance of taker is not correct"); // 867 newly income
-    });
+	issueToken(t, app.AssetKeeper, ctx, "foo", sdk.NewInt(100000000000000), maker)
+	issueToken(t, app.AssetKeeper, ctx, "bar", sdk.NewInt(100000000000000), maker)
+	createPair(t, ask, ctx, maker, "foo", "bar")
 
-    it("remove sell order", async () => {
-        result = await pair.removeOrder(true, 12, 0, {from: taker})
-        console.log("gas on remove order: ", result.receipt.gasUsed);
-        //for(let i=0; i < result.logs.length; i++) {
-        //    console.log("========log ", i, result.logs[i].args);
-        //}
+	addLimitOrder(t, ask, ctx, pair, true, taker, sdk.NewInt(51), makePrice32(10000000, 18), 12, merge3(0, 0, 0))
+	// TODO
+}
 
-        let reserves = await pair.getReserves.call();
-        let booked = await pair.getBooked.call();
-        console.log("reserveStock", reserves.reserveStock.toNumber())
-        console.log("reserveMoney", reserves.reserveMoney.toNumber())
-        console.log("firstSellID", reserves.firstSellID.toNumber())
-        console.log("bookedStock", booked.bookedStock.toNumber())
-        console.log("bookedMoney", booked.bookedMoney.toNumber())
-        console.log("firstBuyID", booked.firstBuyID.toNumber())
-        // 1048809/9537 = 109.97
-        // 1048809*9537 = 10002491433.0
-        assert.equal(reserves.reserveStock.toNumber(), 9538, "reserve stock balance is not correct");
-        assert.equal(reserves.reserveMoney.toNumber(), 1049020, "reserve money balance is not correct");
-        assert.equal(reserves.firstSellID.toNumber(), 0, "firstSellID is not correct");
-        assert.equal(booked.bookedStock.toNumber(), 0, "booked stock balance is not correct");
-        assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct"); // 1 is rounding error
-        assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+/*
+   it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
+       await usd.transferFrom(taker, pair.address, 99000, {from: boss});
+       result = await pair.addLimitOrder(true, taker, 900, makePrice32(11000000, 18), 12, [0, 0, 0], {from: taker})
+       //for(let i=0; i < result.logs.length; i++) {
+       //    console.log("========log ", i, result.logs[i].event, result.logs[i].args);
+       //}
+       console.log("gas on complete 7 buy: ", result.receipt.gasUsed);
 
-        let balance = await usd.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 9898160, "usd balance of taker is not correct"); // 9891000+7370 = 9898370
-        balance = await btc.balanceOf.call(taker);
-        assert.equal(balance.toNumber(), 966, "btc balance of taker is not correct");
-    });
+       let reserves = await pair.getReserves.call();
+       let booked = await pair.getBooked.call();
+       console.log("reserveStock", reserves.reserveStock.toNumber())
+       console.log("reserveMoney", reserves.reserveMoney.toNumber())
+       console.log("firstSellID", reserves.firstSellID.toNumber())
+       console.log("bookedStock", booked.bookedStock.toNumber())
+       console.log("bookedMoney", booked.bookedMoney.toNumber())
+       console.log("firstBuyID", booked.firstBuyID.toNumber())
+       // 1048809/9537 = 109.97
+       // 1048809*9537 = 10002491433.0
+       assert.equal(reserves.reserveStock.toNumber(), 9538, "reserve stock balance is not correct");
+       assert.equal(reserves.reserveMoney.toNumber(), 1049020, "reserve money balance is not correct");
+       assert.equal(reserves.firstSellID.toNumber(), 0, "firstSellID is not correct");
+       assert.equal(booked.bookedStock.toNumber(), 0, "booked stock balance is not correct");
+       assert.equal(booked.bookedMoney.toNumber(), 7260, "booked money balance is not correct"); // 33*110=3630 < 7371
+       assert.equal(booked.firstBuyID.toNumber(), 12, "firstBuyID is not correct");
 
+       let balance = await usd.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 9890900, "usd balance of taker is not correct"); // 9990000-99000=9891000
+       balance = await btc.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 966, "btc balance of taker is not correct"); // 867 newly income
+   });
+*/
+func TestInsertBuyOrder3(t *testing.T) {
+	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	taker := maker
+	app, ctx := newTestApp()
+	ask := app.AutoSwapKeeper
+	pair := "foo/bar"
+
+	issueToken(t, app.AssetKeeper, ctx, "foo", sdk.NewInt(100000000000000), maker)
+	issueToken(t, app.AssetKeeper, ctx, "bar", sdk.NewInt(100000000000000), maker)
+	createPair(t, ask, ctx, maker, "foo", "bar")
+
+	addLimitOrder(t, ask, ctx, pair, true, taker, sdk.NewInt(900), makePrice32(11000000, 18), 12, merge3(0, 0, 0))
+	// TODO
+}
+
+/*
+   it("remove sell order", async () => {
+       result = await pair.removeOrder(true, 12, 0, {from: taker})
+       console.log("gas on remove order: ", result.receipt.gasUsed);
+       //for(let i=0; i < result.logs.length; i++) {
+       //    console.log("========log ", i, result.logs[i].args);
+       //}
+
+       let reserves = await pair.getReserves.call();
+       let booked = await pair.getBooked.call();
+       console.log("reserveStock", reserves.reserveStock.toNumber())
+       console.log("reserveMoney", reserves.reserveMoney.toNumber())
+       console.log("firstSellID", reserves.firstSellID.toNumber())
+       console.log("bookedStock", booked.bookedStock.toNumber())
+       console.log("bookedMoney", booked.bookedMoney.toNumber())
+       console.log("firstBuyID", booked.firstBuyID.toNumber())
+       // 1048809/9537 = 109.97
+       // 1048809*9537 = 10002491433.0
+       assert.equal(reserves.reserveStock.toNumber(), 9538, "reserve stock balance is not correct");
+       assert.equal(reserves.reserveMoney.toNumber(), 1049020, "reserve money balance is not correct");
+       assert.equal(reserves.firstSellID.toNumber(), 0, "firstSellID is not correct");
+       assert.equal(booked.bookedStock.toNumber(), 0, "booked stock balance is not correct");
+       assert.equal(booked.bookedMoney.toNumber(), 0, "booked money balance is not correct"); // 1 is rounding error
+       assert.equal(booked.firstBuyID.toNumber(), 0, "firstBuyID is not correct");
+
+       let balance = await usd.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 9898160, "usd balance of taker is not correct"); // 9891000+7370 = 9898370
+       balance = await btc.balanceOf.call(taker);
+       assert.equal(balance.toNumber(), 966, "btc balance of taker is not correct");
+   });
+*/
+func TestRemoveSellOrder(t *testing.T) {
+	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	taker := maker
+	app, ctx := newTestApp()
+	ask := app.AutoSwapKeeper
+	pair := "foo/bar"
+
+	removeOrder(t, ask, ctx, pair, true, 12, merge3(0, 0, 0), taker)
+	// TODO
+}
+
+/*
 });
 
 contract("insert & delete order", async (accounts) => {

@@ -30,6 +30,9 @@ func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
 
 	err := ak.IssueToken(ctx, sym, sym, totalSupply, owner, false, false, false, false, sym, sym, sym)
 	require.NoError(t, err)
+
+	err = ak.SendCoinsFromAssetModuleToAccount(ctx, owner, sdk.NewCoins(sdk.NewCoin(sym, totalSupply)))
+	require.NoError(t, err)
 }
 
 func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
@@ -72,6 +75,20 @@ func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 		Price:   price,
 		OrderID: id,
 		PrevKey: prevKey,
+	})
+	require.NoError(t, err)
+}
+
+func removeOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
+	err := ask.DeleteOrder(ctx, &types.MsgDeleteOrder{
+		MarketSymbol:    pair,
+		IsOpenSwap:      true,
+		IsOpenOrderBook: true,
+		Sender:          sender,
+		IsBuy:           isBuy,
+		OrderID:         id,
+		PrevKey:         prevKey,
 	})
 	require.NoError(t, err)
 }
