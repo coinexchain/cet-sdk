@@ -27,10 +27,11 @@ type PairKeeper struct {
 	IPoolKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
-	codec       *codec.Codec
-	storeKey    sdk.StoreKey
-	GetTakerFee func(ctx sdk.Context) sdk.Dec
-	GetMakerFee func(ctx sdk.Context) sdk.Dec
+	codec              *codec.Codec
+	storeKey           sdk.StoreKey
+	GetTakerFee        func(ctx sdk.Context) sdk.Dec
+	GetMakerFee        func(ctx sdk.Context) sdk.Dec
+	GetDealWithPoolFee func(ctx sdk.Context) sdk.Dec
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, bnk types.ExpectedBankKeeper, codec *codec.Codec, storeKey sdk.StoreKey) *PairKeeper {
@@ -85,6 +86,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	if _, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo); err != nil {
 		return err
 	}
+
 	return nil
 }
 

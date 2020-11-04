@@ -52,6 +52,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 	}
 	pairK.GetMakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetMakerFee(ctx) }
 	pairK.GetTakerFee = func(ctx sdk.Context) sdk.Dec { return k.GetTakerFee(ctx) }
+	pairK.GetDealWithPoolFee = func(ctx sdk.Context) sdk.Dec { return k.GetDealWithPoolFee(ctx) }
 	k.IPairKeeper = pairK
 	return k
 }
@@ -74,7 +75,6 @@ func (keeper *Keeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
 func (keeper *Keeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
 	return sdk.NewDec(keeper.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
 }
-
 func (keeper *Keeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 	param := keeper.GetParams(ctx)
 	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
