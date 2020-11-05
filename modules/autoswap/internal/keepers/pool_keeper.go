@@ -1,6 +1,7 @@
 package keepers
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
@@ -160,6 +161,13 @@ func (p PoolInfo) GetTokensAmountOut(liquidity sdk.Int) (stockOut, moneyOut sdk.
 	stockOut = liquidity.Mul(p.StockAmmReserve).Quo(p.TotalSupply)
 	moneyOut = liquidity.Mul(p.MoneyAmmReserve).Quo(p.TotalSupply)
 	return
+}
+
+func (p PoolInfo) String() string {
+	return fmt.Sprintf("Symbol:%v, IsSwapOpen: %v, IsOrderBookOpen: %v, StockAmmReserve: %s, "+
+		"MoneyAmmReserve: %s, StockOrderBookReserve: %s, MoneyOrderBookReserve: %s, TotalSupply: %s, KLast: %s\n",
+		p.Symbol, p.IsSwapOpen, p.IsOrderBookOpen, p.StockAmmReserve, p.MoneyAmmReserve, p.StockAmmReserve,
+		p.MoneyOrderBookReserve, p.TotalSupply, p.KLast)
 }
 
 type PoolInfoDisplay struct {
