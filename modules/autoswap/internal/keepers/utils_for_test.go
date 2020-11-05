@@ -18,6 +18,7 @@ import (
 )
 
 /* TestHelper */
+
 type TestHelper struct {
 	t   *testing.T
 	app *testapp.TestApp
@@ -28,44 +29,89 @@ func newTestHelper(t *testing.T) TestHelper {
 	app, ctx := newTestApp()
 	return TestHelper{t, app, ctx}
 }
-func (h TestHelper) issueToken(sym string, totalSupply int64, owner sdk.AccAddress) {
+func (h TestHelper) issueToken(sym string, totalSupply int64, owner sdk.AccAddress) Token {
 	issueToken(h.t, h.app.AssetKeeper, h.ctx, sym, sdk.NewInt(totalSupply), owner)
+	return Token{h, sym}
 }
-func (h TestHelper) balanceOf(sym string, addr sdk.AccAddress) sdk.Int {
-	return h.app.BankxKeeper.GetCoins(h.ctx, addr).AmountOf(sym)
-}
-func (h TestHelper) transfer(sym string, amt int64, from, to sdk.AccAddress) {
-	err := h.app.BankxKeeper.SendCoins(h.ctx, from, to, sdk.NewCoins(sdk.NewCoin(sym, sdk.NewInt(amt))))
-	require.NoError(h.t, err)
-}
-func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string) {
+func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string) Pair {
 	createPair(h.t, h.app.AutoSwapKeeper, h.ctx, owner, stock, money)
+	return Pair{h, stock + "/" + money}
 }
-func (h TestHelper) mint(pair string, stockIn, moneyIn int64, to sdk.AccAddress) {
-	mint(h.t, h.app.AutoSwapKeeper, h.ctx, pair, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
+
+/* Token */
+
+type Token struct {
+	th  TestHelper
+	sym string
 }
-func (h TestHelper) addLimitOrder(pair string, isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
-	addLimitOrder(h.t, h.app.AutoSwapKeeper, h.ctx, pair, isBuy, sender, sdk.NewInt(amt), price, id, prevKey)
+
+func (t Token) transfer(to sdk.AccAddress, amt int64, from sdk.AccAddress) {
+	coins := sdk.NewCoins(sdk.NewCoin(t.sym, sdk.NewInt(amt)))
+	err := t.th.app.BankxKeeper.SendCoins(t.th.ctx, from, to, coins)
+	require.NoError(t.th.t, err)
 }
-func (h TestHelper) removeOrder(pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
-	removeOrder(h.t, h.app.AutoSwapKeeper, h.ctx, pair, isBuy, id, prevKey, sender)
+func (t Token) balanceOf(addr sdk.AccAddress) sdk.Int {
+	return t.th.app.BankxKeeper.GetCoins(t.th.ctx, addr).AmountOf(t.sym)
 }
-func (h TestHelper) getLiquidity(pair string, addr sdk.AccAddress) sdk.Int {
-	return h.app.AutoSwapKeeper.GetLiquidity(h.ctx, pair, true, true, addr)
+
+/* Pair */
+
+type Pair struct {
+	th  TestHelper
+	sym string
 }
-func (h TestHelper) getPoolInfo(pair string) *autoswap.PoolInfo {
-	return h.app.AutoSwapKeeper.GetPoolInfo(h.ctx, pair, true, true)
+type PairReserves struct {
+	reserveStock sdk.Int
+	reserveMoney sdk.Int
+	firstSellID  int64
 }
-func (h TestHelper) getFirstBuyID(pair string) int64 {
-	return h.app.AutoSwapKeeper.GetFirstOrderID(h.ctx, pair, true, true, true)
+type PairBooked struct {
+	bookedStock sdk.Int
+	bookedMoney sdk.Int
+	firstBuyID  int64
 }
-func (h TestHelper) getFirstSellID(pair string) int64 {
-	return h.app.AutoSwapKeeper.GetFirstOrderID(h.ctx, pair, true, true, false)
+
+func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
+	mint(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
 }
-func (h TestHelper) getOrder(pair string, isBuy bool, orderID int64) *types.Order {
-	return h.app.AutoSwapKeeper.GetOrder(h.ctx, pair, true, true, isBuy, orderID)
+func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
+	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, sdk.NewInt(amt), price, id, prevKey)
 }
-func (h TestHelper) getOrderList(pair string, isBuy bool) []*types.Order {
+func (p Pair) removeOrder(isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
+	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, prevKey, sender)
+}
+func (p Pair) getLiquidity(addr sdk.AccAddress) sdk.Int {
+	return p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, true, true, addr)
+}
+func (p Pair) getPoolInfo() *autoswap.PoolInfo {
+	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym, true, true)
+}
+func (p Pair) getFirstBuyID() int64 {
+	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, true)
+}
+func (p Pair) getFirstSellID(pair string) int64 {
+	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, pair, true, true, false)
+}
+func (p Pair) getReserves() PairReserves {
+	pi := p.getPoolInfo()
+	return PairReserves{
+		reserveStock: pi.StockAmmReserve,
+		reserveMoney: pi.MoneyAmmReserve,
+		firstSellID:  0,
+	}
+}
+func (p Pair) getBooked() PairBooked {
+	pi := p.getPoolInfo()
+	return PairBooked{
+		bookedStock: pi.StockOrderBookReserve,
+		bookedMoney: pi.MoneyOrderBookReserve,
+		firstBuyID:  0,
+	}
+}
+func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {
+	return p.th.app.AutoSwapKeeper.GetOrder(p.th.ctx, p.sym, true, true, isBuy, orderID)
+}
+func (p Pair) getOrderList(isBuy bool) []*types.Order {
 	// TODO
 	return nil
 }

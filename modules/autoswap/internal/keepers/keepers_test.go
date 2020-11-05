@@ -12,105 +12,159 @@ func TestMint(t *testing.T) {
 	addr := sdk.AccAddress("add123")
 	th := newTestHelper(t)
 
-	th.createPair(addr, "foo", "bar")
-	th.mint("foo/bar", 10000, 1000000, addr)
-	require.Equal(t, sdk.NewInt(100000), th.getLiquidity("foo/bar", addr))
-	pi := th.getPoolInfo("foo/bar")
-	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
+	pair := th.createPair(addr, "foo", "bar")
+	pair.mint(10000, 1000000, addr)
+	require.Equal(t, sdk.NewInt(100000), pair.getLiquidity(addr))
+	reserves := pair.getReserves()
+	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
 }
 
+// contract("pair", async accounts => {
 func TestPair(t *testing.T) {
-	btc := "btc0"
-	usd := "usd0"
-	pair := "btc0/usd0"
 	boss := sdk.AccAddress("boss")
 	maker := sdk.AccAddress("maker")
 	taker := sdk.AccAddress("taker")
 	shareReceiver := sdk.AccAddress("shareReceiver")
 	th := newTestHelper(t)
 
-	th.issueToken(btc, 100000000000000, boss)
-	th.issueToken(usd, 100000000000000, boss)
-	th.createPair(maker, btc, usd)
+	// it("initialize pair with btc/usd", async () => {
+	btc := th.issueToken("btc0", 100000000000000, boss)
+	usd := th.issueToken("usd0", 100000000000000, boss)
+	pair := th.createPair(maker, btc.sym, usd.sym)
 
-	th.mint(pair, 10000, 1000000, shareReceiver)
-	pi := th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
+	// it("mint", async () => {
+	pair.mint(10000, 1000000, shareReceiver)
+	reserves := pair.getReserves()
+	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
 
-	// insert sell order with 0 deal
-	th.transfer(btc, 10000, boss, maker)
-	th.transfer(usd, 1000000, boss, taker)
-	th.addLimitOrder(pair, false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
-	th.addLimitOrder(pair, false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0))
-	th.addLimitOrder(pair, false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0))
-	th.addLimitOrder(pair, false, maker, 100, makePrice32(10700000, 18), 4, merge3(3, 0, 0))
-	th.addLimitOrder(pair, false, maker, 100, makePrice32(10900000, 18), 5, merge3(4, 0, 0))
-	th.addLimitOrder(pair, false, maker, 1, makePrice32(10200000, 18), 6, merge3(1, 0, 0))
-	th.addLimitOrder(pair, false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0))
-	th.addLimitOrder(pair, false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0))
-	th.addLimitOrder(pair, false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0))
-	require.Equal(t, sdk.NewInt(9496), th.balanceOf(btc, maker))
-	require.Equal(t, sdk.NewInt(0), th.balanceOf(usd, maker))
-	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)   // TODO
-	require.Equal(t, sdk.NewInt(504), pi.StockOrderBookReserve) // TODO
-	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
-	require.Equal(t, 1, th.getFirstSellID(pair)) // TODO
-	require.Equal(t, 0, th.getFirstBuyID(pair))  // TODO
-	th.getOrderList(pair, true)                  // TODO
-	th.getOrderList(pair, false)                 // TODO
+	// it("insert sell order with 0 deal", async () => {
+	btc.transfer(maker, 10000, boss)
+	usd.transfer(taker, 1000000, boss)
+	pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
+	pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0))
+	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0))
+	pair.addLimitOrder(false, maker, 100, makePrice32(10700000, 18), 4, merge3(3, 0, 0))
+	pair.addLimitOrder(false, maker, 100, makePrice32(10900000, 18), 5, merge3(4, 0, 0))
+	pair.addLimitOrder(false, maker, 1, makePrice32(10200000, 18), 6, merge3(1, 0, 0))
+	pair.addLimitOrder(false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0))
+	pair.addLimitOrder(false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0))
+	pair.addLimitOrder(false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0))
+	require.Equal(t, sdk.NewInt(9496), btc.balanceOf(maker))
+	require.Equal(t, sdk.NewInt(0), usd.balanceOf(maker))
+	reserves = pair.getReserves()
+	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney) // TODO
+	require.Equal(t, 1, reserves.firstSellID)                    // TODO
+	booked := pair.getBooked()
+	require.Equal(t, sdk.NewInt(504), booked.bookedStock) // TODO
+	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 0, booked.firstBuyID) // TODO
+	//th.getOrderList(pair, true)                  // TODO
+	//th.getOrderList(pair, false)                 // TODO
 
-	// insert buy order with only 1 incomplete deal with orderbook
-	th.transfer(usd, 5000, boss, taker)
-	th.addLimitOrder(pair, true, taker, 50, makePrice32(10000000, 18), 11, merge3(0, 0, 0))
-	require.Equal(t, sdk.NewInt(9995000), th.balanceOf(usd, taker))
-	require.Equal(t, sdk.NewInt(49), th.balanceOf(btc, taker))
-	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(10001), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)
-	require.Equal(t, sdk.NewInt(454), pi.StockOrderBookReserve)
-	require.Equal(t, sdk.NewInt(0), pi.MoneyOrderBookReserve)
-	require.Equal(t, 1, th.getFirstSellID(pair))
-	require.Equal(t, 0, th.getFirstBuyID(pair))
+	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
+	usd.transfer(taker, 5000, boss)
+	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11, merge3(0, 0, 0))
+	require.Equal(t, sdk.NewInt(9995000), usd.balanceOf(taker))
+	require.Equal(t, sdk.NewInt(49), btc.balanceOf(taker))
+	reserves = pair.getReserves()
+	require.Equal(t, sdk.NewInt(10001), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
+	require.Equal(t, 1, reserves.firstSellID)
+	booked = pair.getBooked()
+	require.Equal(t, sdk.NewInt(454), booked.bookedStock)
+	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 0, booked.firstBuyID)
 
-	// insert buy order with only 1 complete deal with orderbook
-	th.transfer(usd, 5100, boss, taker)
-	th.addLimitOrder(pair, true, taker, 51, makePrice32(10000000, 18), 12, merge3(0, 0, 0))
-	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(10001), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000100), pi.MoneyAmmReserve)
-	require.Equal(t, sdk.NewInt(404), pi.StockOrderBookReserve)
-	require.Equal(t, sdk.NewInt(0), pi.MoneyOrderBookReserve)
-	require.Equal(t, 6, th.getFirstSellID(pair))
-	require.Equal(t, 0, th.getFirstBuyID(pair))
-	require.Equal(t, sdk.NewInt(9989900), th.balanceOf(usd, taker))
-	require.Equal(t, sdk.NewInt(99), th.balanceOf(btc, taker))
+	// it("insert buy order with only 1 complete deal with orderbook", async () => {
+	usd.transfer(taker, 5100, boss)
+	pair.addLimitOrder(true, taker, 51, makePrice32(10000000, 18), 12, merge3(0, 0, 0))
+	reserves = pair.getReserves()
+	require.Equal(t, sdk.NewInt(10001), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1000100), reserves.reserveMoney)
+	require.Equal(t, 6, reserves.firstSellID)
+	booked = pair.getBooked()
+	require.Equal(t, sdk.NewInt(404), booked.bookedStock)
+	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 0, booked.firstBuyID)
+	require.Equal(t, sdk.NewInt(9989900), usd.balanceOf(taker))
+	require.Equal(t, sdk.NewInt(99), btc.balanceOf(taker))
 
-	// insert buy order with 7 complete deal with orderbook and 4 swap
-	th.transfer(usd, 99000, boss, taker)
-	th.addLimitOrder(pair, true, taker, 900, makePrice32(11000000, 18), 12, merge3(0, 0, 0))
-	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(9538), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1049020), pi.MoneyAmmReserve)
-	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
-	require.Equal(t, sdk.NewInt(7260), pi.MoneyOrderBookReserve)
-	require.Equal(t, 0, th.getFirstSellID(pair))
-	require.Equal(t, 12, th.getFirstBuyID(pair))
-	require.Equal(t, sdk.NewInt(9890900), th.balanceOf(usd, taker))
-	require.Equal(t, sdk.NewInt(966), th.balanceOf(btc, taker))
+	// it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
+	usd.transfer(taker, 99000, boss)
+	pair.addLimitOrder(true, taker, 900, makePrice32(11000000, 18), 12, merge3(0, 0, 0))
+	reserves = pair.getReserves()
+	require.Equal(t, sdk.NewInt(9538), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1049020), reserves.reserveMoney)
+	require.Equal(t, 0, reserves.firstSellID)
+	booked = pair.getBooked()
+	require.Equal(t, sdk.NewInt(0), booked.bookedStock)
+	require.Equal(t, sdk.NewInt(7260), booked.bookedMoney)
+	require.Equal(t, 12, booked.firstBuyID)
+	require.Equal(t, sdk.NewInt(9890900), usd.balanceOf(taker))
+	require.Equal(t, sdk.NewInt(966), btc.balanceOf(taker))
 
-	// remove sell order
-	th.removeOrder(pair, true, 12, merge3(0, 0, 0), taker)
-	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(9538), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1049020), pi.MoneyAmmReserve)
-	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
-	require.Equal(t, sdk.NewInt(0), pi.MoneyOrderBookReserve)
-	require.Equal(t, 0, th.getFirstSellID(pair))
-	require.Equal(t, 0, th.getFirstBuyID(pair))
-	require.Equal(t, sdk.NewInt(9898160), th.balanceOf(usd, taker))
-	require.Equal(t, sdk.NewInt(966), th.balanceOf(btc, taker))
+	// it("remove sell order", async () => {
+	pair.removeOrder(true, 12, merge3(0, 0, 0), taker)
+	reserves = pair.getReserves()
+	require.Equal(t, sdk.NewInt(9538), reserves.reserveStock)
+	require.Equal(t, sdk.NewInt(1049020), reserves.reserveMoney)
+	require.Equal(t, 0, reserves.firstSellID)
+	booked = pair.getBooked()
+	require.Equal(t, sdk.NewInt(0), booked.bookedStock)
+	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 0, booked.firstBuyID)
+	require.Equal(t, sdk.NewInt(9898160), usd.balanceOf(taker))
+	require.Equal(t, sdk.NewInt(966), btc.balanceOf(taker))
+}
+
+// contract("insert & delete order", async (accounts) => {
+func TestInsertAndDeleteOrder(t *testing.T) {
+	// TODO
+}
+
+// contract("swap on low liquidity", async (accounts) => {
+func TestSwapOnLowLiquidity(t *testing.T) {
+	// TODO
+}
+
+// contract("big deal on low liquidity", async (accounts) => {
+func TestBigDealOnLowLiquidity(t *testing.T) {
+	// TODO
+}
+
+// contract("deal with pool", async (accounts) => {
+func TestDealWithPool(t *testing.T) {
+	// TODO
+}
+
+// contract("deal after donate and sync", async (accounts) => {
+func TestDealAfterDonateAndSync(t *testing.T) {
+	// TODO
+}
+
+// contract("pair with weth token", async (accounts) => {
+func TestPairWithWethToken(t *testing.T) {
+	// TODO
+}
+
+// contract("pair with eth token", async (accounts) => {
+func TestPairWithEthToken(t *testing.T) {
+	// TODO
+}
+
+// contract("OneSwapPair/addMarketOrder", async (accounts) => {
+func TestAddMarketOrder(t *testing.T) {
+	// TODO
+}
+
+// contract("OneSwapPair/addMarketOrder/emptyAMM", async (accounts) => {
+func TestEmptyAMM(t *testing.T) {
+	// TODO
+}
+
+func TestAddMarketOrderEat(t *testing.T) {
+	// TODO
 }
