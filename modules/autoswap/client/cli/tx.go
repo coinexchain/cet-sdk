@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -20,6 +22,7 @@ const (
 	flagMoney       = "money"
 	flagNoSwap      = "no-swap"
 	flagNoOrderBook = "no-order-book"
+	flagSwapPath    = "swap-path"
 	flagStockIn     = "stock-in"
 	flagMoneyIn     = "money-in"
 	flagStockMin    = "stock-min"
@@ -44,8 +47,8 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	txCmd.AddCommand(client.PostCommands(
 		GetAddLiquidityCmd(cdc),
 		GetRemoveLiquidityCmd(cdc),
+		GetSwapTokensCmd(cdc),
 		GetCreateLimitOrderCmd(cdc),
-		GetCreateMarketOrderCmd(cdc),
 		GetDeleteOrderCmd(cdc),
 	)...)
 
@@ -117,20 +120,20 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
 	return cmd
 }
 
-func GetCreateMarketOrderCmd(cdc *codec.Codec) *cobra.Command {
+func GetSwapTokensCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-market-order",
-		Short: "generate tx to create autoswap market order",
+		Use:   "swap-tokens",
+		Short: "generate tx to swap tokens in autoswap market",
 		Long: strings.TrimSpace(
-			`generate a tx and sign it to create autoswap market order in Dex blockchain. 
+			`generate a tx and sign it to swap tokens in autoswap market in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap create-market-order --pair="foo/bar" --no-swap \
+$ cetcli tx autoswap swap-tokens --swap-path='[{"pair":"foo/bar", "noSwap":false, "noOrderBook":false}]' \
 	--side=buy --amount=12345 \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			msg, err := getCreateMarketOrderMsg()
+			msg, err := getSwapTokensMsg()
 			if err != nil {
 				return err
 			}
@@ -138,7 +141,9 @@ $ cetcli tx autoswap create-market-order --pair="foo/bar" --no-swap \
 		},
 	}
 
-	addBasicOrderFlags(cmd)
+	//addBasicOrderFlags(cmd)
+	cmd.Flags().String(flagSwapPath, "", "swap path in JSON format")
+	cmd.Flags().String(flagSide, "", "buy or sell")
 	cmd.Flags().String(flagAmount, "", "the amount of the order")
 	cmd.Flags().String(flagOutputMin, "", "the minimum output")
 	markRequiredFlags(cmd, flagPairSymbol, flagSide, flagAmount)
@@ -227,9 +232,10 @@ func addBasicOrderFlags(cmd *cobra.Command) {
 
 func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 	msg = &types.MsgAddLiquidity{
-		Stock:      viper.GetString(flagStock),
-		Money:      viper.GetString(flagMoney),
-		IsSwapOpen: !viper.GetBool(flagNoSwap),
+		Stock:           viper.GetString(flagStock),
+		Money:           viper.GetString(flagMoney),
+		IsSwapOpen:      !viper.GetBool(flagNoSwap),
+		IsOrderBookOpen: !viper.GetBool(flagNoOrderBook),
 	}
 
 	if msg.StockIn, err = parseSdkInt(flagStockIn); err != nil {
@@ -267,15 +273,46 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	return
 }
 
-// todo. will adapter MsgSwapTokens later.
-func getCreateMarketOrderMsg() (msg *types.MsgSwapTokens, err error) {
+func getSwapTokensMsg() (msg *types.MsgSwapTokens, err error) {
 	msg = &types.MsgSwapTokens{}
-	//if msg.OrderBasic, err = getOrderBasic(); err != nil {
-	//	return
-	//}
 	msg.IsLimitOrder = false
+	if msg.Pairs, err = parseSwapPath(viper.GetString(flagSwapPath)); err != nil {
+		return
+	}
+	if msg.IsBuy, err = parseIsBuy(); err != nil {
+		return
+	}
+	if msg.Amount, err = parseSdkInt(flagAmount); err != nil {
+		return
+	}
 	if msg.MinOutputAmount, err = parseSdkInt(flagOutputMin); err != nil {
 		return
+	}
+	return
+}
+func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
+	type pairInfo struct {
+		Pair        string `json:"pair"`
+		NoSwap      bool   `json:"noSwap"`
+		NoOrderBook bool   `json:"noOrderBook"`
+	}
+
+	var swapPathArr []pairInfo
+	if err = json.Unmarshal([]byte(swapPathStr), &swapPathArr); err != nil {
+		err = errors.New("invalid " + flagSwapPath + ": " + err.Error())
+		return
+	}
+	if len(swapPathArr) == 0 {
+		err = errors.New("empty " + flagSwapPath)
+		return
+	}
+
+	for _, pairInfo := range swapPathArr {
+		ret = append(ret, types.MarketInfo{
+			MarketSymbol:    pairInfo.Pair,
+			IsOpenSwap:      !pairInfo.NoSwap,
+			IsOpenOrderBook: !pairInfo.NoOrderBook,
+		})
 	}
 	return
 }

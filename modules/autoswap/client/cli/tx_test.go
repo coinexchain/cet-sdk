@@ -17,8 +17,8 @@ func TestAddLiquidityCmd(t *testing.T) {
 		"add-liquidity",
 		"--stock=foo",
 		"--money=bar",
-		"--no-swap",
-		"--no-order-book",
+		"--no-swap=false",
+		"--no-order-book=false",
 		"--stock-in=100000000",
 		"--money-in=200000000",
 		"--to=" + fromAddr.String(),
@@ -30,13 +30,14 @@ func TestAddLiquidityCmd(t *testing.T) {
 	err := txCmd.Execute()
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &types.MsgAddLiquidity{
-		Owner:      fromAddr,
-		To:         fromAddr,
-		Stock:      "foo",
-		Money:      "bar",
-		StockIn:    sdk.NewInt(100000000),
-		MoneyIn:    sdk.NewInt(200000000),
-		IsOpenSwap: false,
+		Owner:           fromAddr,
+		To:              fromAddr,
+		Stock:           "foo",
+		Money:           "bar",
+		StockIn:         sdk.NewInt(100000000),
+		MoneyIn:         sdk.NewInt(200000000),
+		IsSwapOpen:      true,
+		IsOrderBookOpen: true,
 	}, resultMsg)
 }
 
@@ -46,8 +47,8 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		"remove-liquidity",
 		"--stock=foo",
 		"--money=bar",
-		"--no-swap",
-		"--no-order-book",
+		"--no-swap=false",
+		"--no-order-book=false",
 		"--stock-min=100000000",
 		"--money-min=200000000",
 		"--amount=12345",
@@ -67,12 +68,12 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		AmountStockMin:  sdk.NewInt(100000000),
 		AmountMoneyMin:  sdk.NewInt(200000000),
 		Amount:          sdk.NewInt(12345),
-		IsSwapOpen:      false,
-		IsOrderBookOpen: false,
+		IsSwapOpen:      true,
+		IsOrderBookOpen: true,
 	}, resultMsg)
 }
 
-func TestCreateMarketOrderCmd(t *testing.T) {
+func TestSwapTokensCmd(t *testing.T) {
 	txCmd := GetTxCmd(nil)
 	for _, x := range []struct {
 		side  string
@@ -82,10 +83,8 @@ func TestCreateMarketOrderCmd(t *testing.T) {
 		{"sell", false},
 	} {
 		args := []string{
-			"create-market-order",
-			"--pair=foo/bar",
-			"--no-swap",
-			//"--no-order-book",
+			"swap-tokens",
+			"--swap-path=[{\"pair\":\"foo/bar\", \"noSwap\":false, \"noOrderBook\":false}]",
 			"--side=" + x.side,
 			"--amount=12345",
 			"--output-min=54321",
@@ -96,16 +95,18 @@ func TestCreateMarketOrderCmd(t *testing.T) {
 		cliutil.SetViperWithArgs(args)
 		err := txCmd.Execute()
 		assert.Equal(t, nil, err)
-		assert.Equal(t, &types.MsgCreateMarketOrder{
-			OrderBasic: types.OrderBasic{
-				Sender:          fromAddr,
-				MarketSymbol:    "foo/bar",
-				IsOpenSwap:      false,
-				IsOpenOrderBook: true,
-				IsBuy:           x.isBuy,
-				IsLimitOrder:    false,
-				Amount:          sdk.NewInt(12345),
+		assert.Equal(t, &types.MsgSwapTokens{
+			Pairs: []types.MarketInfo{
+				{
+					MarketSymbol:    "foo/bar",
+					IsOpenSwap:      true,
+					IsOpenOrderBook: true,
+				},
 			},
+			Sender:          fromAddr,
+			IsBuy:           x.isBuy,
+			IsLimitOrder:    false,
+			Amount:          sdk.NewInt(12345),
 			MinOutputAmount: sdk.NewInt(54321),
 		}, resultMsg)
 	}

@@ -94,7 +94,7 @@ func (mkOr MsgSwapTokens) Type() string {
 }
 
 func (mkOr MsgSwapTokens) ValidateBasic() sdk.Error {
-	if isValidSwapChain(mkOr.Pairs) {
+	if !isValidSwapChain(mkOr.Pairs) {
 		return ErrInvalidSwap(mkOr.Pairs)
 	}
 	if mkOr.Sender.Empty() {
@@ -111,7 +111,7 @@ func (mkOr MsgSwapTokens) ValidateBasic() sdk.Error {
 
 func isValidSwapChain(pairs []MarketInfo) bool {
 	index := 0
-	tokenLists := make([][]string, len(pairs))
+	tokenLists := make([][]string, 0, len(pairs))
 	if len(pairs) == 0 {
 		return false
 	}
