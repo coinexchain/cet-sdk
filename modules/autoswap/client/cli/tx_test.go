@@ -117,8 +117,8 @@ func TestCreateLimitOrderCmd(t *testing.T) {
 	args := []string{
 		"create-limit-order",
 		"--pair=foo/bar",
-		"--no-swap",
-		//"--no-order-book",
+		"--no-swap=false",
+		"--no-order-book=false",
 		"--side=buy",
 		"--amount=12345",
 		"--price=678.9",
@@ -134,7 +134,7 @@ func TestCreateLimitOrderCmd(t *testing.T) {
 		OrderBasic: types.OrderBasic{
 			Sender:          fromAddr,
 			MarketSymbol:    "foo/bar",
-			IsOpenSwap:      false,
+			IsOpenSwap:      true,
 			IsOpenOrderBook: true,
 			IsBuy:           true,
 			IsLimitOrder:    true,
@@ -150,8 +150,8 @@ func TestDeleteOrderCmd(t *testing.T) {
 	args := []string{
 		"delete-order",
 		"--pair=foo/bar",
-		"--no-swap",
-		//"--no-order-book",
+		"--no-swap=false",
+		"--no-order-book=false",
 		"--side=buy",
 		"--order-id=6789",
 		"--from=" + fromAddr.String(),
@@ -164,7 +164,7 @@ func TestDeleteOrderCmd(t *testing.T) {
 	assert.Equal(t, &types.MsgDeleteOrder{
 		Sender:          fromAddr,
 		MarketSymbol:    "foo/bar",
-		IsOpenSwap:      false,
+		IsOpenSwap:      true,
 		IsOpenOrderBook: true,
 		IsBuy:           true,
 		OrderID:         6789,

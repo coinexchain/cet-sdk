@@ -72,10 +72,9 @@ type MarketInfo struct {
 }
 
 type MsgSwapTokens struct {
-	Pairs        []MarketInfo
-	Sender       sdk.AccAddress `json:"sender"`
-	IsBuy        bool           `json:"is_buy"`
-	IsLimitOrder bool           `json:"is_limit_order"`
+	Pairs  []MarketInfo
+	Sender sdk.AccAddress `json:"sender"`
+	IsBuy  bool           `json:"is_buy"`
 
 	// if the order is market_order, the amount is the actual input amount with special token(
 	// ie: sell order, amount = stockTokenAmount, buy order = moneyTokenAmount)

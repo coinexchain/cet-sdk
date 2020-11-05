@@ -39,10 +39,11 @@ func (req *addLiquidityReq) GetBaseReq() *rest.BaseReq {
 
 func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgAddLiquidity{
-		Owner:      sender,
-		Stock:      req.Stock,
-		Money:      req.Money,
-		IsSwapOpen: !req.NoSwap,
+		Owner:           sender,
+		Stock:           req.Stock,
+		Money:           req.Money,
+		IsSwapOpen:      !req.NoSwap,
+		IsOrderBookOpen: !req.NoOrderBook,
 	}
 
 	var err error
@@ -107,36 +108,41 @@ func (req *removeLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (s
 	return msg, err
 }
 
-/* createMarketOrderReq */
+/* swapTokensReq */
 
-type createMarketOrderReq struct {
-	BaseReq     rest.BaseReq `json:"base_req"`
-	PairSymbol  string       `json:"pair"`
-	NoSwap      bool         `json:"no-swap"`
-	NoOrderBook bool         `json:"no_order_book"`
-	Side        string       `json:"side"`
-	Amount      string       `json:"amount"`
-	OutputMin   string       `json:"output_min"`
+type pairInfo struct {
+	Symbol      string `json:"pair"`
+	NoSwap      bool   `json:"no_swap"`
+	NoOrderBook bool   `json:"no_order_book"`
+}
+type swapTokensReq struct {
+	BaseReq   rest.BaseReq `json:"base_req"`
+	Path      []pairInfo   `json:"path"`
+	Side      string       `json:"side"`
+	Amount    string       `json:"amount"`
+	OutputMin string       `json:"output_min"`
 }
 
-func (req *createMarketOrderReq) New() restutil.RestReq {
-	return new(createMarketOrderReq)
+func (req *swapTokensReq) New() restutil.RestReq {
+	return new(swapTokensReq)
 }
 
-func (req *createMarketOrderReq) GetBaseReq() *rest.BaseReq {
+func (req *swapTokensReq) GetBaseReq() *rest.BaseReq {
 	return &req.BaseReq
 }
 
-func (req *createMarketOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
+func (req *swapTokensReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgSwapTokens{
-		//OrderBasic: types.OrderBasic{
-		//	Sender:          sender,
-		//	MarketSymbol:    req.PairSymbol,
-		//	IsOpenSwap:      !req.NoSwap,
-		//	IsOpenOrderBook: !req.NoOrderBook,
-		//	IsLimitOrder:    false,
-		//},
+		Sender: sender,
 	}
+	for _, pairInfo := range req.Path {
+		msg.Pairs = append(msg.Pairs, types.MarketInfo{
+			MarketSymbol:    pairInfo.Symbol,
+			IsOpenSwap:      !pairInfo.NoSwap,
+			IsOpenOrderBook: !pairInfo.NoOrderBook,
+		})
+	}
+
 	var err error
 	if msg.IsBuy, err = parseIsBuy(req.Side); err != nil {
 		return nil, err
@@ -249,8 +255,8 @@ func removeLiquidityHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.
 	var req removeLiquidityReq
 	return restutil.NewRestHandler(cdc, cliCtx, &req)
 }
-func createMarketOrderHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
-	var req createMarketOrderReq
+func swapTokensHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+	var req swapTokensReq
 	return restutil.NewRestHandler(cdc, cliCtx, &req)
 }
 func createLimitOrderHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {

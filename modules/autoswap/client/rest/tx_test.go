@@ -14,7 +14,7 @@ func TestAddLiquidityReq(t *testing.T) {
 	req := addLiquidityReq{
 		Stock:       "foo",
 		Money:       "bar",
-		NoSwap:      true,
+		NoSwap:      false,
 		NoOrderBook: false,
 		StockIn:     "123",
 		MoneyIn:     "456",
@@ -23,13 +23,14 @@ func TestAddLiquidityReq(t *testing.T) {
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgAddLiquidity{
-		Owner:      addr,
-		Stock:      "foo",
-		Money:      "bar",
-		IsOpenSwap: false,
-		StockIn:    sdk.NewInt(123),
-		MoneyIn:    sdk.NewInt(456),
-		To:         addr,
+		Owner:           addr,
+		Stock:           "foo",
+		Money:           "bar",
+		IsSwapOpen:      true,
+		IsOrderBookOpen: true,
+		StockIn:         sdk.NewInt(123),
+		MoneyIn:         sdk.NewInt(456),
+		To:              addr,
 	}, msg)
 }
 
@@ -59,27 +60,32 @@ func TestRemoveLiquidityReq(t *testing.T) {
 	}, msg)
 }
 
-func TestCreateMarketOrderReq(t *testing.T) {
-	req := createMarketOrderReq{
-		PairSymbol:  "foo/bar",
-		NoSwap:      true,
-		NoOrderBook: false,
-		Side:        "buy",
-		Amount:      "123",
-		OutputMin:   "456",
+func TestSwapTokensReq(t *testing.T) {
+	req := swapTokensReq{
+		Path: []pairInfo{
+			{
+				Symbol:      "foo/bar",
+				NoSwap:      false,
+				NoOrderBook: false,
+			},
+		},
+		Side:      "buy",
+		Amount:    "123",
+		OutputMin: "456",
 	}
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
-	assert.Equal(t, &types.MsgCreateMarketOrder{
-		OrderBasic: types.OrderBasic{
-			Sender:          addr,
-			MarketSymbol:    "foo/bar",
-			IsOpenSwap:      false,
-			IsOpenOrderBook: true,
-			IsBuy:           true,
-			IsLimitOrder:    false,
-			Amount:          sdk.NewInt(123),
+	assert.Equal(t, &types.MsgSwapTokens{
+		Pairs: []types.MarketInfo{
+			{
+				MarketSymbol:    "foo/bar",
+				IsOpenSwap:      true,
+				IsOpenOrderBook: true,
+			},
 		},
+		Sender:          addr,
+		IsBuy:           true,
+		Amount:          sdk.NewInt(123),
 		MinOutputAmount: sdk.NewInt(456),
 	}, msg)
 }

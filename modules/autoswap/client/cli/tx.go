@@ -146,7 +146,7 @@ $ cetcli tx autoswap swap-tokens --swap-path='[{"pair":"foo/bar", "noSwap":false
 	cmd.Flags().String(flagSide, "", "buy or sell")
 	cmd.Flags().String(flagAmount, "", "the amount of the order")
 	cmd.Flags().String(flagOutputMin, "", "the minimum output")
-	markRequiredFlags(cmd, flagPairSymbol, flagSide, flagAmount)
+	markRequiredFlags(cmd, flagSwapPath, flagSide, flagAmount)
 
 	return cmd
 }
