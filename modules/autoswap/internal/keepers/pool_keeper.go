@@ -71,7 +71,12 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	if l.LT(liquidity) {
 		return sdk.ZeroInt(), sdk.ZeroInt(), types.ErrInvalidLiquidityAmount()
 	}
-	p.SetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from, l.Sub(liquidity))
+	l = l.Sub(liquidity)
+	if l.IsZero() {
+		p.ClearLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from)
+	}else {
+		p.SetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from, l)
+	}
 	if FeeOn {
 		info.KLast = info.StockAmmReserve.Mul(info.MoneyAmmReserve)
 	}
@@ -140,10 +145,6 @@ func NewPoolInfo(symbol string, stockAmmReserve sdk.Int, moneyAmmReserve sdk.Int
 		KLast:           stockAmmReserve.Mul(moneyAmmReserve),
 	}
 	return poolInfo
-}
-
-func (p PoolInfo) GetSymbol() string {
-	return p.Symbol
 }
 
 func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {

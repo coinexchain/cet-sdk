@@ -50,7 +50,7 @@ func (data GenesisState) Validate() error {
 	//todo: check duplicate order with id
 	infos := make(map[string]struct{})
 	for _, info := range data.PoolInfos {
-		symbol := info.GetSymbol()
+		symbol := info.Symbol
 		if _, exists := infos[symbol]; exists {
 			return errors.New("duplicate pool found during autoswap genesis validate")
 		}
