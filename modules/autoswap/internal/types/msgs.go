@@ -120,6 +120,9 @@ func isValidSwapChain(pairs []MarketInfo) bool {
 		if len(tokenLists[index]) != 2 || (tokenLists[index][0] == tokenLists[index][1]) {
 			return false
 		}
+		if !v.IsOpenSwap && !v.IsOpenOrderBook {
+			return false
+		}
 	}
 	// swap pairs should be : a/b, b/c, c/d ....
 	for i := 0; i < len(tokenLists)-1; i++ {
