@@ -62,6 +62,13 @@ func (h TestHelper) getFirstBuyID(pair string) int64 {
 func (h TestHelper) getFirstSellID(pair string) int64 {
 	return h.app.AutoSwapKeeper.GetFirstOrderID(h.ctx, pair, true, true, false)
 }
+func (h TestHelper) getOrder(pair string, isBuy bool, orderID int64) *types.Order {
+	return h.app.AutoSwapKeeper.GetOrder(h.ctx, pair, true, true, isBuy, orderID)
+}
+func (h TestHelper) getOrderList(pair string, isBuy bool) []*types.Order {
+	// TODO
+	return nil
+}
 
 /* helper functions */
 
