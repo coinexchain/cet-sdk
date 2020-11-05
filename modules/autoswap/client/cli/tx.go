@@ -275,7 +275,6 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 
 func getSwapTokensMsg() (msg *types.MsgSwapTokens, err error) {
 	msg = &types.MsgSwapTokens{}
-	msg.IsLimitOrder = false
 	if msg.Pairs, err = parseSwapPath(viper.GetString(flagSwapPath)); err != nil {
 		return
 	}
