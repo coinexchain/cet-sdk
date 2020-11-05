@@ -105,7 +105,7 @@ func (p Pair) getBooked() PairBooked {
 	return PairBooked{
 		bookedStock: int(pi.StockOrderBookReserve.Int64()),
 		bookedMoney: int(pi.MoneyOrderBookReserve.Int64()),
-		firstBuyID:  int(p.getFirstSellID()),
+		firstBuyID:  int(p.getFirstBuyID()),
 	}
 }
 func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {

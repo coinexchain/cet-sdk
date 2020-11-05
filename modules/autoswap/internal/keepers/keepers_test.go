@@ -41,7 +41,7 @@ func TestPair(t *testing.T) {
 
 	// it("insert sell order with 0 deal", async () => {
 	btc.transfer(maker, 10000, boss)
-	usd.transfer(taker, 1000000, boss)
+	usd.transfer(taker, 10000000, boss)
 	pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
 	pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0))
 	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0))
@@ -55,20 +55,20 @@ func TestPair(t *testing.T) {
 	require.Equal(t, 0, usd.balanceOf(maker))
 	reserves = pair.getReserves()
 	require.Equal(t, 10000, reserves.reserveStock)
-	require.Equal(t, 1000000, reserves.reserveMoney) // TODO
-	require.Equal(t, 1, reserves.firstSellID)        // TODO
+	require.Equal(t, 1000000, reserves.reserveMoney)
+	require.Equal(t, 1, reserves.firstSellID)
 	booked := pair.getBooked()
-	require.Equal(t, 504, booked.bookedStock) // TODO
+	require.Equal(t, 504, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	require.Equal(t, 0, booked.firstBuyID) // TODO
+	require.Equal(t, -1, booked.firstBuyID)
 	//th.getOrderList(pair, true)                  // TODO
 	//th.getOrderList(pair, false)                 // TODO
 
 	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
-	usd.transfer(taker, 5000, boss)
+	//usd.transfer(taker, 5000, boss)
 	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11, merge3(0, 0, 0))
-	require.Equal(t, 9995000, usd.balanceOf(taker))
-	require.Equal(t, 49, btc.balanceOf(taker))
+	require.Equal(t, 9995000, usd.balanceOf(taker)) // TODO
+	require.Equal(t, 49, btc.balanceOf(taker))      // TODO
 	reserves = pair.getReserves()
 	require.Equal(t, 10001, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
