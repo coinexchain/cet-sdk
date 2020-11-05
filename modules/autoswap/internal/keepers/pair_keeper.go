@@ -242,14 +242,14 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 		pk.tryDealInPool(dealInfo, order.Price, order.IsBuy, poolInfo)
 		pk.insertOrderToBook(ctx, order, dealInfo, poolInfo)
 	} else {
-		dealInfo.AmountInToPool.Add(order.ActualAmount())
+		dealInfo.AmountInToPool = dealInfo.AmountInToPool.Add(order.ActualAmount())
 		dealInfo.RemainAmount = sdk.ZeroInt()
 	}
 	amountToTaker := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if order.IsBuy {
-		poolInfo.StockOrderBookReserve.Sub(dealInfo.DealStockInBook)
+		poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Sub(dealInfo.DealStockInBook)
 	} else {
-		poolInfo.MoneyOrderBookReserve.Sub(dealInfo.DealMoneyInBook)
+		poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Sub(dealInfo.DealMoneyInBook)
 	}
 	if firstOrderID != currOrderID {
 		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, !order.IsBuy, currOrderID)
@@ -270,8 +270,8 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 		if allDeal {
 			diffTokenTradeWithPool = dealInfo.RemainAmount
 		}
-		dealInfo.AmountInToPool.Add(diffTokenTradeWithPool)
-		dealInfo.RemainAmount.Sub(diffTokenTradeWithPool)
+		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(diffTokenTradeWithPool)
+		dealInfo.AmountInToPool = dealInfo.AmountInToPool.Add(diffTokenTradeWithPool)
 		return allDeal
 	}
 	return false
@@ -296,34 +296,49 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	} else {
 		stockAmount = dealInfo.RemainAmount
 	}
-	if orderInBook.ActualAmount().LTE(stockAmount) {
-		stockAmount = orderInBook.ActualAmount()
-		orderInBook.Amount = sdk.ZeroInt()
-	} else {
-		if orderInBook.IsBuy {
-			orderInBook.Amount.Sub((stockAmount.ToDec().Mul(orderInBook.Price).TruncateInt()))
-		} else {
-			orderInBook.Amount.Sub(stockAmount)
-		}
+	if orderInBook.Amount.LT(stockAmount) {
+		stockAmount = orderInBook.Amount
 	}
+	orderInBook.Amount = orderInBook.Amount.Sub(stockAmount)
+	currOrder.Amount = currOrder.Amount.Sub(stockAmount)
 
-	stockTrans := stockAmount
-	moneyTrans := sdk.NewDecFromInt(stockAmount).Mul(orderInBook.Price).TruncateInt()
+	var (
+		stockFee   sdk.Int
+		moneyFee   sdk.Int
+		stockTrans = stockAmount
+		moneyTrans = sdk.NewDecFromInt(stockAmount).Mul(orderInBook.Price).TruncateInt()
+	)
 	if currOrder.IsBuy {
-		dealInfo.RemainAmount.Sub(moneyTrans)
+		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
+		moneyFee = pk.GetMakerFee(ctx).MulInt(moneyTrans).TruncateInt()
+		stockFee = pk.GetTakerFee(ctx).MulInt(stockTrans).TruncateInt()
 	} else {
-		dealInfo.RemainAmount.Sub(stockTrans)
+		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(stockTrans)
+		stockFee = pk.GetMakerFee(ctx).MulInt(stockTrans).TruncateInt()
+		moneyFee = pk.GetTakerFee(ctx).MulInt(moneyTrans).TruncateInt()
 	}
 
-	dealInfo.DealMoneyInBook.Add(moneyTrans)
-	dealInfo.DealStockInBook.Add(stockTrans)
+	dealInfo.DealMoneyInBook = dealInfo.DealMoneyInBook.Add(moneyTrans)
+	dealInfo.DealStockInBook = dealInfo.DealStockInBook.Add(stockTrans)
 	// transfer tokens in orders
 	if currOrder.IsBuy {
-		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans)
-		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans)
+		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
+		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
+		if err := pk.SendCoinsFromAccountToModule(ctx, currOrder.Sender, types.PoolModuleAcc, newCoins(currOrder.Money(), moneyFee)); err != nil {
+			panic(err)
+		}
+		if err := pk.SendCoinsFromAccountToModule(ctx, orderInBook.Sender, types.PoolModuleAcc, newCoins(currOrder.Stock(), stockFee)); err != nil {
+			panic(err)
+		}
 	} else {
-		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans)
-		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans)
+		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
+		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
+		if err := pk.SendCoinsFromAccountToModule(ctx, currOrder.Sender, types.PoolModuleAcc, newCoins(currOrder.Stock(), stockFee)); err != nil {
+			panic(err)
+		}
+		if err := pk.SendCoinsFromAccountToModule(ctx, orderInBook.Sender, types.PoolModuleAcc, newCoins(currOrder.Money(), moneyFee)); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -406,16 +421,16 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		// todo emit deal with pool log
 	}
 
-	amountToTaker := outAmount.Add(otherToTaker)
-	// todo. will add fee calculate and setup fee param in param store
-	fee := sdk.ZeroInt()
-	amountToTaker = amountToTaker.Sub(fee)
+	// add fee calculate
+	fee := pk.GetDealWithPoolFee(ctx).MulInt(outAmount).TruncateInt()
+	amountToTaker := outAmount.Add(otherToTaker).Sub(fee)
+	outAmount = outAmount.Sub(fee)
 	if order.IsBuy {
 		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(dealInfo.AmountInToPool)
-		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Sub(outAmount).Add(fee)
+		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Sub(outAmount)
 	} else {
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.AmountInToPool)
-		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outAmount).Add(fee)
+		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outAmount)
 	}
 	// transfer token from pool to order sender
 	if order.IsBuy {
