@@ -50,8 +50,8 @@ func (t Token) transfer(to sdk.AccAddress, amt int64, from sdk.AccAddress) {
 	err := t.th.app.BankxKeeper.SendCoins(t.th.ctx, from, to, coins)
 	require.NoError(t.th.t, err)
 }
-func (t Token) balanceOf(addr sdk.AccAddress) sdk.Int {
-	return t.th.app.BankxKeeper.GetCoins(t.th.ctx, addr).AmountOf(t.sym)
+func (t Token) balanceOf(addr sdk.AccAddress) int {
+	return int(t.th.app.BankxKeeper.GetCoins(t.th.ctx, addr).AmountOf(t.sym).Int64())
 }
 
 /* Pair */
@@ -61,14 +61,14 @@ type Pair struct {
 	sym string
 }
 type PairReserves struct {
-	reserveStock sdk.Int
-	reserveMoney sdk.Int
-	firstSellID  int64
+	reserveStock int
+	reserveMoney int
+	firstSellID  int
 }
 type PairBooked struct {
-	bookedStock sdk.Int
-	bookedMoney sdk.Int
-	firstBuyID  int64
+	bookedStock int
+	bookedMoney int
+	firstBuyID  int
 }
 
 func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
@@ -89,23 +89,23 @@ func (p Pair) getPoolInfo() *autoswap.PoolInfo {
 func (p Pair) getFirstBuyID() int64 {
 	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, true)
 }
-func (p Pair) getFirstSellID(pair string) int64 {
-	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, pair, true, true, false)
+func (p Pair) getFirstSellID() int64 {
+	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, false)
 }
 func (p Pair) getReserves() PairReserves {
 	pi := p.getPoolInfo()
 	return PairReserves{
-		reserveStock: pi.StockAmmReserve,
-		reserveMoney: pi.MoneyAmmReserve,
-		firstSellID:  0,
+		reserveStock: int(pi.StockAmmReserve.Int64()),
+		reserveMoney: int(pi.MoneyAmmReserve.Int64()),
+		firstSellID:  int(p.getFirstSellID()),
 	}
 }
 func (p Pair) getBooked() PairBooked {
 	pi := p.getPoolInfo()
 	return PairBooked{
-		bookedStock: pi.StockOrderBookReserve,
-		bookedMoney: pi.MoneyOrderBookReserve,
-		firstBuyID:  0,
+		bookedStock: int(pi.StockOrderBookReserve.Int64()),
+		bookedMoney: int(pi.MoneyOrderBookReserve.Int64()),
+		firstBuyID:  int(p.getFirstSellID()),
 	}
 }
 func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {

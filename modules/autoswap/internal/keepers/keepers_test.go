@@ -16,8 +16,8 @@ func TestMint(t *testing.T) {
 	pair.mint(10000, 1000000, addr)
 	require.Equal(t, sdk.NewInt(100000), pair.getLiquidity(addr))
 	reserves := pair.getReserves()
-	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
+	require.Equal(t, 10000, reserves.reserveStock)
+	require.Equal(t, 1000000, reserves.reserveMoney)
 }
 
 // contract("pair", async accounts => {
@@ -36,8 +36,8 @@ func TestPair(t *testing.T) {
 	// it("mint", async () => {
 	pair.mint(10000, 1000000, shareReceiver)
 	reserves := pair.getReserves()
-	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
+	require.Equal(t, 10000, reserves.reserveStock)
+	require.Equal(t, 1000000, reserves.reserveMoney)
 
 	// it("insert sell order with 0 deal", async () => {
 	btc.transfer(maker, 10000, boss)
@@ -51,15 +51,15 @@ func TestPair(t *testing.T) {
 	pair.addLimitOrder(false, maker, 1, makePrice32(10400000, 18), 7, merge3(2, 0, 0))
 	pair.addLimitOrder(false, maker, 1, makePrice32(10600000, 18), 8, merge3(3, 0, 0))
 	pair.addLimitOrder(false, maker, 1, makePrice32(10800000, 18), 9, merge3(4, 0, 0))
-	require.Equal(t, sdk.NewInt(9496), btc.balanceOf(maker))
-	require.Equal(t, sdk.NewInt(0), usd.balanceOf(maker))
+	require.Equal(t, 9496, btc.balanceOf(maker))
+	require.Equal(t, 0, usd.balanceOf(maker))
 	reserves = pair.getReserves()
-	require.Equal(t, sdk.NewInt(10000), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney) // TODO
-	require.Equal(t, 1, reserves.firstSellID)                    // TODO
+	require.Equal(t, 10000, reserves.reserveStock)
+	require.Equal(t, 1000000, reserves.reserveMoney) // TODO
+	require.Equal(t, 1, reserves.firstSellID)        // TODO
 	booked := pair.getBooked()
-	require.Equal(t, sdk.NewInt(504), booked.bookedStock) // TODO
-	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 504, booked.bookedStock) // TODO
+	require.Equal(t, 0, booked.bookedMoney)
 	require.Equal(t, 0, booked.firstBuyID) // TODO
 	//th.getOrderList(pair, true)                  // TODO
 	//th.getOrderList(pair, false)                 // TODO
@@ -67,57 +67,57 @@ func TestPair(t *testing.T) {
 	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
 	usd.transfer(taker, 5000, boss)
 	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11, merge3(0, 0, 0))
-	require.Equal(t, sdk.NewInt(9995000), usd.balanceOf(taker))
-	require.Equal(t, sdk.NewInt(49), btc.balanceOf(taker))
+	require.Equal(t, 9995000, usd.balanceOf(taker))
+	require.Equal(t, 49, btc.balanceOf(taker))
 	reserves = pair.getReserves()
-	require.Equal(t, sdk.NewInt(10001), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1000000), reserves.reserveMoney)
+	require.Equal(t, 10001, reserves.reserveStock)
+	require.Equal(t, 1000000, reserves.reserveMoney)
 	require.Equal(t, 1, reserves.firstSellID)
 	booked = pair.getBooked()
-	require.Equal(t, sdk.NewInt(454), booked.bookedStock)
-	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 454, booked.bookedStock)
+	require.Equal(t, 0, booked.bookedMoney)
 	require.Equal(t, 0, booked.firstBuyID)
 
 	// it("insert buy order with only 1 complete deal with orderbook", async () => {
 	usd.transfer(taker, 5100, boss)
 	pair.addLimitOrder(true, taker, 51, makePrice32(10000000, 18), 12, merge3(0, 0, 0))
 	reserves = pair.getReserves()
-	require.Equal(t, sdk.NewInt(10001), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1000100), reserves.reserveMoney)
+	require.Equal(t, 10001, reserves.reserveStock)
+	require.Equal(t, 1000100, reserves.reserveMoney)
 	require.Equal(t, 6, reserves.firstSellID)
 	booked = pair.getBooked()
-	require.Equal(t, sdk.NewInt(404), booked.bookedStock)
-	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 404, booked.bookedStock)
+	require.Equal(t, 0, booked.bookedMoney)
 	require.Equal(t, 0, booked.firstBuyID)
-	require.Equal(t, sdk.NewInt(9989900), usd.balanceOf(taker))
-	require.Equal(t, sdk.NewInt(99), btc.balanceOf(taker))
+	require.Equal(t, 9989900, usd.balanceOf(taker))
+	require.Equal(t, 99, btc.balanceOf(taker))
 
 	// it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
 	usd.transfer(taker, 99000, boss)
 	pair.addLimitOrder(true, taker, 900, makePrice32(11000000, 18), 12, merge3(0, 0, 0))
 	reserves = pair.getReserves()
-	require.Equal(t, sdk.NewInt(9538), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1049020), reserves.reserveMoney)
+	require.Equal(t, 9538, reserves.reserveStock)
+	require.Equal(t, 1049020, reserves.reserveMoney)
 	require.Equal(t, 0, reserves.firstSellID)
 	booked = pair.getBooked()
-	require.Equal(t, sdk.NewInt(0), booked.bookedStock)
-	require.Equal(t, sdk.NewInt(7260), booked.bookedMoney)
+	require.Equal(t, 0, booked.bookedStock)
+	require.Equal(t, 7260, booked.bookedMoney)
 	require.Equal(t, 12, booked.firstBuyID)
-	require.Equal(t, sdk.NewInt(9890900), usd.balanceOf(taker))
-	require.Equal(t, sdk.NewInt(966), btc.balanceOf(taker))
+	require.Equal(t, 9890900, usd.balanceOf(taker))
+	require.Equal(t, 966, btc.balanceOf(taker))
 
 	// it("remove sell order", async () => {
 	pair.removeOrder(true, 12, merge3(0, 0, 0), taker)
 	reserves = pair.getReserves()
-	require.Equal(t, sdk.NewInt(9538), reserves.reserveStock)
-	require.Equal(t, sdk.NewInt(1049020), reserves.reserveMoney)
+	require.Equal(t, 9538, reserves.reserveStock)
+	require.Equal(t, 1049020, reserves.reserveMoney)
 	require.Equal(t, 0, reserves.firstSellID)
 	booked = pair.getBooked()
-	require.Equal(t, sdk.NewInt(0), booked.bookedStock)
-	require.Equal(t, sdk.NewInt(0), booked.bookedMoney)
+	require.Equal(t, 0, booked.bookedStock)
+	require.Equal(t, 0, booked.bookedMoney)
 	require.Equal(t, 0, booked.firstBuyID)
-	require.Equal(t, sdk.NewInt(9898160), usd.balanceOf(taker))
-	require.Equal(t, sdk.NewInt(966), btc.balanceOf(taker))
+	require.Equal(t, 9898160, usd.balanceOf(taker))
+	require.Equal(t, 966, btc.balanceOf(taker))
 }
 
 // contract("insert & delete order", async (accounts) => {
