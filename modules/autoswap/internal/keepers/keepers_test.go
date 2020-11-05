@@ -315,7 +315,6 @@ func TestInsertSellOrders(t *testing.T) {
 	th.issueToken("btc0", 100000000000000, boss)
 	th.issueToken("usd0", 100000000000000, boss)
 	th.createPair(maker, "btc0", "usd0")
-
 	th.mint(pair, 10000, 1000000, shareReceiver)
 	pi := th.getPoolInfo(pair)
 	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
@@ -335,12 +334,12 @@ func TestInsertSellOrders(t *testing.T) {
 	require.Equal(t, sdk.NewInt(9496), th.balanceOf("btc0", maker))
 	require.Equal(t, sdk.NewInt(0), th.balanceOf("usd0", maker))
 	pi = th.getPoolInfo(pair)
-	require.Equal(t, sdk.NewInt(10000), pi.StockAmmReserve)
-	require.Equal(t, sdk.NewInt(1000000), pi.MoneyAmmReserve)   // TODO
-	require.Equal(t, sdk.NewInt(504), pi.StockOrderBookReserve) // TODO
-	require.Equal(t, sdk.NewInt(0), pi.StockOrderBookReserve)
-	require.Equal(t, 1, th.getFirstSellID(pair)) // TODO
-	require.Equal(t, 0, th.getFirstBuyID(pair))  // TODO
+	require.Equal(t, sdk.NewInt(10000).String(), pi.StockAmmReserve.String())
+	require.Equal(t, sdk.NewInt(1000000).String(), pi.MoneyAmmReserve.String())   // TODO
+	require.Equal(t, sdk.NewInt(504).String(), pi.StockOrderBookReserve.String()) // TODO
+	require.Equal(t, sdk.NewInt(0), pi.MoneyOrderBookReserve)
+	require.EqualValues(t, 1, th.getFirstSellID(pair)) // TODO
+	require.EqualValues(t, -1, th.getFirstBuyID(pair)) // TODO
 	/*
 	   let reserves = await pair.getReserves.call();
 	   assert.equal(reserves.reserveStock.toNumber(), 10000, "reserve stock balance is not correct");

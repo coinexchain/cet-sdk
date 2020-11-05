@@ -166,7 +166,7 @@ func (p PoolInfo) GetTokensAmountOut(liquidity sdk.Int) (stockOut, moneyOut sdk.
 func (p PoolInfo) String() string {
 	return fmt.Sprintf("Symbol:%v, IsSwapOpen: %v, IsOrderBookOpen: %v, StockAmmReserve: %s, "+
 		"MoneyAmmReserve: %s, StockOrderBookReserve: %s, MoneyOrderBookReserve: %s, TotalSupply: %s, KLast: %s\n",
-		p.Symbol, p.IsSwapOpen, p.IsOrderBookOpen, p.StockAmmReserve, p.MoneyAmmReserve, p.StockAmmReserve,
+		p.Symbol, p.IsSwapOpen, p.IsOrderBookOpen, p.StockAmmReserve, p.MoneyAmmReserve, p.StockOrderBookReserve,
 		p.MoneyOrderBookReserve, p.TotalSupply, p.KLast)
 }
 

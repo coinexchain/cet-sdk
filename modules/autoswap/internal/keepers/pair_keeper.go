@@ -78,6 +78,8 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 			err = r.(sdk.Error)
 		case string:
 			err = sdk.NewError(types.RouterKey, types.CodeUnKnownError, r.(string))
+		case error:
+			err = sdk.NewError(types.RouterKey, types.CodeUnKnownError, r.(error).Error())
 		}
 	}()
 
@@ -101,9 +103,9 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 		if pk.insertOrderFromGivePos(ctx, order) {
 			//3. when insert order later, update pool info
 			if order.IsBuy {
-				poolInfo.MoneyOrderBookReserve.Add(actualAmount)
+				poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Add(actualAmount)
 			} else {
-				poolInfo.StockOrderBookReserve.Add(actualAmount)
+				poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Add(actualAmount)
 			}
 			pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, poolInfo)
 			return nil
@@ -113,7 +115,6 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	if _, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -199,7 +200,7 @@ func (pk PairKeeper) insertOrder(ctx sdk.Context, order, prevOrder *types.Order)
 // dealOrderAndAddRemainedOrder Deal the order and
 // insert the remainder order into the order book
 func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.Order, poolInfo *PoolInfo) (sdk.Int, sdk.Error) {
-	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy)
+	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, !order.IsBuy)
 	currOrderID := firstOrderID
 	dealInfo := &types.DealInfo{
 		RemainAmount:    order.ActualAmount(),
@@ -360,9 +361,9 @@ func (pk PairKeeper) insertOrderToBook(ctx sdk.Context, order *types.Order, deal
 		}
 	}
 	if order.IsBuy {
-		poolInfo.MoneyOrderBookReserve.Add(moneyAmount)
+		poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Add(moneyAmount)
 	} else {
-		poolInfo.StockOrderBookReserve.Add(stockAmount)
+		poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Add(stockAmount)
 	}
 }
 
@@ -414,7 +415,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Sub(outAmount).Add(fee)
 	} else {
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.AmountInToPool)
-		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outPoolTokenReserve).Add(fee)
+		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outAmount).Add(fee)
 	}
 	// transfer token from pool to order sender
 	if order.IsBuy {
@@ -457,7 +458,8 @@ func (pk PairKeeper) HasOrder(ctx sdk.Context, symbol string, isOpenSwap, isOpen
 	return pk.GetOrder(ctx, symbol, isOpenSwap, isOpenOrderBook, isBuy, orderID) != nil
 }
 
-func (pk PairKeeper) GetOrder(ctx sdk.Context, symbol string, isOpenSwap bool, isOpenOrderBook, isBuy bool, orderID int64) (order *types.Order) {
+func (pk PairKeeper) GetOrder(ctx sdk.Context, symbol string, isOpenSwap bool, isOpenOrderBook, isBuy bool, orderID int64) *types.Order {
+	var recordOrder *types.Order
 	store := ctx.KVStore(pk.storeKey)
 	key := getOrderKey(&types.Order{
 		OrderBasic: types.OrderBasic{
@@ -472,8 +474,8 @@ func (pk PairKeeper) GetOrder(ctx sdk.Context, symbol string, isOpenSwap bool, i
 	if len(val) == 0 {
 		return nil
 	}
-	pk.codec.MustUnmarshalBinaryBare(val, order)
-	return order
+	pk.codec.MustUnmarshalBinaryBare(val, &recordOrder)
+	return recordOrder
 }
 
 func (pk PairKeeper) SetOrder(ctx sdk.Context, order *types.Order) {
