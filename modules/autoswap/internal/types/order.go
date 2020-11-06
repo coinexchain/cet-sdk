@@ -36,7 +36,7 @@ type Order struct {
 
 func (or Order) HasPrevKey() bool {
 	for _, v := range or.PrevKey {
-		if v >= 0 {
+		if v > 0 {
 			return true
 		}
 	}

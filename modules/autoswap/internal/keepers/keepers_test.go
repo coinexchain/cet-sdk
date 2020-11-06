@@ -1,6 +1,7 @@
 package keepers_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -42,6 +43,9 @@ func TestPair(t *testing.T) {
 	// it("insert sell order with 0 deal", async () => {
 	btc.transfer(maker, 10000, boss)
 	usd.transfer(taker, 10000000, boss)
+	fee := pair.th.app.AutoSwapKeeper.GetDealWithPoolFee(pair.th.ctx)
+	fmt.Println(fee)
+
 	pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
 	pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2, merge3(0, 0, 0))
 	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3, merge3(2, 0, 0))

@@ -123,6 +123,7 @@ func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
 	ctx = sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
 	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
 	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
+	app.AutoSwapKeeper.SetParams(ctx, autoswap.DefaultParams())
 	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccount(ctx, supply.NewEmptyModuleAccount(autoswap.PoolModuleAcc)))
 	return
 }

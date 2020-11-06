@@ -12,7 +12,8 @@ const (
 )
 
 var (
-	NewKeeper = keepers.NewKeeper
+	NewKeeper     = keepers.NewKeeper
+	DefaultParams = types.DefaultParams
 )
 
 type (
