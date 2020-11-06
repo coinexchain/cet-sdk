@@ -187,6 +187,33 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 func TestSwapOnLowLiquidity(t *testing.T) {
 	boss := sdk.AccAddress("boss")
 	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	shareReceiver := sdk.AccAddress("shareReceiver")
+	//lp := sdk.AccAddress("lp")
+	th := newTestHelper(t)
+
+	// it("initialize pair with btc/usd", async () => {
+	btc := th.issueToken("btc0", 100000000000000, boss)
+	usd := th.issueToken("usd0", 100000000000000, boss)
+	pair := th.createPair(maker, btc.sym, usd.sym)
+
+	// it("mint only 1000 shares", async () => {
+	btc.transfer(shareReceiver, 10000, boss)
+	usd.transfer(shareReceiver, 1000000, boss)
+	pair.mint(10000, 1000000, shareReceiver)
+	//balance := pair.balanceOf(shareReceiver)
+	// TODO
+
+	// it("swap with pool", async () => {
+	btc.transfer(maker, 90000000000000, boss)
+	pair.addMarketOrder(false, maker, 90000000000000)
+	// TODO
+}
+
+// contract("big deal on low liquidity", async (accounts) => {
+func TestBigDealOnLowLiquidity(t *testing.T) {
+	boss := sdk.AccAddress("boss")
+	maker := sdk.AccAddress("maker")
 	taker := sdk.AccAddress("taker")
 	shareReceiver := sdk.AccAddress("shareReceiver")
 	//lp := sdk.AccAddress("lp")
@@ -252,24 +279,71 @@ func TestSwapOnLowLiquidity(t *testing.T) {
 	require.Equal(t, 105, balanceAfter-balance)
 }
 
-// contract("big deal on low liquidity", async (accounts) => {
-func TestBigDealOnLowLiquidity(t *testing.T) {
-	// TODO
-}
-
 // contract("deal with pool", async (accounts) => {
 func TestDealWithPool(t *testing.T) {
+	boss := sdk.AccAddress("boss")
+	maker := sdk.AccAddress("maker")
+	//taker := sdk.AccAddress("taker")
+	shareReceiver := sdk.AccAddress("shareReceiver")
+	//lp := sdk.AccAddress("lp")
+	th := newTestHelper(t)
+
+	// it("initialize pair with btc/usd", async () => {
+	btc := th.issueToken("btc0", 100000000000000, boss)
+	usd := th.issueToken("usd0", 100000000000000, boss)
+	pair := th.createPair(maker, btc.sym, usd.sym)
+
+	// it("mint only 1000 shares", async () => {
+	btc.transfer(shareReceiver, 10000, boss)
+	usd.transfer(shareReceiver, 1000000, boss)
+	pair.mint(10000, 1000000, shareReceiver)
+	//balance := pair.balanceOf(shareReceiver)
+	// TODO
+
+	//  it("insert buy order which can not be dealt", async ()=>{
+	pair.addLimitOrder(true, maker, 100, makePrice32(1000_0000, 18), 1, merge3(0, 0, 0))
+	// TODO
+
+	// it("insert sell order which can deal totally", async ()=>{
+	pair.addLimitOrder(false, maker, 10, makePrice32(9000_0000, 17), 1, merge3(0, 0, 0))
+	// TODO
+
+	// it("insert sell order which eats all buy order", async ()=>{
+	pair.addLimitOrder(false, maker, 90, makePrice32(1000_0000, 18), 1, merge3(0, 0, 0))
+	// TODO
+
+	// it("insert buy order which can not be dealt", async ()=>{
+	pair.addLimitOrder(true, maker, 10, makePrice32(1010_0000, 18), 1, merge3(0, 0, 0))
+	reserves := pair.getReserves()
+	require.Equal(t, 100, reserves.reserveStock)
+	require.Equal(t, 10131, reserves.reserveMoney)
 	// TODO
 }
 
 // contract("deal after donate and sync", async (accounts) => {
 func TestDealAfterDonateAndSync(t *testing.T) {
 	// TODO
+
+	// it("mint only 1000 shares", async () => {
+
+	// it("deal with pool", async () => {
 }
 
 // contract("pair with weth token", async (accounts) => {
 func TestPairWithWethToken(t *testing.T) {
 	// TODO
+
+	// it("mint only 1000 shares", async () => {
+
+	// it("insert buy order which can not be dealt", async ()=>{
+
+	// it("insert sell order which can deal totally", async ()=>{
+
+	// it("insert sell order which eats up buy order", async ()=>{
+
+	// it("addMarketOrder to buy eth", async ()=>{
+
+	// it("addMarketOrder to sell eth", async ()=>{
 }
 
 // contract("pair with eth token", async (accounts) => {
@@ -287,6 +361,7 @@ func TestEmptyAMM(t *testing.T) {
 	// TODO
 }
 
+// contract("OneSwapPair/addMarketOrder/eat", async (accounts) => {
 func TestAddMarketOrderEat(t *testing.T) {
 	// TODO
 }
