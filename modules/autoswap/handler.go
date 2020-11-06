@@ -33,13 +33,20 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
 	if info == nil {
+		err := k.SendCoinsFromUserToPool(ctx, msg.Owner, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
+		if err != nil {
+			return err.Result()
+		}
 		if err := k.CreatePair(ctx, msg); err != nil {
 			return err.Result()
 		}
 	} else {
 		stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
-		//transfer token
-		err := k.IPairKeeper.Mint(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, stockR, moneyR, msg.To)
+		err := k.SendCoinsFromUserToPool(ctx, msg.Owner, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockR), sdk.NewCoin(msg.Money, moneyR)))
+		if err != nil {
+			return err.Result()
+		}
+		err = k.IPairKeeper.Mint(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, stockR, moneyR, msg.To)
 		if err != nil {
 			return err.Result()
 		}
@@ -66,8 +73,7 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	if moneyOut.LT(msg.AmountMoneyMin) {
 		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountMoneyMin, moneyOut).Result()
 	}
-	//transfer token
-	//todo: move clear liquidity in burn
+
 	kLast := info.KLast
 	info = k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
 	err = k.AllocateFeeToValidator(ctx, &kLast, info)

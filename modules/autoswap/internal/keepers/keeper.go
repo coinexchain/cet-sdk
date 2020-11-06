@@ -69,6 +69,9 @@ func (keeper *Keeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 }
+func (keeper Keeper) SendCoinsFromUserToPool(ctx sdk.Context, senderAddr sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, types.PoolModuleAcc, amt)
+}
 func (keeper Keeper) SendCoinsFromPoolAccountToModule(ctx sdk.Context, recipientModule string, amt sdk.Coins) sdk.Error {
 	poolAddr := keeper.sk.GetModuleAddress(types.PoolModuleAcc)
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, poolAddr, recipientModule, amt)
