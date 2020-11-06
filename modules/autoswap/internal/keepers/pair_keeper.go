@@ -112,8 +112,16 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 		}
 	}
 	//4. deal the order and insert remained order to orderBook.
-	if _, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo); err != nil {
+	amountToTaker, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo)
+	if err != nil {
 		return err
+	}
+	if amountToTaker.IsPositive() {
+		pk.DealPairs[Pair{
+			Symbol:          order.MarketSymbol,
+			IsSwapOpen:      order.IsOpenSwap,
+			IsOrderBookOpen: order.IsOpenOrderBook,
+		}] = struct{}{}
 	}
 	return nil
 }
@@ -465,6 +473,13 @@ func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.In
 	}
 	if amountToTaker.LT(order.MinOutputAmount) {
 		return sdk.Int{}, types.ErrAmountOutIsSmallerThanExpected(order.MinOutputAmount, amountToTaker)
+	}
+	if amountToTaker.IsPositive() {
+		pk.DealPairs[Pair{
+			Symbol:          order.MarketSymbol,
+			IsSwapOpen:      order.IsOpenSwap,
+			IsOrderBookOpen: order.IsOpenOrderBook,
+		}] = struct{}{}
 	}
 	return amountToTaker, nil
 }
