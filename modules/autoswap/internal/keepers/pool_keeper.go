@@ -74,7 +74,7 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, isOpenSwap, isOpe
 	l = l.Sub(liquidity)
 	if l.IsZero() {
 		p.ClearLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from)
-	}else {
+	} else {
 		p.SetLiquidity(ctx, marketSymbol, isOpenSwap, isOpenOrderBook, from, l)
 	}
 	if FeeOn {

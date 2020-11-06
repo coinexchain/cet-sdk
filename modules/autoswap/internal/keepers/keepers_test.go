@@ -126,12 +126,130 @@ func TestPair(t *testing.T) {
 
 // contract("insert & delete order", async (accounts) => {
 func TestInsertAndDeleteOrder(t *testing.T) {
-	// TODO
+	boss := sdk.AccAddress("boss")
+	maker := sdk.AccAddress("maker")
+	taker := sdk.AccAddress("taker")
+	shareReceiver := sdk.AccAddress("shareReceiver")
+	th := newTestHelper(t)
+
+	// it("initialize pair with btc/usd", async () => {
+	btc := th.issueToken("btc0", 100000000000000, boss)
+	usd := th.issueToken("usd0", 100000000000000, boss)
+	pair := th.createPair(maker, btc.sym, usd.sym)
+
+	// it("mint", async () => {
+	pair.mint(10000, 1000000, shareReceiver)
+	reserves := pair.getReserves()
+	require.Equal(t, 10000, reserves.reserveStock)
+	require.Equal(t, 1000000, reserves.reserveMoney)
+
+	// it("insert sell order with duplicated id", async () => {
+	btc.transfer(maker, 100, boss)
+	pair.addLimitOrder(false, maker, 100, makePrice32(11000000, 18), 1, merge3(0, 0, 0))
+	btc.transfer(maker, 50, boss)
+	pair.addLimitOrder(false, maker, 50, makePrice32(12000000, 18), 1, merge3(0, 0, 0))
+
+	// it("insert sell order with invalid prevkey", async () => {
+	btc.transfer(maker, 100, boss)
+	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 1, merge3(1, 2, 3))
+
+	// it("insert buy order with invalid price", async () => {
+	// "OneSwap: INVALID_PRICE"
+	pair.addLimitOrder(true, taker, 100, makePrice32(105000, 18), 1, merge3(1, 2, 3))
+	// "OneSwap: INVALID_PRICE"
+	pair.addLimitOrder(true, taker, 100, makePrice32(105000000, 18), 1, merge3(1, 2, 3))
+
+	// it("insert buy order with unenough usd", async () => {
+	usd.transfer(taker, 500, boss)
+	// "OneSwap: DEPOSIT_NOT_ENOUGH"
+	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
+
+	// it("remove buy order with non existed id", async () => {
+	// "OneSwap: NO_SUCH_ORDER"
+	pair.removeOrder(true, 1, merge3(0, 0, 0), taker)
+
+	// it("remove sell order with invalid prevKey", async () => {
+	// "OneSwap: REACH_END"
+	pair.removeOrder(false, 1, merge3(2, 3, 3), maker)
+
+	// it("only order sender can remove order", async () => {
+	// "OneSwap: NOT_OWNER"
+	pair.removeOrder(false, 3, merge3(0, 0, 0), boss)
+
+	// it("remove sell order successfully", async () => {
+	// remove first sell id emits sync event at first
+	pair.removeOrder(false, 3, merge3(0, 0, 0), maker)
+	pair.removeOrder(false, 2, merge3(1, 0, 0), maker)
+	pair.removeOrder(false, 1, merge3(0, 0, 0), maker)
 }
 
 // contract("swap on low liquidity", async (accounts) => {
 func TestSwapOnLowLiquidity(t *testing.T) {
+	boss := sdk.AccAddress("boss")
+	maker := sdk.AccAddress("maker")
+	taker := sdk.AccAddress("taker")
+	shareReceiver := sdk.AccAddress("shareReceiver")
+	//lp := sdk.AccAddress("lp")
+	th := newTestHelper(t)
+
+	// it("initialize pair with btc/usd", async () => {
+	btc := th.issueToken("btc0", 100000000000000, boss)
+	usd := th.issueToken("usd0", 100000000000000, boss)
+	pair := th.createPair(maker, btc.sym, usd.sym)
+
+	// it("mint only 1000 shares", async () => {
+	btc.transfer(shareReceiver, 10000, boss)
+	usd.transfer(shareReceiver, 1000000, boss)
+	pair.mint(10000, 1000000, shareReceiver)
+	//balance := pair.balanceOf(shareReceiver)
 	// TODO
+
+	// it("insert sell order at pool current price", async () => {
+	btc.transfer(maker, 90000000000000, boss)
+	pair.addLimitOrder(false, maker, 10, makePrice32(10000000, 18), 1, merge3(0, 0, 0))
+	require.Equal(t, 1, usd.balanceOf(maker))
+	booked := pair.getBooked()
+	require.Equal(t, 0, booked.bookedMoney)
+	require.Equal(t, 10, booked.bookedStock)
+
+	// it("insert three small buy order at lower price", async () => {
+	booked = pair.getBooked()
+	require.Equal(t, 0, booked.bookedMoney)
+	pair.addLimitOrder(true, maker, 10, makePrice32(20000000, 16), 1, merge3(0, 0, 0))
+	booked = pair.getBooked()
+	require.Equal(t, 20, booked.bookedMoney)
+	pair.addLimitOrder(true, maker, 10, makePrice32(30000000, 16), 1, merge3(0, 0, 0))
+	booked = pair.getBooked()
+	require.Equal(t, 50, booked.bookedMoney)
+	pair.addLimitOrder(true, maker, 10, makePrice32(40000000, 16), 1, merge3(0, 0, 0))
+	booked = pair.getBooked()
+	require.Equal(t, 90, booked.bookedMoney)
+
+	// it("insert big sell order not deal", async () => {
+	pair.addLimitOrder(false, maker, 1000000000, makePrice32(10100000, 18), 2, merge3(0, 0, 0))
+	require.Equal(t, 0, usd.balanceOf(maker))
+	booked = pair.getBooked()
+	require.Equal(t, 90, booked.bookedMoney)
+	require.Equal(t, 1000000010, booked.bookedStock)
+	require.Equal(t, 1, pair.getReserves().firstSellID)
+
+	// it("insert big order deal with biggest sell order ", async () => {
+	usd.transfer(taker, 100000_0000_0000, boss)
+	pair.addLimitOrder(true, taker, 10_0000_0000, makePrice32(10100000, 18), 1, merge3(0, 0, 0))
+	balance := btc.balanceOf(taker)
+	require.Equal(t, 9_9700_0000, balance)
+
+	// it("insert big buy order to hao yang mao", async () => {
+	pair.addMarketOrder(true, taker, 10_0000)
+	balanceAfter := btc.balanceOf(taker)
+	require.Equal(t, 2492375, balanceAfter-balance)
+
+	// it("insert sell order", async () => {
+	balance = usd.balanceOf(taker)
+	booked = pair.getBooked()
+	pair.addMarketOrder(false, taker, 100)
+	balanceAfter = usd.balanceOf(taker)
+	require.Equal(t, 105, balanceAfter-balance)
 }
 
 // contract("big deal on low liquidity", async (accounts) => {

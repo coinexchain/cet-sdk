@@ -77,6 +77,9 @@ func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
 func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
 	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, sdk.NewInt(amt), price, id, prevKey)
 }
+func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
+	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, sdk.NewInt(amt))
+}
 func (p Pair) removeOrder(isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
 	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, prevKey, sender)
 }
@@ -114,6 +117,10 @@ func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {
 func (p Pair) getOrderList(isBuy bool) []*types.Order {
 	// TODO
 	return nil
+}
+func (p Pair) balanceOf(addr sdk.AccAddress) int {
+	lq := p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, true, true, addr)
+	return int(lq.Int64())
 }
 
 /* helper functions */
@@ -178,6 +185,25 @@ func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 		Price:   price,
 		OrderID: id,
 		PrevKey: prevKey,
+	})
+	require.NoError(t, err)
+}
+
+// TODO
+func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+	pair string, isBuy bool, sender sdk.AccAddress, amt sdk.Int) {
+
+	err := ask.AddLimitOrder(ctx, &types.Order{
+		OrderBasic: types.OrderBasic{
+			MarketSymbol:    pair,
+			IsOpenSwap:      true,
+			IsOpenOrderBook: true,
+			IsLimitOrder:    false,
+			IsBuy:           isBuy,
+			Sender:          sender,
+			Amount:          amt,
+		},
+		// TODO
 	})
 	require.NoError(t, err)
 }
