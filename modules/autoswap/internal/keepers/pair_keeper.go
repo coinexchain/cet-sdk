@@ -84,7 +84,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	}()
 
 	var poolInfo *PoolInfo
-	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook); poolInfo == nil {
+	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol); poolInfo == nil {
 		return types.ErrInvalidMarket(order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
 	}
 	if order.OrderID = pk.getUnusedOrderID(ctx, order); order.OrderID <= 0 {
@@ -107,7 +107,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 			} else {
 				poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Add(actualAmount)
 			}
-			pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, poolInfo)
+			pk.SetPoolInfo(ctx, order.MarketSymbol, poolInfo)
 			return nil
 		}
 	}
@@ -262,7 +262,7 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 	if firstOrderID != currOrderID {
 		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, !order.IsBuy, currOrderID)
 	}
-	pk.SetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, poolInfo)
+	pk.SetPoolInfo(ctx, order.MarketSymbol, poolInfo)
 	return amountToTaker, nil
 }
 
@@ -466,7 +466,7 @@ func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.In
 		order.Price = sdk.NewDec(math.MaxInt64)
 	}
 	order.IsLimitOrder = false
-	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook)
+	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol)
 	amountToTaker, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo)
 	if err != nil {
 		return sdk.Int{}, err
@@ -559,7 +559,7 @@ func (pk PairKeeper) DeleteOrder(ctx sdk.Context, delOrder *types.MsgDeleteOrder
 }
 
 func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder *types.Order) sdk.Error {
-	info := pk.GetPoolInfo(ctx, delOrder.MarketSymbol, delOrder.IsOpenSwap, delOrder.IsOpenOrderBook)
+	info := pk.GetPoolInfo(ctx, delOrder.MarketSymbol)
 	amount := delOrder.Amount
 	if delOrder.IsBuy {
 		amount = delOrder.ActualAmount()
@@ -573,7 +573,7 @@ func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder 
 			return err
 		}
 	}
-	pk.SetPoolInfo(ctx, delOrder.MarketSymbol, delOrder.IsOpenSwap, delOrder.IsOpenOrderBook, info)
+	pk.SetPoolInfo(ctx, delOrder.MarketSymbol, info)
 	return nil
 }
 

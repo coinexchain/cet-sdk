@@ -42,8 +42,6 @@ func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.
 		Owner:           sender,
 		Stock:           req.Stock,
 		Money:           req.Money,
-		IsSwapOpen:      !req.NoSwap,
-		IsOrderBookOpen: !req.NoOrderBook,
 	}
 
 	var err error
@@ -87,18 +85,10 @@ func (req *removeLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (s
 		Sender:          sender,
 		Stock:           req.Stock,
 		Money:           req.Money,
-		IsSwapOpen:      !req.NoSwap,
-		IsOrderBookOpen: !req.NoOrderBook,
 	}
 
 	var err error
 	if msg.Amount, err = parseSdkInt("amount", req.Amount); err != nil {
-		return nil, err
-	}
-	if msg.AmountStockMin, err = parseSdkInt("stock_min", req.StockMin); err != nil {
-		return nil, err
-	}
-	if msg.AmountMoneyMin, err = parseSdkInt("money_min", req.MoneyMin); err != nil {
 		return nil, err
 	}
 	if msg.To, err = sdk.AccAddressFromBech32(req.To); err != nil {

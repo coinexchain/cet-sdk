@@ -226,8 +226,6 @@ type MsgAddLiquidity struct {
 	Money           string         `json:"money"`
 	StockIn         sdk.Int        `json:"stock_in"`
 	MoneyIn         sdk.Int        `json:"money_in"`
-	IsSwapOpen      bool           `json:"is_swap_open"`
-	IsOrderBookOpen bool           `json:"is_order_book_open"`
 	To              sdk.AccAddress `json:"to"`
 }
 
@@ -249,9 +247,6 @@ func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
 	if m.StockIn.IsZero() && m.MoneyIn.IsPositive() || m.MoneyIn.IsZero() && m.StockIn.IsPositive() {
 		return nil
 	}
-	if !m.IsOrderBookOpen && !m.IsSwapOpen {
-		return ErrInvalidPairFlag("IsOrderBookOpen and IsSwapOpen cannot both false")
-	}
 	//if To is nil, Owner => To
 	return nil
 }
@@ -272,12 +267,8 @@ type MsgRemoveLiquidity struct {
 	Sender          sdk.AccAddress `json:"sender"`
 	Stock           string         `json:"stock"`
 	Money           string         `json:"money"`
-	IsSwapOpen      bool           `json:"amm_open"`
-	IsOrderBookOpen bool           `json:"pool_open"`
 	Amount          sdk.Int        `json:"amount"`
 	To              sdk.AccAddress `json:"to"`
-	AmountStockMin  sdk.Int        `json:"amount_stock_min"`
-	AmountMoneyMin  sdk.Int        `json:"amount_money_min"`
 }
 
 func (m MsgRemoveLiquidity) Route() string {
@@ -294,9 +285,6 @@ func (m MsgRemoveLiquidity) ValidateBasic() sdk.Error {
 	}
 	if len(m.Stock) == 0 || len(m.Money) == 0 {
 		return ErrInvalidToken("token is empty")
-	}
-	if !m.IsOrderBookOpen && !m.IsSwapOpen {
-		return ErrInvalidPairFlag("IsOrderBookOpen and IsSwapOpen cannot both false")
 	}
 	if !m.Amount.IsPositive() {
 		return ErrInvalidAmount(m.Amount)

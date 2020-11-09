@@ -31,7 +31,7 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
+	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info == nil {
 		err := k.SendCoinsFromUserToPool(ctx, msg.Owner, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
 		if err != nil {
@@ -46,7 +46,7 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 		if err != nil {
 			return err.Result()
 		}
-		err = k.IPairKeeper.Mint(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, stockR, moneyR, msg.To)
+		err = k.IPairKeeper.Mint(ctx, marKey, stockR, moneyR, msg.To)
 		if err != nil {
 			return err.Result()
 		}
@@ -56,15 +56,9 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 
 func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	stockOut, moneyOut, err := k.Burn(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, msg.Sender, msg.Amount)
+	_, _, err := k.Burn(ctx, marKey, msg.Sender, msg.Amount)
 	if err != nil {
 		return err.Result()
-	}
-	if stockOut.LT(msg.AmountStockMin) {
-		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountStockMin, stockOut).Result()
-	}
-	if moneyOut.LT(msg.AmountMoneyMin) {
-		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountMoneyMin, moneyOut).Result()
 	}
 	return sdk.Result{}
 }

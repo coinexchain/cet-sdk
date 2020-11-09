@@ -36,8 +36,6 @@ func TestAddLiquidityCmd(t *testing.T) {
 		Money:           "bar",
 		StockIn:         sdk.NewInt(100000000),
 		MoneyIn:         sdk.NewInt(200000000),
-		IsSwapOpen:      true,
-		IsOrderBookOpen: true,
 	}, resultMsg)
 }
 
@@ -65,11 +63,7 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 		To:              fromAddr,
 		Stock:           "foo",
 		Money:           "bar",
-		AmountStockMin:  sdk.NewInt(100000000),
-		AmountMoneyMin:  sdk.NewInt(200000000),
 		Amount:          sdk.NewInt(12345),
-		IsSwapOpen:      true,
-		IsOrderBookOpen: true,
 	}, resultMsg)
 }
 

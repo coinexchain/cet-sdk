@@ -234,8 +234,6 @@ func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 	msg = &types.MsgAddLiquidity{
 		Stock:           viper.GetString(flagStock),
 		Money:           viper.GetString(flagMoney),
-		IsSwapOpen:      !viper.GetBool(flagNoSwap),
-		IsOrderBookOpen: !viper.GetBool(flagNoOrderBook),
 	}
 
 	if msg.StockIn, err = parseSdkInt(flagStockIn); err != nil {
@@ -254,15 +252,6 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	msg = &types.MsgRemoveLiquidity{
 		Stock:           viper.GetString(flagStock),
 		Money:           viper.GetString(flagMoney),
-		IsSwapOpen:      !viper.GetBool(flagNoSwap),
-		IsOrderBookOpen: !viper.GetBool(flagNoOrderBook),
-	}
-
-	if msg.AmountStockMin, err = parseSdkInt(flagStockMin); err != nil {
-		return
-	}
-	if msg.AmountMoneyMin, err = parseSdkInt(flagMoneyMin); err != nil {
-		return
 	}
 	if msg.Amount, err = parseSdkInt(flagAmount); err != nil {
 		return

@@ -52,7 +52,7 @@ func queryPoolInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byt
 	if err := types.ModuleCdc.UnmarshalJSON(req.Data, &param); err != nil {
 		return nil, sdk.NewError(types.CodeSpaceAutoSwap, types.CodeUnMarshalFailed, "failed to parse param")
 	}
-	info := keeper.IPairKeeper.GetPoolInfo(ctx, param.Symbol, true, false)
+	info := keeper.IPairKeeper.GetPoolInfo(ctx, param.Symbol)
 	var infoD PoolInfoDisplay
 	if info != nil {
 		infoD = NewPoolInfoDisplay(info)

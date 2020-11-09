@@ -23,22 +23,14 @@ var (
 	OpenOrderBook = []byte{0x06}
 )
 
-func getLiquidityKey(marketSymbol string, isOpenSwap, isOpenOrderBook bool, address sdk.AccAddress) []byte {
-	return append(append(PoolLiquidityKey, getPairKey(marketSymbol, isOpenSwap, isOpenOrderBook)...), address.Bytes()...)
+func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {
+	return append(append(PoolLiquidityKey, getPairKey(marketSymbol)...), address.Bytes()...)
 }
 
-// getPairKey key = prefix | Symbol | swapFlag | openOrderBookFlag
+// getPairKey key = prefix | Symbol
 // value = PoolInfo
-func getPairKey(symbol string, isOpenSwap, isOpenOrderBook bool) []byte {
-	swapByte := OpenSwap
-	if !isOpenSwap {
-		swapByte = NonSwap
-	}
-	orderBookByte := NonOpenBook
-	if isOpenOrderBook {
-		orderBookByte = OpenOrderBook
-	}
-	return append(append(append(MarketKey, []byte(symbol)...), swapByte...), orderBookByte...)
+func getPairKey(symbol string) []byte {
+	return append(MarketKey, []byte(symbol)...)
 }
 
 // getOrderKey key = prefix | swapFlag | isOpenOrderBook | side | Symbol | orderID

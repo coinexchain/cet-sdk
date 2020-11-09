@@ -84,10 +84,10 @@ func (p Pair) removeOrder(isBuy bool, id int64, prevKey [3]int64, sender sdk.Acc
 	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, prevKey, sender)
 }
 func (p Pair) getLiquidity(addr sdk.AccAddress) sdk.Int {
-	return p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, true, true, addr)
+	return p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, addr)
 }
 func (p Pair) getPoolInfo() *autoswap.PoolInfo {
-	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym, true, true)
+	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym)
 }
 func (p Pair) getFirstBuyID() int64 {
 	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, true)
@@ -119,7 +119,7 @@ func (p Pair) getOrderList(isBuy bool) []*types.Order {
 	return nil
 }
 func (p Pair) balanceOf(addr sdk.AccAddress) int {
-	lq := p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, true, true, addr)
+	lq := p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, addr)
 	return int(lq.Int64())
 }
 
@@ -152,8 +152,6 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 		Owner:           owner,
 		Stock:           stock,
 		Money:           money,
-		IsSwapOpen:      true,
-		IsOrderBookOpen: true,
 		StockIn:         sdk.NewInt(0),
 		MoneyIn:         sdk.NewInt(0),
 		To:              nil,
@@ -164,7 +162,7 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
 
-	err := ask.Mint(ctx, pair, true, true,
+	err := ask.Mint(ctx, pair,
 		stockIn, moneyIn, to)
 	require.NoError(t, err)
 }

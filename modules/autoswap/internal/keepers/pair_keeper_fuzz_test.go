@@ -76,7 +76,7 @@ func TestLiquidity(t *testing.T) {
 		isOpenOrderBook = true
 	)
 	app := prepareTestApp(t)
-	app.AutoSwapKeeper.SetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook, &keepers.PoolInfo{Symbol: market})
+	app.AutoSwapKeeper.SetPoolInfo(app.ctx, market, &keepers.PoolInfo{Symbol: market})
 	mintLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
 	burnLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
 	addLimitOrderTest(t, app, market, isOpenSwap, isOpenOrderBook)
@@ -96,13 +96,13 @@ func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		newCoins(moneySymbol, moneyAmount)), "transfer money coins from account to module failed")
 	// mint liquidity and check added liquidity
 	expectedLiquidity := sdk.NewIntFromBigInt(big.NewInt(0).Sqrt(stockAmount.Mul(moneyAmount).BigInt()))
-	require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market, isOpenSwap, isOpenOrderBook, stockAmount, moneyAmount, to), "init liquidity mint failed")
-	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
+	require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market, stockAmount, moneyAmount, to), "init liquidity mint failed")
+	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 	require.EqualValues(t, info.TotalSupply, expectedLiquidity, "liquidity is not equal")
 
 	for i := 0; i < testNum; i++ {
 		// get random amount to addLiquidity
-		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
+		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 		stockAmount, moneyAmount := info.GetLiquidityAmountIn(getRandom(
 			maxTokenAmount).Mul(sdk.NewInt(1e18)), getRandom(maxTokenAmount).Mul(sdk.NewInt(1e18)))
 		if !app.AccountKeeper.GetAccount(app.ctx, from).GetCoins().IsAllGT(newCoins(stockSymbol, stockAmount).Add(newCoins(moneySymbol, moneyAmount))) {
@@ -120,15 +120,15 @@ func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		beforeLiquidity := info.TotalSupply
 		expectedLiquidity = getExpectedLiquidity(stockAmount, moneyAmount, info)
 		if i%2 == 0 {
-			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market, isOpenSwap, isOpenOrderBook,
+			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market,
 				stockAmount, moneyAmount, to), "subsequent liquidity mint failed")
 		} else {
-			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market, isOpenSwap, isOpenOrderBook,
+			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market,
 				stockAmount, moneyAmount, from), "subsequent liquidity mint failed")
 		}
 
 		// check added liquidity
-		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
+		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 		require.EqualValues(t, info.TotalSupply.Sub(beforeLiquidity), expectedLiquidity, "subsequent liquidity is not equal")
 	}
 }
@@ -145,15 +145,15 @@ func getExpectedLiquidity(stockAmount, moneyAmount sdk.Int, info *keepers.PoolIn
 func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
 	// get random liquidity to burn
 	burnLiquidityAmount := getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9))
-	if app.AutoSwapKeeper.GetLiquidity(ctx, market, isOpenSwap, isOpenOrderBook, to).LT(burnLiquidityAmount) {
+	if app.AutoSwapKeeper.GetLiquidity(ctx, market, to).LT(burnLiquidityAmount) {
 		fmt.Println("The random liquidity amount is larger than the user's balance")
 		return
 	}
-	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
+	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 	expectedStockOut, expectedMoneyOut := info.GetTokensAmountOut(burnLiquidityAmount)
 
 	// burn liquidity
-	stockOut, moneyOut, err := app.AutoSwapKeeper.Burn(app.ctx, market, isOpenSwap, isOpenOrderBook, from, burnLiquidityAmount)
+	stockOut, moneyOut, err := app.AutoSwapKeeper.Burn(app.ctx, market, from, burnLiquidityAmount)
 	require.Nil(t, err, "init liquidity burn failed")
 	// check outToken is correct
 	require.EqualValues(t, stockOut, expectedStockOut, "get stock amount is not equal in burn liquidity")
@@ -163,10 +163,10 @@ func burnLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 	// check result
 	for i := 0; i < testNum; i++ {
 		burnLiqudityAmount := getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9))
-		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market, isOpenSwap, isOpenOrderBook)
+		info = app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 		expectedStockOut, expectedMoneyOut = info.GetTokensAmountOut(burnLiqudityAmount)
 		// todo. transfer token to moduleAccount
-		stockOut, moneyOut, err = app.AutoSwapKeeper.Burn(app.ctx, market, isOpenSwap, isOpenOrderBook, from, sdk.ZeroInt())
+		stockOut, moneyOut, err = app.AutoSwapKeeper.Burn(app.ctx, market, from, sdk.ZeroInt())
 		require.Nil(t, err, "subsequent liquidity burn failed")
 		// check outToken is correct
 		require.EqualValues(t, stockOut, expectedStockOut, "get stock amount is not equal in burn liquidity")
