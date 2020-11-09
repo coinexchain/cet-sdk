@@ -50,19 +50,12 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 		if err != nil {
 			return err.Result()
 		}
-		kLast := info.KLast
-		info = k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
-		err = k.AllocateFeeToValidator(ctx, &kLast, info)
-		if err != nil {
-			return err.Result()
-		}
 	}
 	return sdk.Result{}
 }
 
 func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	info := k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
 	stockOut, moneyOut, err := k.Burn(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen, msg.Sender, msg.Amount)
 	if err != nil {
 		return err.Result()
@@ -72,13 +65,6 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	}
 	if moneyOut.LT(msg.AmountMoneyMin) {
 		return types.ErrAmountOutIsSmallerThanExpected(msg.AmountMoneyMin, moneyOut).Result()
-	}
-
-	kLast := info.KLast
-	info = k.IPairKeeper.GetPoolInfo(ctx, marKey, msg.IsSwapOpen, msg.IsOrderBookOpen)
-	err = k.AllocateFeeToValidator(ctx, &kLast, info)
-	if err != nil {
-		return err.Result()
 	}
 	return sdk.Result{}
 }
