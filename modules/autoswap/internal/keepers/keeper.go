@@ -1,15 +1,11 @@
 package keepers
 
 import (
-	"math/big"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/params"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
-	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 type Keeper struct {
@@ -71,43 +67,4 @@ func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sd
 }
 func (keeper Keeper) SendCoinsFromUserToPool(ctx sdk.Context, senderAddr sdk.AccAddress, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, types.PoolModuleAcc, amt)
-}
-func (keeper Keeper) SendCoinsFromPoolAccountToModule(ctx sdk.Context, recipientModule string, amt sdk.Coins) sdk.Error {
-	poolAddr := keeper.sk.GetModuleAddress(types.PoolModuleAcc)
-	return keeper.sk.SendCoinsFromAccountToModule(ctx, poolAddr, recipientModule, amt)
-}
-func (keeper *Keeper) AllocateFeeToValidator(ctx sdk.Context, lastK *sdk.Int, info *PoolInfo) sdk.Error {
-	if !lastK.IsZero() {
-		k := info.MoneyAmmReserve.Mul(info.StockAmmReserve).BigInt()
-		var rootK, rootLastK big.Int
-		rootK.Sqrt(k)
-		rootLastK.Sqrt(lastK.BigInt())
-
-		if rootK.Cmp(&rootLastK) == 1 {
-			var subKBigInt big.Int
-			subK := sdk.NewIntFromBigInt(subKBigInt.Sub(&rootK, &rootLastK))
-			param := keeper.GetParams(ctx)
-
-			numerator := subK.MulRaw(param.FeeToValidator)
-			denominator := sdk.NewIntFromBigInt(&rootK).MulRaw(param.FeeToPool).
-				Add(sdk.NewIntFromBigInt(&rootLastK).MulRaw(param.FeeToValidator))
-			moneyToValidator := info.MoneyAmmReserve.Mul(numerator).Quo(denominator)
-			stockToValidator := info.StockAmmReserve.Mul(numerator).Quo(denominator)
-			stock, money := dex.SplitSymbol(info.Symbol)
-
-			if moneyToValidator.IsPositive() {
-				if err := keeper.SendCoinsFromPoolAccountToModule(ctx, auth.FeeCollectorName,
-					sdk.NewCoins(sdk.NewCoin(money, moneyToValidator))); err != nil {
-					return err
-				}
-			}
-			if stockToValidator.IsPositive() {
-				if err := keeper.SendCoinsFromPoolAccountToModule(ctx, auth.FeeCollectorName,
-					sdk.NewCoins(sdk.NewCoin(stock, stockToValidator))); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }
