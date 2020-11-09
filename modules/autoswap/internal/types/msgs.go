@@ -28,8 +28,8 @@ func (limit MsgCreateLimitOrder) Type() string {
 }
 
 func (limit MsgCreateLimitOrder) ValidateBasic() sdk.Error {
-	if len(strings.TrimSpace(limit.MarketSymbol)) == 0 || (!limit.IsOpenSwap && !limit.IsOpenOrderBook) {
-		return ErrInvalidMarket(limit.MarketSymbol, limit.IsOpenSwap, limit.IsOpenOrderBook)
+	if len(strings.TrimSpace(limit.MarketSymbol)) == 0 {
+		return ErrInvalidMarket(limit.MarketSymbol)
 	}
 	if limit.Sender.Empty() {
 		return ErrInvalidSender(limit.Sender)
@@ -67,8 +67,6 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 
 type MarketInfo struct {
 	MarketSymbol    string // stock/money
-	IsOpenSwap      bool
-	IsOpenOrderBook bool
 }
 
 type MsgSwapTokens struct {
@@ -120,9 +118,6 @@ func isValidSwapChain(pairs []MarketInfo) bool {
 		if len(tokenLists[index]) != 2 || (tokenLists[index][0] == tokenLists[index][1]) {
 			return false
 		}
-		if !v.IsOpenSwap && !v.IsOpenOrderBook {
-			return false
-		}
 	}
 	// swap pairs should be : a/b, b/c, c/d ....
 	for i := 0; i < len(tokenLists)-1; i++ {
@@ -152,8 +147,6 @@ func (mkOr *MsgSwapTokens) GetOrderInfos() []*Order {
 			OrderBasic: OrderBasic{
 				Sender:          mkOr.Sender,
 				MarketSymbol:    v.MarketSymbol,
-				IsOpenSwap:      v.IsOpenSwap,
-				IsOpenOrderBook: v.IsOpenOrderBook,
 				Amount:          mkOr.Amount,
 			},
 			MinOutputAmount: sdk.ZeroInt(),
@@ -165,8 +158,6 @@ func (mkOr *MsgSwapTokens) GetOrderInfos() []*Order {
 
 type MsgDeleteOrder struct {
 	MarketSymbol    string         `json:"market_symbol"`
-	IsOpenSwap      bool           `json:"is_open_swap"`
-	IsOpenOrderBook bool           `json:"is_open_order_book"`
 	Sender          sdk.AccAddress `json:"sender"`
 	IsBuy           bool           `json:"is_buy"`
 	PrevKey         [3]int64       `json:"prev_key"`
@@ -182,8 +173,8 @@ func (m MsgDeleteOrder) Type() string {
 }
 
 func (m MsgDeleteOrder) ValidateBasic() sdk.Error {
-	if len(strings.TrimSpace(m.MarketSymbol)) == 0 || (!m.IsOpenSwap && !m.IsOpenOrderBook) {
-		return ErrInvalidMarket(m.MarketSymbol, m.IsOpenSwap, m.IsOpenOrderBook)
+	if len(strings.TrimSpace(m.MarketSymbol)) == 0 {
+		return ErrInvalidMarket(m.MarketSymbol)
 	}
 	if m.OrderID <= 0 {
 		return ErrInvalidOrderID(m.OrderID)
@@ -211,8 +202,6 @@ func (m MsgDeleteOrder) OrderInfo() *Order {
 		OrderBasic: OrderBasic{
 			Sender:          m.Sender,
 			MarketSymbol:    m.MarketSymbol,
-			IsOpenSwap:      m.IsOpenSwap,
-			IsOpenOrderBook: m.IsOpenOrderBook,
 			IsBuy:           m.IsBuy,
 		},
 		OrderID: m.OrderID,

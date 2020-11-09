@@ -281,8 +281,6 @@ func getSwapTokensMsg() (msg *types.MsgSwapTokens, err error) {
 func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
 	type pairInfo struct {
 		Pair        string `json:"pair"`
-		NoSwap      bool   `json:"noSwap"`
-		NoOrderBook bool   `json:"noOrderBook"`
 	}
 
 	var swapPathArr []pairInfo
@@ -298,8 +296,6 @@ func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
 	for _, pairInfo := range swapPathArr {
 		ret = append(ret, types.MarketInfo{
 			MarketSymbol:    pairInfo.Pair,
-			IsOpenSwap:      !pairInfo.NoSwap,
-			IsOpenOrderBook: !pairInfo.NoOrderBook,
 		})
 	}
 	return
@@ -322,8 +318,6 @@ func getCreateLimitOrderMsg() (msg *types.MsgCreateLimitOrder, err error) {
 func getDeleteOrderMsg() (msg *types.MsgDeleteOrder, err error) {
 	msg = &types.MsgDeleteOrder{
 		MarketSymbol:    viper.GetString(flagPairSymbol),
-		IsOpenSwap:      !viper.GetBool(flagNoSwap),
-		IsOpenOrderBook: !viper.GetBool(flagNoOrderBook),
 		OrderID:         viper.GetInt64(flagOrderID),
 	}
 	if msg.IsBuy, err = parseIsBuy(); err != nil {
@@ -335,8 +329,6 @@ func getDeleteOrderMsg() (msg *types.MsgDeleteOrder, err error) {
 
 func getOrderBasic() (ob types.OrderBasic, err error) {
 	ob.MarketSymbol = viper.GetString(flagPairSymbol)
-	ob.IsOpenSwap = !viper.GetBool(flagNoSwap)
-	ob.IsOpenOrderBook = !viper.GetBool(flagNoOrderBook)
 	if ob.Amount, err = parseSdkInt(flagAmount); err != nil {
 		return
 	}

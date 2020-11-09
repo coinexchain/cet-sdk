@@ -26,15 +26,13 @@ func TestPairKeeper_SetOrder(t *testing.T) {
 		MinOutputAmount: sdk.NewInt(19),
 		OrderBasic: types.OrderBasic{
 			MarketSymbol:    "stock/money",
-			IsOpenSwap:      true,
-			IsOpenOrderBook: true,
 			IsBuy:           false,
 			IsLimitOrder:    false,
 			Amount:          sdk.NewInt(1999999),
 		},
 	}
 	k.SetOrder(ctx, &order)
-	recordOrder := k.GetOrder(ctx, order.MarketSymbol, order.IsOpenSwap, order.IsOpenOrderBook, order.IsBuy, order.OrderID)
+	recordOrder := k.GetOrder(ctx, order.MarketSymbol, order.IsBuy, order.OrderID)
 	require.NotNil(t, recordOrder)
 	require.EqualValues(t, recordOrder.OrderBasic, order.OrderBasic)
 	require.EqualValues(t, recordOrder.OrderID, order.OrderID)

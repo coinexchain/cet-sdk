@@ -185,8 +185,6 @@ func addLimitOrderTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 			OrderBasic: types.OrderBasic{
 				IsLimitOrder:    true,
 				Sender:          from,
-				IsOpenOrderBook: isOpenOrderBook,
-				IsOpenSwap:      isOpenSwap,
 				MarketSymbol:    market,
 				Amount:          getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
 			},

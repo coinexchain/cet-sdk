@@ -49,9 +49,9 @@ func ErrInvalidSender(sender sdk.AccAddress) sdk.Error {
 		"sender: %s", sender.String()))
 }
 
-func ErrInvalidMarket(market string, isOpenSwap bool, isOpenOrderBook bool) sdk.Error {
+func ErrInvalidMarket(market string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidMarket, fmt.Sprintf(
-		"Invalid market: %s, isOpenSwap: %v, isOpenOrderBook: %v", market, isOpenSwap, isOpenOrderBook))
+		"Invalid market: %s", market))
 }
 
 func ErrInvalidSwap(pairs []MarketInfo) sdk.Error {

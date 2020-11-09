@@ -8,8 +8,6 @@ import (
 
 type OrderBasic struct {
 	MarketSymbol    string         `json:"market_symbol"`
-	IsOpenSwap      bool           `json:"is_open_swap"`
-	IsOpenOrderBook bool           `json:"is_open_order_book"`
 	Sender          sdk.AccAddress `json:"sender"`
 	IsBuy           bool           `json:"is_buy"`
 	IsLimitOrder    bool           `json:"is_limit_order"`

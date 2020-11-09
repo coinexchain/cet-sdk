@@ -128,8 +128,6 @@ func (req *swapTokensReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Ms
 	for _, pairInfo := range req.Path {
 		msg.Pairs = append(msg.Pairs, types.MarketInfo{
 			MarketSymbol:    pairInfo.Symbol,
-			IsOpenSwap:      !pairInfo.NoSwap,
-			IsOpenOrderBook: !pairInfo.NoOrderBook,
 		})
 	}
 
@@ -174,8 +172,6 @@ func (req *createLimitOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (
 		OrderBasic: types.OrderBasic{
 			Sender:          sender,
 			MarketSymbol:    req.PairSymbol,
-			IsOpenSwap:      !req.NoSwap,
-			IsOpenOrderBook: !req.NoOrderBook,
 			IsLimitOrder:    true,
 		},
 	}
@@ -221,8 +217,6 @@ func (req *cancelOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.M
 	msg := &types.MsgDeleteOrder{
 		Sender:          sender,
 		MarketSymbol:    req.PairSymbol,
-		IsOpenSwap:      !req.NoSwap,
-		IsOpenOrderBook: !req.NoOrderBook,
 	}
 	var err error
 	if msg.IsBuy, err = parseIsBuy(req.Side); err != nil {

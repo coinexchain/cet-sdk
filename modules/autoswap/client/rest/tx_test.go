@@ -73,8 +73,6 @@ func TestSwapTokensReq(t *testing.T) {
 		Pairs: []types.MarketInfo{
 			{
 				MarketSymbol:    "foo/bar",
-				IsOpenSwap:      true,
-				IsOpenOrderBook: true,
 			},
 		},
 		Sender:          addr,
@@ -100,8 +98,6 @@ func TestCreateLimitOrderReq(t *testing.T) {
 		OrderBasic: types.OrderBasic{
 			Sender:          addr,
 			MarketSymbol:    "foo/bar",
-			IsOpenSwap:      false,
-			IsOpenOrderBook: true,
 			IsBuy:           false,
 			IsLimitOrder:    true,
 			Amount:          sdk.NewInt(123),
@@ -124,8 +120,6 @@ func TestCancelOrderReq(t *testing.T) {
 	assert.Equal(t, &types.MsgDeleteOrder{
 		Sender:          addr,
 		MarketSymbol:    "foo/bar",
-		IsOpenSwap:      false,
-		IsOpenOrderBook: true,
 		IsBuy:           false,
 		OrderID:         888,
 	}, msg)

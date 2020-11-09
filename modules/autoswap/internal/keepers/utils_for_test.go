@@ -90,10 +90,10 @@ func (p Pair) getPoolInfo() *autoswap.PoolInfo {
 	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym)
 }
 func (p Pair) getFirstBuyID() int64 {
-	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, true)
+	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true)
 }
 func (p Pair) getFirstSellID() int64 {
-	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true, true, false)
+	return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, false)
 }
 func (p Pair) getReserves() PairReserves {
 	pi := p.getPoolInfo()
@@ -112,7 +112,7 @@ func (p Pair) getBooked() PairBooked {
 	}
 }
 func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {
-	return p.th.app.AutoSwapKeeper.GetOrder(p.th.ctx, p.sym, true, true, isBuy, orderID)
+	return p.th.app.AutoSwapKeeper.GetOrder(p.th.ctx, p.sym, isBuy, orderID)
 }
 func (p Pair) getOrderList(isBuy bool) []*types.Order {
 	// TODO
@@ -173,8 +173,6 @@ func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		OrderBasic: types.OrderBasic{
 			MarketSymbol:    pair,
-			IsOpenSwap:      true,
-			IsOpenOrderBook: true,
 			IsLimitOrder:    true,
 			IsBuy:           isBuy,
 			Sender:          sender,
@@ -194,8 +192,6 @@ func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		OrderBasic: types.OrderBasic{
 			MarketSymbol:    pair,
-			IsOpenSwap:      true,
-			IsOpenOrderBook: true,
 			IsLimitOrder:    false,
 			IsBuy:           isBuy,
 			Sender:          sender,
@@ -210,8 +206,6 @@ func removeOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
 	err := ask.DeleteOrder(ctx, &types.MsgDeleteOrder{
 		MarketSymbol:    pair,
-		IsOpenSwap:      true,
-		IsOpenOrderBook: true,
 		Sender:          sender,
 		IsBuy:           isBuy,
 		OrderID:         id,
