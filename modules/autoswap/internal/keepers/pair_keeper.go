@@ -8,6 +8,8 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/params"
 )
 
 var _ IPairKeeper = &PairKeeper{}
@@ -26,6 +28,12 @@ type IPairKeeper interface {
 	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
 	HasOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) bool
 	GetOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) *types.Order
+	SetParams(ctx sdk.Context, params types.Params)
+	GetParams(ctx sdk.Context) types.Params
+	GetTakerFee(ctx sdk.Context) sdk.Dec
+	GetMakerFee(ctx sdk.Context) sdk.Dec
+	GetDealWithPoolFee(ctx sdk.Context) sdk.Dec
+	GetFeeToValidator(ctx sdk.Context) sdk.Dec
 
 	GetPairList() map[Pair]struct{}
 	ClearPairList()
@@ -37,27 +45,22 @@ type PairKeeper struct {
 	IPoolKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
-	codec              *codec.Codec
-	storeKey           sdk.StoreKey
-	GetTakerFee        FeeFunc
-	GetMakerFee        FeeFunc
-	GetDealWithPoolFee FeeFunc
-
+	codec    *codec.Codec
+	storeKey sdk.StoreKey
+	subspace params.Subspace
 	// record deal pairs in one block.
 	DealPairs map[Pair]struct{}
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
-	codec *codec.Codec, storeKey sdk.StoreKey, takerFee, makerFee, poolFee FeeFunc) *PairKeeper {
+	codec *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace) *PairKeeper {
 	return &PairKeeper{
 		codec:              codec,
 		storeKey:           storeKey,
 		IPoolKeeper:        poolKeeper,
 		SupplyKeeper:       supplyK,
 		ExpectedBankKeeper: bnk,
-		GetTakerFee:        takerFee,
-		GetMakerFee:        makerFee,
-		GetDealWithPoolFee: poolFee,
+		subspace:           paramSubspace.WithKeyTable(types.ParamKeyTable()),
 
 		DealPairs: make(map[Pair]struct{}),
 	}
@@ -68,6 +71,46 @@ func (pk *PairKeeper) GetPairList() map[Pair]struct{} {
 }
 func (pk *PairKeeper) ClearPairList() {
 	pk.DealPairs = make(map[Pair]struct{})
+}
+
+func (keeper *PairKeeper) SetParams(ctx sdk.Context, params types.Params) {
+	keeper.subspace.SetParamSet(ctx, &params)
+}
+
+func (keeper *PairKeeper) GetParams(ctx sdk.Context) (param types.Params) {
+	keeper.subspace.GetParamSet(ctx, &param)
+	return
+}
+
+func (keeper *PairKeeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(keeper.GetParams(ctx).TakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+}
+
+func (keeper *PairKeeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(keeper.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+}
+
+func (keeper *PairKeeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(keeper.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
+}
+
+func (keeper *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
+	param := keeper.GetParams(ctx)
+	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
+}
+
+func (keeper *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) sdk.Error {
+	feeToVal := keeper.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
+	feeToPool := totalAmount.Sub(feeToVal)
+	err := keeper.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
+	if err != nil {
+		return err
+	}
+	err = keeper.SendCoinsFromAccountToModule(ctx, sender, types.PoolModuleAcc, sdk.NewCoins(sdk.NewCoin(denom, feeToPool)))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
@@ -329,19 +372,19 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	if currOrder.IsBuy {
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
-		if err := pk.SendCoinsFromAccountToModule(ctx, currOrder.Sender, types.PoolModuleAcc, newCoins(currOrder.Money(), moneyFee)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, orderInBook.Sender, types.PoolModuleAcc, newCoins(currOrder.Stock(), stockFee)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender); err != nil {
 			panic(err)
 		}
 	} else {
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
-		if err := pk.SendCoinsFromAccountToModule(ctx, currOrder.Sender, types.PoolModuleAcc, newCoins(currOrder.Stock(), stockFee)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, orderInBook.Sender, types.PoolModuleAcc, newCoins(currOrder.Money(), moneyFee)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, orderInBook.Sender); err != nil {
 			panic(err)
 		}
 	}
@@ -442,7 +485,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), dealInfo.AmountInToPool, order.Sender); err != nil {
 			panic(err)
 		}
 	} else {
@@ -450,7 +493,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), dealInfo.AmountInToPool, order.Sender); err != nil {
 			panic(err)
 		}
 	}

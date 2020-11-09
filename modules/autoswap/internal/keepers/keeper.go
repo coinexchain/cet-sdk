@@ -9,9 +9,8 @@ import (
 )
 
 type Keeper struct {
-	storeKey      sdk.StoreKey
-	paramSubspace params.Subspace
-	sk            types.SupplyKeeper
+	storeKey sdk.StoreKey
+	sk       types.SupplyKeeper
 	FactoryInterface
 	IPairKeeper
 }
@@ -32,36 +31,13 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 
 	k := Keeper{
 		storeKey:         storeKey,
-		paramSubspace:    paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		sk:               sk,
 		FactoryInterface: factoryK,
 	}
-	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, cdc, storeKey, k.GetTakerFee, k.GetMakerFee, k.GetDealWithPoolFee)
+	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, cdc, storeKey, paramSubspace)
 	return k
 }
 
-func (keeper *Keeper) SetParams(ctx sdk.Context, params types.Params) {
-	keeper.paramSubspace.SetParamSet(ctx, &params)
-}
-
-func (keeper *Keeper) GetParams(ctx sdk.Context) (param types.Params) {
-	keeper.paramSubspace.GetParamSet(ctx, &param)
-	return
-}
-func (keeper *Keeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).TakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
-}
-
-func (keeper *Keeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
-}
-func (keeper *Keeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
-}
-func (keeper *Keeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
-	param := keeper.GetParams(ctx)
-	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
-}
 func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 }
