@@ -8,11 +8,12 @@ import (
 )
 
 var (
-	OrderKey          = []byte{0x01}
-	MarketKey         = []byte{0x02}
-	MarketEndKey      = []byte{0x03}
-	BestOrderPriceKey = []byte{0x03}
-	PoolLiquidityKey  = []byte{0x04}
+	OrderKey            = []byte{0x01}
+	MarketKey           = []byte{0x02}
+	MarketEndKey        = []byte{0x03}
+	BestOrderPriceKey   = []byte{0x03}
+	PoolLiquidityKey    = []byte{0x04}
+	PoolLiquidityEndKey = []byte{0x05}
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 )
 
 func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {
-	return append(append(PoolLiquidityKey, getPairKey(marketSymbol)...), address.Bytes()...)
+	return append(append(PoolLiquidityKey, marketSymbol...), address.Bytes()...)
 }
 
 // getPairKey key = prefix | Symbol

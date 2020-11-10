@@ -12,15 +12,21 @@ import (
 type IPoolKeeper interface {
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo
-	GetPoolInfos(ctx sdk.Context) (infos []*PoolInfo)
+	GetPoolInfos(ctx sdk.Context) (infos []PoolInfo)
 	SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int)
 	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int
 	ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress)
+	GetAllLiquidityInfos(ctx sdk.Context) (infos []LiquidityInfo)
 	Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) (sdk.Int, sdk.Error)
 	Burn(ctx sdk.Context, marketSymbol string, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error)
 }
 
 //todo: _mintFee is not support
+type LiquidityInfo struct {
+	Symbol    string         `json:"symbol"`
+	Owner     sdk.AccAddress `json:"owner"`
+	Liquidity sdk.Int        `json:"liquidity"`
+}
 
 type PoolKeeper struct {
 	key   sdk.StoreKey
@@ -88,18 +94,41 @@ func (p PoolKeeper) ClearLiquidity(ctx sdk.Context, marketSymbol string, address
 
 func (p PoolKeeper) SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int) {
 	store := ctx.KVStore(p.key)
-	bytes := p.codec.MustMarshalBinaryBare(liquidity)
+	bytes := p.codec.MustMarshalBinaryBare(LiquidityInfo{
+		Symbol:    marketSymbol,
+		Owner:     address,
+		Liquidity: liquidity,
+	})
 	store.Set(getLiquidityKey(marketSymbol, address), bytes)
 }
 
 func (p PoolKeeper) GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int {
 	store := ctx.KVStore(p.key)
-	liquidity := sdk.ZeroInt()
+	info := LiquidityInfo{}
 	bytes := store.Get(getLiquidityKey(marketSymbol, address))
 	if bytes != nil {
-		p.codec.MustUnmarshalBinaryBare(bytes, &liquidity)
+		p.codec.MustUnmarshalBinaryBare(bytes, &info)
 	}
-	return liquidity
+	return info.Liquidity
+}
+
+func (p PoolKeeper) IterateAllLiquidityInfo(ctx sdk.Context, liquidityProc func(li LiquidityInfo)) {
+	store := ctx.KVStore(p.key)
+	iter := store.Iterator(PoolLiquidityKey, PoolLiquidityEndKey)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		li := &LiquidityInfo{}
+		p.codec.MustUnmarshalBinaryBare(iter.Value(), li)
+		liquidityProc(*li)
+	}
+}
+
+func (p PoolKeeper) GetAllLiquidityInfos(ctx sdk.Context) (infos []LiquidityInfo) {
+	proc := func(info LiquidityInfo) {
+		infos = append(infos, info)
+	}
+	p.IterateAllLiquidityInfo(ctx, proc)
+	return
 }
 
 func (p PoolKeeper) SetPoolInfo(ctx sdk.Context, marketSymbol string, info *PoolInfo) {
@@ -124,9 +153,9 @@ func (p PoolKeeper) IteratePoolInfo(ctx sdk.Context, poolInfoProc func(info *Poo
 	}
 }
 
-func (p PoolKeeper) GetPoolInfos(ctx sdk.Context) (infos []*PoolInfo) {
+func (p PoolKeeper) GetPoolInfos(ctx sdk.Context) (infos []PoolInfo) {
 	proc := func(info *PoolInfo) {
-		infos = append(infos, info)
+		infos = append(infos, *info)
 	}
 	p.IteratePoolInfo(ctx, proc)
 	return
