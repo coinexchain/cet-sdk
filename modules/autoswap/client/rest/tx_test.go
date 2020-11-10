@@ -23,12 +23,12 @@ func TestAddLiquidityReq(t *testing.T) {
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgAddLiquidity{
-		Owner:           addr,
-		Stock:           "foo",
-		Money:           "bar",
-		StockIn:         sdk.NewInt(123),
-		MoneyIn:         sdk.NewInt(456),
-		To:              addr,
+		Sender:  addr,
+		Stock:   "foo",
+		Money:   "bar",
+		StockIn: sdk.NewInt(123),
+		MoneyIn: sdk.NewInt(456),
+		To:      addr,
 	}, msg)
 }
 

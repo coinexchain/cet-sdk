@@ -50,9 +50,6 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, mo
 	p.SetLiquidity(ctx, marketSymbol, to, totalLiq)
 	info.StockAmmReserve = info.StockAmmReserve.Add(stockAmountIn)
 	info.MoneyAmmReserve = info.MoneyAmmReserve.Add(moneyAmountIn)
-	if FeeOn {
-		info.KLast = info.StockAmmReserve.Mul(info.MoneyAmmReserve)
-	}
 	p.SetPoolInfo(ctx, marketSymbol, info)
 	return nil
 }
@@ -76,9 +73,6 @@ func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, from sdk.AccAddre
 		p.ClearLiquidity(ctx, marketSymbol, from)
 	} else {
 		p.SetLiquidity(ctx, marketSymbol, from, l)
-	}
-	if FeeOn {
-		info.KLast = info.StockAmmReserve.Mul(info.MoneyAmmReserve)
 	}
 	p.SetPoolInfo(ctx, marketSymbol, info)
 	return stockAmount, moneyAmount, nil
@@ -125,26 +119,12 @@ func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo 
 var _ IPoolKeeper = PoolKeeper{}
 
 type PoolInfo struct {
-	Symbol                string
-	IsSwapOpen            bool
-	IsOrderBookOpen       bool
-	StockAmmReserve       sdk.Int
-	MoneyAmmReserve       sdk.Int
-	StockOrderBookReserve sdk.Int
-	MoneyOrderBookReserve sdk.Int
-	TotalSupply           sdk.Int
-	KLast                 sdk.Int
-}
-
-func NewPoolInfo(symbol string, stockAmmReserve sdk.Int, moneyAmmReserve sdk.Int, totalSupply sdk.Int) PoolInfo {
-	poolInfo := PoolInfo{
-		Symbol:          symbol,
-		StockAmmReserve: stockAmmReserve,
-		MoneyAmmReserve: moneyAmmReserve,
-		TotalSupply:     totalSupply,
-		KLast:           stockAmmReserve.Mul(moneyAmmReserve),
-	}
-	return poolInfo
+	Symbol                string  `json:"symbol"`
+	StockAmmReserve       sdk.Int `json:"stock_amm_reserve"`
+	MoneyAmmReserve       sdk.Int `json:"money_amm_reserve"`
+	StockOrderBookReserve sdk.Int `json:"stock_order_book_reserve"`
+	MoneyOrderBookReserve sdk.Int `json:"money_order_book_reserve"`
+	TotalSupply           sdk.Int `json:"total_supply"`
 }
 
 func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {
@@ -166,27 +146,51 @@ func (p PoolInfo) GetTokensAmountOut(liquidity sdk.Int) (stockOut, moneyOut sdk.
 
 func (p PoolInfo) String() string {
 	return fmt.Sprintf("Symbol:%v, StockAmmReserve: %s, "+
-		"MoneyAmmReserve: %s, StockOrderBookReserve: %s, MoneyOrderBookReserve: %s, TotalSupply: %s, KLast: %s\n",
+		"MoneyAmmReserve: %s, StockOrderBookReserve: %s, MoneyOrderBookReserve: %s, TotalSupply: %s\n",
 		p.Symbol, p.StockAmmReserve, p.MoneyAmmReserve, p.StockOrderBookReserve,
-		p.MoneyOrderBookReserve, p.TotalSupply, p.KLast)
+		p.MoneyOrderBookReserve, p.TotalSupply)
 }
 
-type PoolInfoDisplay struct {
-	Symbol                  string  `json:"Symbol"`
-	StockReserveInAmm       sdk.Int `json:"stock_reserve_in_amm"`
-	MoneyReserveInAmm       sdk.Int `json:"money_reserve_in_amm"`
-	StockReserveInOrderBook sdk.Int `json:"stock_reserve_in_order_book"`
-	MoneyReserveInOrderBook sdk.Int `json:"money_reserve_in_order_book"`
-	TotalLiquidity          sdk.Int `json:"total_liquidity"`
+type AddLiquidityInfo struct {
+	Sender    sdk.AccAddress `json:"sender"`
+	Stock     string         `json:"stock"`
+	Money     string         `json:"money"`
+	StockIn   sdk.Int        `json:"stock_in"`
+	MoneyIn   sdk.Int        `json:"money_in"`
+	To        sdk.AccAddress `json:"to"`
+	Liquidity sdk.Int        `json:"liquidity"`
 }
 
-func NewPoolInfoDisplay(info *PoolInfo) PoolInfoDisplay {
-	return PoolInfoDisplay{
-		Symbol:                  info.Symbol,
-		StockReserveInAmm:       info.StockAmmReserve,
-		MoneyReserveInAmm:       info.MoneyAmmReserve,
-		StockReserveInOrderBook: info.StockOrderBookReserve,
-		MoneyReserveInOrderBook: info.MoneyOrderBookReserve,
-		TotalLiquidity:          info.TotalSupply,
+func NewAddLiquidityInfo(msg types.MsgAddLiquidity, liquidity sdk.Int) AddLiquidityInfo {
+	return AddLiquidityInfo{
+		Sender:    msg.Sender,
+		Stock:     msg.Stock,
+		Money:     msg.Money,
+		StockIn:   msg.StockIn,
+		MoneyIn:   msg.MoneyIn,
+		To:        msg.To,
+		Liquidity: liquidity,
+	}
+}
+
+type RemoveLiquidityInfo struct {
+	Sender   sdk.AccAddress `json:"sender"`
+	Stock    string         `json:"stock"`
+	Money    string         `json:"money"`
+	Amount   sdk.Int        `json:"amount"`
+	To       sdk.AccAddress `json:"to"`
+	StockOut sdk.Int        `json:"stock_out"`
+	MoneyOut sdk.Int        `json:"money_out"`
+}
+
+func NewRemoveLiquidityInfo(msg types.MsgRemoveLiquidity, stockOut, moneyOut sdk.Int) RemoveLiquidityInfo {
+	return RemoveLiquidityInfo{
+		Sender:   msg.Sender,
+		Stock:    msg.Stock,
+		Money:    msg.Money,
+		Amount:   msg.Amount,
+		To:       msg.To,
+		StockOut: stockOut,
+		MoneyOut: moneyOut,
 	}
 }

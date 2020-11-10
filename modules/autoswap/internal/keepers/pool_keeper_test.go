@@ -19,14 +19,11 @@ func TestPoolKeeper_Pool(t *testing.T) {
 	var marketKey = "stock/money"
 	var poolInfo = keepers.PoolInfo{
 		Symbol:                marketKey,
-		IsSwapOpen:            true,
-		IsOrderBookOpen:       true,
 		StockAmmReserve:       sdk.NewInt(100),
 		MoneyAmmReserve:       sdk.NewInt(10000),
 		StockOrderBookReserve: sdk.ZeroInt(),
 		MoneyOrderBookReserve: sdk.ZeroInt(),
 		TotalSupply:           sdk.ZeroInt(),
-		KLast:                 sdk.ZeroInt(),
 	}
 	k := app.AutoSwapKeeper
 	//step1: set pool info, stock/money = 100/10000
@@ -36,18 +33,13 @@ func TestPoolKeeper_Pool(t *testing.T) {
 	require.Equal(t, info.Symbol, marketKey)
 	require.Equal(t, info.StockAmmReserve.Int64(), int64(100))
 	require.Equal(t, info.MoneyAmmReserve.Int64(), int64(10000))
-	require.True(t, info.IsSwapOpen)
-	require.True(t, info.IsOrderBookOpen)
 	//step2: set pool info with swap close
-	poolInfo.IsSwapOpen = false
 	k.SetPoolInfo(ctx, marketKey, &poolInfo)
 	info = k.GetPoolInfo(ctx, marketKey)
 	require.NotNil(t, info)
 	require.Equal(t, marketKey, info.Symbol)
 	require.Equal(t, int64(100), info.StockAmmReserve.Int64())
 	require.Equal(t, int64(10000), info.MoneyAmmReserve.Int64())
-	require.False(t, info.IsSwapOpen)
-	require.True(t, info.IsOrderBookOpen)
 	//step3: get pool exist
 	info = k.GetPoolInfo(ctx, marketKey)
 	require.NotNil(t, info)

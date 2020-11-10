@@ -33,7 +33,7 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info == nil {
-		err := k.SendCoinsFromUserToPool(ctx, msg.Owner, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
+		err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
 		if err != nil {
 			return err.Result()
 		}
@@ -42,7 +42,7 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 		}
 	} else {
 		stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
-		err := k.SendCoinsFromUserToPool(ctx, msg.Owner, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockR), sdk.NewCoin(msg.Money, moneyR)))
+		err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockR), sdk.NewCoin(msg.Money, moneyR)))
 		if err != nil {
 			return err.Result()
 		}

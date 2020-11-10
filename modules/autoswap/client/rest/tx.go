@@ -39,9 +39,9 @@ func (req *addLiquidityReq) GetBaseReq() *rest.BaseReq {
 
 func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgAddLiquidity{
-		Owner:           sender,
-		Stock:           req.Stock,
-		Money:           req.Money,
+		Sender: sender,
+		Stock:  req.Stock,
+		Money:  req.Money,
 	}
 
 	var err error

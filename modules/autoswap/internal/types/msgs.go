@@ -210,12 +210,12 @@ func (m MsgDeleteOrder) OrderInfo() *Order {
 }
 
 type MsgAddLiquidity struct {
-	Owner           sdk.AccAddress `json:"owner"`
-	Stock           string         `json:"stock"`
-	Money           string         `json:"money"`
-	StockIn         sdk.Int        `json:"stock_in"`
-	MoneyIn         sdk.Int        `json:"money_in"`
-	To              sdk.AccAddress `json:"to"`
+	Sender  sdk.AccAddress `json:"sender"`
+	Stock   string         `json:"stock"`
+	Money   string         `json:"money"`
+	StockIn sdk.Int        `json:"stock_in"`
+	MoneyIn sdk.Int        `json:"money_in"`
+	To      sdk.AccAddress `json:"to"`
 }
 
 func (m MsgAddLiquidity) Route() string {
@@ -227,7 +227,7 @@ func (m MsgAddLiquidity) Type() string {
 }
 
 func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
-	if m.Owner.Empty() {
+	if m.Sender.Empty() {
 		return sdk.ErrInvalidAddress("missing owner address")
 	}
 	if len(m.Stock) == 0 || len(m.Money) == 0 {
@@ -236,7 +236,7 @@ func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
 	if m.StockIn.IsZero() && m.MoneyIn.IsPositive() || m.MoneyIn.IsZero() && m.StockIn.IsPositive() {
 		return nil
 	}
-	//if To is nil, Owner => To
+	//if To is nil, Sender => To
 	return nil
 }
 
@@ -245,11 +245,11 @@ func (m MsgAddLiquidity) GetSignBytes() []byte {
 }
 
 func (m MsgAddLiquidity) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Owner}
+	return []sdk.AccAddress{m.Sender}
 }
 
 func (m *MsgAddLiquidity) SetAccAddress(address sdk.AccAddress) {
-	m.Owner = address
+	m.Sender = address
 }
 
 type MsgRemoveLiquidity struct {

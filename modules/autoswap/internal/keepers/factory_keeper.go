@@ -32,7 +32,6 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sd
 		StockOrderBookReserve: sdk.ZeroInt(),
 		MoneyOrderBookReserve: sdk.ZeroInt(),
 		TotalSupply:           sdk.ZeroInt(),
-		KLast:                 msg.StockIn.Mul(msg.MoneyIn),
 	}
 	f.poolKeeper.SetPoolInfo(ctx, symbol, p)
 	//vanity check in handler

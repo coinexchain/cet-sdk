@@ -53,11 +53,10 @@ func queryPoolInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byt
 		return nil, sdk.NewError(types.CodeSpaceAutoSwap, types.CodeUnMarshalFailed, "failed to parse param")
 	}
 	info := keeper.IPairKeeper.GetPoolInfo(ctx, param.Symbol)
-	var infoD PoolInfoDisplay
-	if info != nil {
-		infoD = NewPoolInfoDisplay(info)
+	if info == nil {
+		return nil, types.ErrPairIsNotExist()
 	}
-	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, infoD)
+	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, info)
 	if err != nil {
 		return nil, types.ErrMarshalFailed()
 	}

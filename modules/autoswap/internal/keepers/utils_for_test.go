@@ -149,12 +149,12 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	owner sdk.AccAddress, stock, money string) {
 
 	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
-		Owner:           owner,
-		Stock:           stock,
-		Money:           money,
-		StockIn:         sdk.NewInt(0),
-		MoneyIn:         sdk.NewInt(0),
-		To:              nil,
+		Sender:  owner,
+		Stock:   stock,
+		Money:   money,
+		StockIn: sdk.NewInt(0),
+		MoneyIn: sdk.NewInt(0),
+		To:      nil,
 	})
 	require.NoError(t, err)
 }
