@@ -111,6 +111,14 @@ func (keeper *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom s
 	return nil
 }
 
+func (keeper *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
+	err := keeper.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, fee)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
 	defer func() {
 		r := recover()
@@ -159,7 +167,7 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	}
 	if amountToTaker.IsPositive() {
 		pk.DealPairs[Pair{
-			Symbol:          order.MarketSymbol,
+			Symbol: order.MarketSymbol,
 		}] = struct{}{}
 	}
 	return nil
@@ -270,7 +278,11 @@ func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.
 			break
 		}
 		// deal in order book
-		pk.dealInOrderBook(ctx, order, orderInBook, dealInfo)
+		isPoolExists := true
+		if poolInfo == nil || poolInfo.StockAmmReserve.IsZero() {
+			isPoolExists = false
+		}
+		pk.dealInOrderBook(ctx, order, orderInBook, dealInfo, isPoolExists)
 
 		// the order in order book didn't fully deal, then the new order did fully deal.
 		// update remained order info to order book.
@@ -332,7 +344,7 @@ func (pk PairKeeper) intoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info
 	return sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.Int)).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt()
 }
 
-func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *types.Order, dealInfo *types.DealInfo) {
+func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *types.Order, dealInfo *types.DealInfo, isPoolExists bool) {
 	dealInfo.HasDealInOrderBook = true
 	stockAmount := sdk.Int{}
 	// will calculate stock amount
@@ -370,12 +382,20 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	if currOrder.IsBuy {
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender); err != nil {
-			panic(err)
+		if isPoolExists {
+			if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender); err != nil {
+				panic(err)
+			}
+			if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender); err != nil {
+				panic(err)
+			}
+		} else {
+			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee),
+				sdk.NewCoin(currOrder.Stock(), stockFee)), currOrder.Sender); err != nil {
+				panic(err)
+			}
 		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender); err != nil {
-			panic(err)
-		}
+
 	} else {
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
@@ -514,7 +534,7 @@ func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.In
 	}
 	if amountToTaker.IsPositive() {
 		pk.DealPairs[Pair{
-			Symbol:          order.MarketSymbol,
+			Symbol: order.MarketSymbol,
 		}] = struct{}{}
 	}
 	return amountToTaker, nil
@@ -529,8 +549,8 @@ func (pk PairKeeper) GetOrder(ctx sdk.Context, symbol string, isBuy bool, orderI
 	store := ctx.KVStore(pk.storeKey)
 	key := getOrderKey(&types.Order{
 		OrderBasic: types.OrderBasic{
-			MarketSymbol:    symbol,
-			IsBuy:           isBuy,
+			MarketSymbol: symbol,
+			IsBuy:        isBuy,
 		},
 		OrderID: orderID,
 	})
