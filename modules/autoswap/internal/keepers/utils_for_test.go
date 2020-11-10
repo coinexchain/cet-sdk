@@ -148,7 +148,7 @@ func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
 func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	owner sdk.AccAddress, stock, money string) {
 
-	err := ask.CreatePair(ctx, types.MsgAddLiquidity{
+	_, err := ask.CreatePair(ctx, types.MsgAddLiquidity{
 		Sender:  owner,
 		Stock:   stock,
 		Money:   money,
@@ -162,7 +162,7 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
 
-	err := ask.Mint(ctx, pair,
+	_, err := ask.Mint(ctx, pair,
 		stockIn, moneyIn, to)
 	require.NoError(t, err)
 }

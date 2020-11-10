@@ -10,17 +10,14 @@ import (
 var (
 	OrderKey          = []byte{0x01}
 	MarketKey         = []byte{0x02}
+	MarketEndKey      = []byte{0x03}
 	BestOrderPriceKey = []byte{0x03}
 	PoolLiquidityKey  = []byte{0x04}
 )
 
 var (
-	BUY           = []byte{0x01}
-	SELL          = []byte{0x02}
-	NonSwap       = []byte{0x03}
-	OpenSwap      = []byte{0x04}
-	NonOpenBook   = []byte{0x05}
-	OpenOrderBook = []byte{0x06}
+	BUY  = []byte{0x01}
+	SELL = []byte{0x02}
 )
 
 func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {

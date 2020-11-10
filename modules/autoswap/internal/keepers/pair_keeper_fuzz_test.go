@@ -96,7 +96,8 @@ func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		newCoins(moneySymbol, moneyAmount)), "transfer money coins from account to module failed")
 	// mint liquidity and check added liquidity
 	expectedLiquidity := sdk.NewIntFromBigInt(big.NewInt(0).Sqrt(stockAmount.Mul(moneyAmount).BigInt()))
-	require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market, stockAmount, moneyAmount, to), "init liquidity mint failed")
+	_, err := app.AutoSwapKeeper.Mint(app.ctx, market, stockAmount, moneyAmount, to)
+	require.Nil(t, err, "init liquidity mint failed")
 	info := app.AutoSwapKeeper.GetPoolInfo(app.ctx, market)
 	require.EqualValues(t, info.TotalSupply, expectedLiquidity, "liquidity is not equal")
 
@@ -120,11 +121,12 @@ func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 		beforeLiquidity := info.TotalSupply
 		expectedLiquidity = getExpectedLiquidity(stockAmount, moneyAmount, info)
 		if i%2 == 0 {
-			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market,
-				stockAmount, moneyAmount, to), "subsequent liquidity mint failed")
+			_, err = app.AutoSwapKeeper.Mint(app.ctx, market, stockAmount, moneyAmount, to)
+			require.Nil(t, err, "subsequent liquidity mint failed")
 		} else {
-			require.Nil(t, app.AutoSwapKeeper.Mint(app.ctx, market,
-				stockAmount, moneyAmount, from), "subsequent liquidity mint failed")
+			_, err := app.AutoSwapKeeper.Mint(app.ctx, market,
+				stockAmount, moneyAmount, from)
+			require.Nil(t, err, "subsequent liquidity mint failed")
 		}
 
 		// check added liquidity
@@ -183,10 +185,10 @@ func addLimitOrderTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 	for i := 0; i < testNum; i++ {
 		order := &types.Order{
 			OrderBasic: types.OrderBasic{
-				IsLimitOrder:    true,
-				Sender:          from,
-				MarketSymbol:    market,
-				Amount:          getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
+				IsLimitOrder: true,
+				Sender:       from,
+				MarketSymbol: market,
+				Amount:       getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
 			},
 			OrderID: int64(i) + 1,
 			Price:   getRandomPrice(maxPrice),

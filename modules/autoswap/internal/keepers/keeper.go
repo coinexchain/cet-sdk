@@ -1,6 +1,8 @@
 package keepers
 
 import (
+	"github.com/coinexchain/cet-sdk/msgqueue"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
@@ -13,6 +15,7 @@ type Keeper struct {
 	sk       types.SupplyKeeper
 	FactoryInterface
 	IPairKeeper
+	msgProducer msgqueue.MsgSender
 }
 
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
@@ -41,6 +44,15 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
 }
+
 func (keeper Keeper) SendCoinsFromUserToPool(ctx sdk.Context, senderAddr sdk.AccAddress, amt sdk.Coins) sdk.Error {
 	return keeper.sk.SendCoinsFromAccountToModule(ctx, senderAddr, types.PoolModuleAcc, amt)
+}
+
+func (keeper Keeper) SendCoinsFromPoolToUser(ctx sdk.Context, receiver sdk.AccAddress, amt sdk.Coins) sdk.Error {
+	return keeper.sk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, receiver, amt)
+}
+
+func (keeper Keeper) IsSubscribed(topic string) bool {
+	return keeper.msgProducer.IsSubscribed(topic)
 }

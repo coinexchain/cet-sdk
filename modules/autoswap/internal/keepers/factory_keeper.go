@@ -10,7 +10,7 @@ import (
 //var
 
 type FactoryInterface interface {
-	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sdk.Error
+	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) (sdk.Int, sdk.Error)
 	QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo
 }
 
@@ -19,11 +19,11 @@ type FactoryKeeper struct {
 	poolKeeper PoolKeeper
 }
 
-func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sdk.Error {
+func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) (sdk.Int, sdk.Error) {
 	symbol := dex.GetSymbol(msg.Stock, msg.Money)
 	info := f.poolKeeper.GetPoolInfo(ctx, symbol)
 	if info != nil {
-		return types.ErrPairAlreadyExist()
+		return sdk.ZeroInt(), types.ErrPairAlreadyExist()
 	}
 	p := &PoolInfo{
 		Symbol:                symbol,
@@ -35,13 +35,11 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) sd
 	}
 	f.poolKeeper.SetPoolInfo(ctx, symbol, p)
 	//vanity check in handler
-	if msg.StockIn.IsPositive() {
-		err := f.poolKeeper.Mint(ctx, symbol, msg.StockIn, msg.MoneyIn, msg.To)
-		if err != nil {
-			return err
-		}
+	liquidity, err := f.poolKeeper.Mint(ctx, symbol, msg.StockIn, msg.MoneyIn, msg.To)
+	if err != nil {
+		return sdk.ZeroInt(), err
 	}
-	return nil
+	return liquidity, nil
 }
 
 func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo {

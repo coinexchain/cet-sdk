@@ -15,12 +15,11 @@ type IPoolKeeper interface {
 	SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int)
 	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int
 	ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress)
-	Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) sdk.Error
+	Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) (sdk.Int, sdk.Error)
 	Burn(ctx sdk.Context, marketSymbol string, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error)
 }
 
 //todo: _mintFee is not support
-var FeeOn bool //todo: parameter it
 
 type PoolKeeper struct {
 	key   sdk.StoreKey
@@ -28,8 +27,11 @@ type PoolKeeper struct {
 	types.SupplyKeeper
 }
 
-func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) sdk.Error {
+func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, moneyAmountIn sdk.Int, to sdk.AccAddress) (sdk.Int, sdk.Error) {
 	info := p.GetPoolInfo(ctx, marketSymbol)
+	if info == nil {
+		return sdk.ZeroInt(), types.ErrPairIsNotExist()
+	}
 	liquidity := sdk.ZeroInt()
 	if info.TotalSupply.IsZero() {
 		value, _ := (&big.Int{}).SetString(stockAmountIn.Mul(moneyAmountIn).String(), 10)
@@ -42,7 +44,7 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, mo
 		}
 	}
 	if !liquidity.IsPositive() {
-		return types.ErrInvalidLiquidityAmount()
+		return sdk.ZeroInt(), types.ErrInvalidLiquidityAmount()
 	}
 	info.TotalSupply = info.TotalSupply.Add(liquidity)
 	totalLiq := p.GetLiquidity(ctx, marketSymbol, to)
@@ -51,7 +53,7 @@ func (p PoolKeeper) Mint(ctx sdk.Context, marketSymbol string, stockAmountIn, mo
 	info.StockAmmReserve = info.StockAmmReserve.Add(stockAmountIn)
 	info.MoneyAmmReserve = info.MoneyAmmReserve.Add(moneyAmountIn)
 	p.SetPoolInfo(ctx, marketSymbol, info)
-	return nil
+	return liquidity, nil
 }
 
 func (p PoolKeeper) Burn(ctx sdk.Context, marketSymbol string, from sdk.AccAddress, liquidity sdk.Int) (stockOut, moneyOut sdk.Int, err sdk.Error) {
@@ -103,6 +105,30 @@ func (p PoolKeeper) SetPoolInfo(ctx sdk.Context, marketSymbol string, info *Pool
 	store := ctx.KVStore(p.key)
 	bytes := p.codec.MustMarshalBinaryBare(info)
 	store.Set(getPairKey(marketSymbol), bytes)
+}
+
+func (p PoolKeeper) ClearPoolInfo(ctx sdk.Context, marketSymbol string) {
+	store := ctx.KVStore(p.key)
+	store.Delete(getPairKey(marketSymbol))
+}
+
+func (p PoolKeeper) IteratePoolInfo(ctx sdk.Context, poolInfoProc func(info *PoolInfo)) {
+	store := ctx.KVStore(p.key)
+	iter := store.Iterator(MarketKey, MarketEndKey)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		bi := &PoolInfo{}
+		p.codec.MustUnmarshalBinaryBare(iter.Value(), bi)
+		poolInfoProc(bi)
+	}
+}
+
+func (p PoolKeeper) GetPoolInfos(ctx sdk.Context) (infos []*PoolInfo) {
+	proc := func(info *PoolInfo) {
+		infos = append(infos, info)
+	}
+	p.IteratePoolInfo(ctx, proc)
+	return
 }
 
 func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo {
