@@ -66,7 +66,7 @@ func (limit *MsgCreateLimitOrder) SetAccAddress(address sdk.AccAddress) {
 }
 
 type MarketInfo struct {
-	MarketSymbol    string // stock/money
+	MarketSymbol string // stock/money
 }
 
 type MsgSwapTokens struct {
@@ -145,9 +145,9 @@ func (mkOr *MsgSwapTokens) GetOrderInfos() []*Order {
 	for _, v := range mkOr.Pairs {
 		orders = append(orders, &Order{
 			OrderBasic: OrderBasic{
-				Sender:          mkOr.Sender,
-				MarketSymbol:    v.MarketSymbol,
-				Amount:          mkOr.Amount,
+				Sender:       mkOr.Sender,
+				MarketSymbol: v.MarketSymbol,
+				Amount:       mkOr.Amount,
 			},
 			MinOutputAmount: sdk.ZeroInt(),
 		})
@@ -157,11 +157,11 @@ func (mkOr *MsgSwapTokens) GetOrderInfos() []*Order {
 }
 
 type MsgDeleteOrder struct {
-	MarketSymbol    string         `json:"market_symbol"`
-	Sender          sdk.AccAddress `json:"sender"`
-	IsBuy           bool           `json:"is_buy"`
-	PrevKey         [3]int64       `json:"prev_key"`
-	OrderID         int64          `json:"order_id"`
+	MarketSymbol string         `json:"market_symbol"`
+	Sender       sdk.AccAddress `json:"sender"`
+	IsBuy        bool           `json:"is_buy"`
+	PrevKey      [3]int64       `json:"prev_key"`
+	OrderID      int64          `json:"order_id"`
 }
 
 func (m MsgDeleteOrder) Route() string {
@@ -200,9 +200,9 @@ func (m *MsgDeleteOrder) SetAccAddress(address sdk.AccAddress) {
 func (m MsgDeleteOrder) OrderInfo() *Order {
 	return &Order{
 		OrderBasic: OrderBasic{
-			Sender:          m.Sender,
-			MarketSymbol:    m.MarketSymbol,
-			IsBuy:           m.IsBuy,
+			Sender:       m.Sender,
+			MarketSymbol: m.MarketSymbol,
+			IsBuy:        m.IsBuy,
 		},
 		OrderID: m.OrderID,
 		PrevKey: m.PrevKey,
@@ -233,8 +233,11 @@ func (m MsgAddLiquidity) ValidateBasic() sdk.Error {
 	if len(m.Stock) == 0 || len(m.Money) == 0 {
 		return ErrInvalidToken("token is empty")
 	}
-	if m.StockIn.IsZero() && m.MoneyIn.IsPositive() || m.MoneyIn.IsZero() && m.StockIn.IsPositive() {
-		return nil
+	if !m.StockIn.IsPositive() {
+		return ErrInvalidAmount(m.StockIn)
+	}
+	if !m.MoneyIn.IsPositive() {
+		return ErrInvalidAmount(m.MoneyIn)
 	}
 	//if To is nil, Sender => To
 	return nil
@@ -253,11 +256,11 @@ func (m *MsgAddLiquidity) SetAccAddress(address sdk.AccAddress) {
 }
 
 type MsgRemoveLiquidity struct {
-	Sender          sdk.AccAddress `json:"sender"`
-	Stock           string         `json:"stock"`
-	Money           string         `json:"money"`
-	Amount          sdk.Int        `json:"amount"`
-	To              sdk.AccAddress `json:"to"`
+	Sender sdk.AccAddress `json:"sender"`
+	Stock  string         `json:"stock"`
+	Money  string         `json:"money"`
+	Amount sdk.Int        `json:"amount"`
+	To     sdk.AccAddress `json:"to"`
 }
 
 func (m MsgRemoveLiquidity) Route() string {

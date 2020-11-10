@@ -12,6 +12,7 @@ import (
 type IPoolKeeper interface {
 	SetPoolInfo(ctx sdk.Context, marketSymbol string, info *PoolInfo)
 	GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo
+	GetPoolInfos(ctx sdk.Context) (infos []*PoolInfo)
 	SetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress, liquidity sdk.Int)
 	GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int
 	ClearLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress)
@@ -188,13 +189,17 @@ type AddLiquidityInfo struct {
 }
 
 func NewAddLiquidityInfo(msg types.MsgAddLiquidity, liquidity sdk.Int) AddLiquidityInfo {
+	to := msg.To
+	if to.Empty() {
+		to = msg.Sender
+	}
 	return AddLiquidityInfo{
 		Sender:    msg.Sender,
 		Stock:     msg.Stock,
 		Money:     msg.Money,
 		StockIn:   msg.StockIn,
 		MoneyIn:   msg.MoneyIn,
-		To:        msg.To,
+		To:        to,
 		Liquidity: liquidity,
 	}
 }
@@ -210,12 +215,16 @@ type RemoveLiquidityInfo struct {
 }
 
 func NewRemoveLiquidityInfo(msg types.MsgRemoveLiquidity, stockOut, moneyOut sdk.Int) RemoveLiquidityInfo {
+	to := msg.To
+	if to.Empty() {
+		to = msg.Sender
+	}
 	return RemoveLiquidityInfo{
 		Sender:   msg.Sender,
 		Stock:    msg.Stock,
 		Money:    msg.Money,
 		Amount:   msg.Amount,
-		To:       msg.To,
+		To:       to,
 		StockOut: stockOut,
 		MoneyOut: moneyOut,
 	}

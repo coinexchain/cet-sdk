@@ -43,8 +43,6 @@ func queryParameters(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 
 type QueryPoolInfoParam struct {
 	Symbol        string `json:"Symbol"`
-	IsSwapOpen    bool   `json:"amm_open"`
-	OrderBookOpen bool   `json:"order_book_open"`
 }
 
 func queryPoolInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
@@ -63,6 +61,11 @@ func queryPoolInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byt
 	return bz, nil
 }
 
-func queryPoolList(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
-	return nil, nil
+func queryPoolList(ctx sdk.Context, _ abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
+	infos := k.GetPoolInfos(ctx)
+	bz, err := codec.MarshalJSONIndent(types.ModuleCdc, infos)
+	if err != nil {
+		return nil, types.ErrMarshalFailed()
+	}
+	return bz, nil
 }

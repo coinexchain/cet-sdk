@@ -34,6 +34,10 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	//todo: get trading pair, if not exist, return;
 	var liquidity sdk.Int
+	to := msg.To
+	if to.Empty() {
+		to = msg.Sender
+	}
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info == nil {
 		err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
@@ -49,20 +53,12 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 		if err != nil {
 			return err.Result()
 		}
-		liquidity, err = k.IPairKeeper.Mint(ctx, marKey, stockR, moneyR, msg.To)
+		liquidity, err = k.IPairKeeper.Mint(ctx, marKey, stockR, moneyR, to)
 		if err != nil {
 			return err.Result()
 		}
 	}
-	infoDisplay := keepers.AddLiquidityInfo{
-		Sender:    msg.Sender,
-		Stock:     msg.Stock,
-		Money:     msg.Money,
-		StockIn:   msg.StockIn,
-		MoneyIn:   msg.MoneyIn,
-		To:        msg.To,
-		Liquidity: liquidity,
-	}
+	infoDisplay := keepers.NewAddLiquidityInfo(msg, liquidity)
 	fillMsgQueue(ctx, k, KafkaAddLiquidity, infoDisplay)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeKeyAddLiquidity,
@@ -87,19 +83,15 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	if err != nil {
 		return err.Result()
 	}
-	err = k.SendCoinsFromPoolToUser(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockOut), sdk.NewCoin(msg.Money, moneyOut)))
+	to := msg.To
+	if to.Empty() {
+		to = msg.Sender
+	}
+	err = k.SendCoinsFromPoolToUser(ctx, to, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockOut), sdk.NewCoin(msg.Money, moneyOut)))
 	if err != nil {
 		return err.Result()
 	}
-	infoDisplay := keepers.RemoveLiquidityInfo{
-		Sender:   msg.Sender,
-		Stock:    msg.Stock,
-		Money:    msg.Money,
-		Amount:   msg.Amount,
-		To:       msg.To,
-		StockOut: stockOut,
-		MoneyOut: moneyOut,
-	}
+	infoDisplay := keepers.NewRemoveLiquidityInfo(msg, stockOut, moneyOut)
 	fillMsgQueue(ctx, k, KafkaRemoveLiquidity, infoDisplay)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeKeyRemoveLiquidity,

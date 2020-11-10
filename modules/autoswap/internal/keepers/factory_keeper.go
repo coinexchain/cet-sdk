@@ -11,7 +11,7 @@ import (
 
 type FactoryInterface interface {
 	CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) (sdk.Int, sdk.Error)
-	QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo
+	QueryPair(ctx sdk.Context, marketSymbol string) *PoolInfo
 }
 
 type FactoryKeeper struct {
@@ -34,14 +34,17 @@ func (f FactoryKeeper) CreatePair(ctx sdk.Context, msg types.MsgAddLiquidity) (s
 		TotalSupply:           sdk.ZeroInt(),
 	}
 	f.poolKeeper.SetPoolInfo(ctx, symbol, p)
-	//vanity check in handler
-	liquidity, err := f.poolKeeper.Mint(ctx, symbol, msg.StockIn, msg.MoneyIn, msg.To)
+	to := msg.To
+	if to.Empty() {
+		to = msg.Sender
+	}
+	liquidity, err := f.poolKeeper.Mint(ctx, symbol, msg.StockIn, msg.MoneyIn, to)
 	if err != nil {
 		return sdk.ZeroInt(), err
 	}
 	return liquidity, nil
 }
 
-func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string, isSwapOpen bool, isOrderBookOpen bool) *PoolInfo {
+func (f FactoryKeeper) QueryPair(ctx sdk.Context, marketSymbol string) *PoolInfo {
 	return f.poolKeeper.GetPoolInfo(ctx, marketSymbol)
 }

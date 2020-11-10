@@ -16,8 +16,6 @@ var _ IPairKeeper = &PairKeeper{}
 
 type Pair struct {
 	Symbol          string
-	IsSwapOpen      bool
-	IsOrderBookOpen bool
 }
 
 type IPairKeeper interface {

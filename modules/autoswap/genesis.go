@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -27,20 +26,22 @@ func DefaultGenesisState() GenesisState {
 	return NewGenesisState(types.DefaultParams(), []*types.Order{}, []*keepers.PoolInfo{})
 }
 
-func InitGenesis(ctx sdk.Context, keeper keepers.Keeper, data GenesisState) {
-	keeper.SetParams(ctx, data.Params)
-
+func InitGenesis(ctx sdk.Context, k keepers.Keeper, data GenesisState) {
+	k.SetParams(ctx, data.Params)
 	for _ = range data.Orders {
 		//todo: setOrders
 	}
-
-	for _ = range data.PoolInfos {
-		//todo: setPoolInfo
+	for _, info := range data.PoolInfos {
+		k.SetPoolInfo(ctx, info.Symbol, info)
 	}
 }
 
 func ExportGenesis(ctx sdk.Context, k keepers.Keeper) GenesisState {
-	return GenesisState{}
+	infos := k.GetPoolInfos(ctx)
+	var g GenesisState
+	g.PoolInfos = infos
+	g.Params = k.GetParams(ctx)
+	return g
 }
 
 func (data GenesisState) Validate() error {
