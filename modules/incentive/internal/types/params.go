@@ -18,7 +18,6 @@ var (
 type Params struct {
 	DefaultRewardPerBlock int64  `json:"default_reward_per_block"`
 	Plans                 []Plan `json:"plans"`
-	UpdatedRewards        int64  `json:"updated_rewards"`
 }
 
 type Plan struct {
@@ -30,15 +29,8 @@ type Plan struct {
 
 func DefaultParams() Params {
 	return Params{
-		DefaultRewardPerBlock: 2e8,
-		Plans: []Plan{
-			{0, 10512000, 10e8, 105120000e8},
-			{10512000, 21024000, 8e8, 84096000e8},
-			{21024000, 31536000, 6e8, 63072000e8},
-			{31536000, 42048000, 4e8, 42048000e8},
-			{42048000, 52560000, 2e8, 21024000e8},
-		},
-		UpdatedRewards: 10e8,
+		DefaultRewardPerBlock: 3e8,
+		Plans:                 []Plan{},
 	}
 }
 
@@ -51,7 +43,6 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
 		{Key: KeyIncentiveDefaultRewardPerBlock, Value: &p.DefaultRewardPerBlock},
 		{Key: KeyIncentivePlans, Value: &p.Plans},
-		{Key: KeyIncentiveUpdatedRewards, Value: &p.UpdatedRewards},
 	}
 }
 

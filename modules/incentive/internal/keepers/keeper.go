@@ -3,7 +3,6 @@ package keepers
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"reflect"
 
@@ -15,23 +14,23 @@ var (
 )
 
 type Keeper struct {
-	cdc              *codec.Codec
-	key              sdk.StoreKey
-	paramSubspace    params.Subspace
-	bankKeeper       types.BankKeeper
-	supplyKeeper     authtypes.SupplyKeeper
+	cdc           *codec.Codec
+	key           sdk.StoreKey
+	paramSubspace params.Subspace
+	types.BankKeeper
+	types.SupplyKeeper
 	feeCollectorName string
 }
 
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace,
-	bk types.BankKeeper, supplyKeeper authtypes.SupplyKeeper, feeCollectorName string) Keeper {
+	bk types.BankKeeper, supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
 
 	return Keeper{
 		cdc:              cdc,
 		key:              key,
 		paramSubspace:    paramSubspace.WithKeyTable(types.ParamKeyTable()),
-		bankKeeper:       bk,
-		supplyKeeper:     supplyKeeper,
+		BankKeeper:       bk,
+		SupplyKeeper:     supplyKeeper,
 		feeCollectorName: feeCollectorName,
 	}
 }
@@ -79,11 +78,4 @@ func (k Keeper) AddNewPlan(ctx sdk.Context, plan types.Plan) sdk.Error {
 	param.Plans = append(param.Plans, plan)
 	k.SetParams(ctx, param)
 	return nil
-}
-
-func (k Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
-	return k.supplyKeeper.SendCoinsFromAccountToModule(ctx, senderAddr, recipientModule, amt)
-}
-func (k Keeper) HasCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) bool {
-	return k.bankKeeper.HasCoins(ctx, addr, amt)
 }

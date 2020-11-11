@@ -1,6 +1,7 @@
 package incentive
 
 import (
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 	"github.com/tendermint/tendermint/crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,53 +17,38 @@ var (
 )
 
 func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
-
-	var blockRewards sdk.Coins
-	if ctx.BlockHeight() >= Dex3StartHeight {
-		if ctx.BlockHeight() == Dex3StartHeight {
-			k.SetUpdatedRewards(ctx, DefaultParams().UpdatedRewards)
-		}
-		blockRewards = sdk.NewCoins(sdk.NewInt64Coin(dex.DefaultBondDenom, k.GetParams(ctx).UpdatedRewards))
-	} else {
-		blockRewards = calcRewards(ctx, k)
+	if ctx.BlockHeight() == Dex3StartHeight {
+		clearIncentiveState(ctx, k)
 	}
 
-	if k.HasCoins(ctx, PoolAddr, blockRewards) {
-		if err := collectRewardsFromPool(k, ctx, blockRewards); err != nil {
-			panic(err)
-		}
-	}
+	collectRewardsFromPool(ctx, k)
 }
 
-func collectRewardsFromPool(k keepers.Keeper, ctx sdk.Context, blockRewards sdk.Coins) sdk.Error {
-	//transfer rewards into collected_fees for further distribution
-	if err := k.SendCoinsFromAccountToModule(ctx, PoolAddr, auth.FeeCollectorName, blockRewards); err != nil {
-		return err
+func collectRewardsFromPool(ctx sdk.Context, k Keeper) {
+	rewardAmount := k.GetParams(ctx).DefaultRewardPerBlock
+	blockRewards := sdk.NewCoins(sdk.NewInt64Coin(dex.DefaultBondDenom, rewardAmount))
+	err := k.MintCoins(ctx, ModuleName, blockRewards)
+	if err != nil {
+		panic(err)
 	}
-	return nil
+
+	err = k.SendCoinsFromModuleToModule(ctx, ModuleName, auth.FeeCollectorName, blockRewards)
+	if err != nil {
+		panic(err)
+	}
 }
-
-func calcRewards(ctx sdk.Context, k keepers.Keeper) sdk.Coins {
-	height := ctx.BlockHeader().Height
-	adjustmentHeight := k.GetState(ctx).HeightAdjustment
-	height += adjustmentHeight
-
-	rewardAmount := int64(0)
-	inPlan := false
-	plans := k.GetParams(ctx).Plans
-
-	for _, plan := range plans {
-		if height > plan.StartHeight && height <= plan.EndHeight {
-			// the height may be in different plans, do not break
-			rewardAmount += plan.RewardPerBlock
-			inPlan = true
-		}
+func clearIncentiveState(ctx sdk.Context, k Keeper) {
+	// burn all coins in PoolAddr
+	allCoins := k.GetCoins(ctx, PoolAddr)
+	err := k.SendCoinsFromAccountToModule(ctx, PoolAddr, types.ModuleName, allCoins)
+	if err != nil {
+		panic(err)
+	}
+	err = k.BurnCoins(ctx, types.ModuleName, allCoins)
+	if err != nil {
+		panic(err)
 	}
 
-	if !inPlan {
-		rewardAmount = k.GetParams(ctx).DefaultRewardPerBlock
-	}
-
-	blockRewardsCoins := sdk.NewCoins(sdk.NewInt64Coin(dex.DefaultBondDenom, rewardAmount))
-	return blockRewardsCoins
+	// clear unused plans & params
+	k.SetParams(ctx, types.DefaultParams())
 }
