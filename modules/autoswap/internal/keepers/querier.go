@@ -12,6 +12,7 @@ const (
 	QueryParameters = "parameters"
 	QueryPoolInfo   = "pool-info"
 	QueryPools      = "pool-list"
+	QueryOrder      = "order"
 )
 
 // creates a querier for asset REST endpoints
@@ -68,4 +69,8 @@ func queryPoolList(ctx sdk.Context, _ abci.RequestQuery, k Keeper) ([]byte, sdk.
 		return nil, types.ErrMarshalFailed()
 	}
 	return bz, nil
+}
+
+type QueryOrderInfo struct {
+	OrderID string
 }

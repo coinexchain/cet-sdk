@@ -21,6 +21,7 @@ const (
 	ASK                     = types.ASK
 	BUY                     = types.BUY
 	SELL                    = types.SELL
+	DecByteCount            = types.DecByteCount
 )
 
 var (
@@ -32,6 +33,7 @@ var (
 	ModuleCdc           = types.ModuleCdc
 	GetSymbol           = dex.GetSymbol
 	SplitSymbol         = dex.SplitSymbol
+	AssemblyOrderID     = types.AssemblyOrderID
 )
 
 type (

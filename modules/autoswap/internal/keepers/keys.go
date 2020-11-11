@@ -1,24 +1,26 @@
 package keepers
 
 import (
-	"strconv"
+	"encoding/binary"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
-	OrderKey            = []byte{0x01}
+	OrderBookKey        = []byte{0x01}
 	MarketKey           = []byte{0x02}
 	MarketEndKey        = []byte{0x03}
-	BestOrderPriceKey   = []byte{0x03}
-	PoolLiquidityKey    = []byte{0x04}
-	PoolLiquidityEndKey = []byte{0x05}
+	PoolLiquidityKey    = []byte{0x05}
+	PoolLiquidityEndKey = []byte{0x06}
+	BidOrderKey         = []byte{0x07}
+	AskOrderKey         = []byte{0x08}
 )
 
 var (
-	BUY  = []byte{0x01}
-	SELL = []byte{0x02}
+	BIDKEY = []byte{0x01}
+	ASKKEY = []byte{0x02}
 )
 
 func getLiquidityKey(marketSymbol string, address sdk.AccAddress) []byte {
@@ -31,23 +33,71 @@ func getPairKey(symbol string) []byte {
 	return append(MarketKey, []byte(symbol)...)
 }
 
-// getOrderKey key = prefix | side | Symbol | orderID
-// value = pair info
-func getOrderKey(order *types.Order) []byte {
-	side := BUY
+// getBidOrderKey key = bidPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// value = nil
+func getBidOrderKey(order *types.Order) []byte {
+	index := make([]byte, 4)
+	binary.BigEndian.PutUint32(index, uint32(order.OrderIndexInOneBlock))
+	side := BIDKEY
 	if !order.IsBuy {
-		side = SELL
+		side = ASKKEY
 	}
-	orderID := strconv.Itoa(int(order.OrderID))
-	return append(append(append(OrderKey, side...), order.MarketSymbol...), orderID...)
+	return append(append(append(append(append(append(append(BidOrderKey, order.TradingPair...), side...), 0x0),
+		market.DecToBigEndianBytes(order.Price)...)), index...), order.GetOrderID()...)
 }
 
-// getBestOrderPriceKey key = prefix | side | Symbol
-// value = orderID
-func getBestOrderPriceKey(symbol string, isBuy bool) []byte {
-	side := BUY
-	if !isBuy {
-		side = SELL
+// getBidQueueBegin bidKey = bidPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// so beginKey = bidPrefix | tradingPair | side | 0x0
+func getBidQueueBegin(tradingPair string) []byte {
+	return append(append(append(BidOrderKey, tradingPair...), BIDKEY...), []byte{0x0}...)
+}
+
+// getBidQueueEnd bidKey = bidPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// so endKey = bidPrefix | tradingPair | side | 0x1
+func getBidQueueEnd(tradingPair string) []byte {
+	return append(append(append(BidOrderKey, tradingPair...), BIDKEY...), []byte{0x1}...)
+}
+
+// getAskOrderKey key = askPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// value = nil
+func getAskOrderKey(order *types.Order) []byte {
+	index := make([]byte, 4)
+	binary.BigEndian.PutUint32(index, uint32(order.OrderIndexInOneBlock))
+	side := BIDKEY
+	if !order.IsBuy {
+		side = ASKKEY
 	}
-	return append(append(BestOrderPriceKey, side...), symbol...)
+	return append(append(append(append(append(append(append(AskOrderKey, order.TradingPair...), side...), 0x0),
+		market.DecToBigEndianBytes(order.Price)...)), index...), order.GetOrderID()...)
+}
+
+// getAskQueueBegin askKey = askPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// so beginKey = askPrefix | tradingPair | side | 0x0
+func getAskQueueBegin(tradingPair string) []byte {
+	return append(append(append(AskOrderKey, tradingPair...), ASKKEY...), []byte{0x0}...)
+}
+
+// getAskQueueEnd askKey = askPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+// so endKey = askPrefix | tradingPair | side | 0x0
+func getAskQueueEnd(tradingPair string) []byte {
+	return append(append(append(AskOrderKey, tradingPair...), ASKKEY...), []byte{0x1}...)
+}
+
+// getPricePos prefix | tradingPair | side | 0x0
+// return: beginPos, endPos.
+func getPricePos(tradingPair string) []int {
+	begin := 3 + len(tradingPair)
+	end := begin + market.DecByteCount
+	return []int{begin, end}
+}
+
+// getOrderPos the preContent = askPrefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock
+func getOrderIDPos(tradingPair string) int {
+	return 3 + len(tradingPair) + market.DecByteCount + 4
+}
+
+// getOrderKey key = orderBookPrefix | orderID
+// value = order info
+func getOrderBookKey(orderID string) []byte {
+	return append(OrderBookKey, orderID...)
 }

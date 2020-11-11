@@ -1,0 +1,230 @@
+package keepers
+
+import (
+	"bytes"
+	"math/big"
+	"sort"
+
+	"github.com/coinexchain/cet-sdk/modules/market"
+
+	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
+
+var _ IOrderBookKeeper = &OrderKeeper{}
+
+type IOrderBookKeeper interface {
+	AddOrder(sdk.Context, *types.Order)
+	DelOrder(sdk.Context, *types.Order)
+	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
+	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
+	GetMatchedOrder(ctx sdk.Context, order *types.Order) []*types.Order
+	OrderIndexInOneBlock() int32
+	ResetOrderIndexInOneBlock()
+}
+
+type OrderKeeper struct {
+	codec                 *codec.Codec
+	storeKey              sdk.StoreKey
+	ordersIndexInOneBlock int32
+}
+
+func (o *OrderKeeper) OrderIndexInOneBlock() int32 {
+	index := o.ordersIndexInOneBlock
+	o.ordersIndexInOneBlock++
+	return index
+}
+
+func (o *OrderKeeper) ResetOrderIndexInOneBlock() {
+	o.ordersIndexInOneBlock = 0
+}
+
+func (o OrderKeeper) AddOrder(ctx sdk.Context, order *types.Order) {
+	o.storeBidOrAskQueue(ctx, order)
+	o.storeToOrderBook(ctx, order)
+}
+
+func (o OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
+	var (
+		sideKey []byte
+		store   = ctx.KVStore(o.storeKey)
+	)
+	order.OrderIndexInOneBlock = o.OrderIndexInOneBlock()
+	if order.IsBuy {
+		sideKey = getBidOrderKey(order)
+	} else {
+		sideKey = getAskOrderKey(order)
+	}
+	store.Set(sideKey, []byte{0x0})
+}
+
+func (o OrderKeeper) storeToOrderBook(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(o.storeKey)
+	key := getOrderBookKey(order.GetOrderID())
+	val := o.codec.MustMarshalBinaryBare(order)
+	store.Set(key, val)
+}
+
+func (o OrderKeeper) DelOrder(ctx sdk.Context, order *types.Order) {
+	o.delOrderBook(ctx, order)
+	o.delBidOrAskQueue(ctx, order)
+}
+
+func (o OrderKeeper) delOrderBook(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(o.storeKey)
+	key := getOrderBookKey(order.GetOrderID())
+	store.Delete(key)
+}
+
+func (o OrderKeeper) delBidOrAskQueue(ctx sdk.Context, order *types.Order) {
+	var (
+		sideKey []byte
+		store   = ctx.KVStore(o.storeKey)
+	)
+	if order.IsBuy {
+		sideKey = getBidOrderKey(order)
+	} else {
+		sideKey = getAskOrderKey(order)
+	}
+	store.Delete(sideKey)
+}
+
+func (o OrderKeeper) GetOrder(ctx sdk.Context, info *QueryOrderInfo) *types.Order {
+	var (
+		order = types.Order{}
+		store = ctx.KVStore(o.storeKey)
+	)
+	key := getOrderBookKey(info.OrderID)
+	val := store.Get(key)
+	o.codec.MustUnmarshalBinaryBare(val, &order)
+	return &order
+}
+
+func (o OrderKeeper) GetBestPrice(ctx sdk.Context, tradingPair string, isBuy bool) sdk.Dec {
+	var (
+		key   []byte
+		iter  sdk.Iterator
+		store = ctx.KVStore(o.storeKey)
+	)
+	begin, end := getBidOrAskQueueBeginEndKey(tradingPair, isBuy)
+	if isBuy {
+		iter = store.ReverseIterator(begin, end)
+	} else {
+		iter = store.Iterator(begin, end)
+	}
+	defer iter.Close()
+	if iter.Valid() {
+		key = iter.Key()
+	}
+	pos := getPricePos(tradingPair)
+	return sdk.NewDecFromBigInt(big.NewInt(0).SetBytes(key[pos[0]:pos[1]]))
+}
+
+func getBidOrAskQueueBeginEndKey(tradingPair string, isBuy bool) ([]byte, []byte) {
+	var (
+		begin []byte
+		end   []byte
+	)
+	if isBuy {
+		begin = getBidQueueBegin(tradingPair)
+		end = getBidQueueEnd(tradingPair)
+	} else {
+		begin = getAskQueueBegin(tradingPair)
+		end = getAskQueueEnd(tradingPair)
+	}
+	return begin, end
+}
+
+func (o OrderKeeper) GetMatchedOrder(ctx sdk.Context, order *types.Order) []*types.Order {
+	var (
+		key        []byte
+		orderIDPos int
+		pricePoses []int
+		iter       sdk.Iterator
+		store      = ctx.KVStore(o.storeKey)
+	)
+	begin, end := getBidOrAskQueueBeginEndKey(order.TradingPair, !order.IsBuy)
+	if !order.IsBuy {
+		iter = store.ReverseIterator(begin, end)
+	} else {
+		iter = store.Iterator(begin, end)
+	}
+	defer iter.Close()
+	orderPriceBytes := market.DecToBigEndianBytes(order.Price)
+
+	// key = prefix | tradingPair | side | 0x0 | price | orderIndexInOneBlock | orderID
+	oppositeOrderIDs := make([]string, 0)
+	for ; iter.Valid(); iter.Next() {
+		key = iter.Key()
+		pricePoses = getPricePos(order.TradingPair)
+		if (order.IsBuy && bytes.Compare(orderPriceBytes, key[pricePoses[0]:pricePoses[1]]) >= 0) ||
+			(!order.IsBuy && bytes.Compare(orderPriceBytes, key[pricePoses[0]:pricePoses[1]]) <= 0) {
+			orderIDPos = getOrderIDPos(order.TradingPair)
+			oppositeOrderIDs = append(oppositeOrderIDs, string(key[orderIDPos:]))
+		}
+	}
+
+	oppositeOrders := make([]*types.Order, 0, len(oppositeOrderIDs))
+	totalAmount := int64(0)
+	for _, id := range oppositeOrderIDs {
+		opOrder := o.getOrder(store, id)
+		if totalAmount < order.LeftStock {
+			oppositeOrders = append(oppositeOrders, opOrder)
+			totalAmount += opOrder.LeftStock
+		} else {
+			if opOrder.Price == oppositeOrders[len(oppositeOrders)-1].Price {
+				oppositeOrders = append(oppositeOrders, opOrder)
+			} else {
+				break
+			}
+		}
+	}
+	return o.inChronologicalOrders(order, oppositeOrders)
+}
+
+func (o OrderKeeper) getOrder(store sdk.KVStore, orderID string) *types.Order {
+	order := types.Order{}
+	val := store.Get(getOrderBookKey(orderID))
+	o.codec.MustUnmarshalBinaryBare(val, &order)
+	return &order
+}
+
+func (o OrderKeeper) inChronologicalOrders(order *types.Order, oppositeOrders []*types.Order) []*types.Order {
+	totalAmount := int64(0)
+	samePriceOrders := make([]*types.Order, 0)
+	index := 0
+	for i := len(oppositeOrders) - 1; i >= 1; i-- {
+		currOrder := oppositeOrders[i]
+		if currOrder.Price.Equal(oppositeOrders[i-1].Price) {
+			samePriceOrders = append(samePriceOrders, currOrder)
+		} else {
+			if len(samePriceOrders) > 0 && samePriceOrders[len(samePriceOrders)-1].Price.Equal(currOrder.Price) {
+				samePriceOrders = append(samePriceOrders, currOrder)
+			}
+			index = i
+			break
+		}
+	}
+	for i := 0; i < index; i++ {
+		totalAmount += oppositeOrders[i].LeftStock
+	}
+	sort.Slice(samePriceOrders, func(i, j int) bool {
+		if samePriceOrders[i].Height < samePriceOrders[j].Height ||
+			(samePriceOrders[i].Height == samePriceOrders[j].Height &&
+				samePriceOrders[i].OrderIndexInOneBlock < samePriceOrders[j].OrderIndexInOneBlock) {
+			return true
+		}
+		return false
+	})
+	ret := oppositeOrders[:index]
+	for i := 0; i < len(samePriceOrders); i++ {
+		if totalAmount < order.LeftStock {
+			ret = append(ret, samePriceOrders[i])
+			totalAmount += samePriceOrders[i].LeftStock
+		} else {
+			break
+		}
+	}
+	return ret
+}

@@ -3,17 +3,20 @@ package types
 import (
 	"strings"
 
+	"github.com/coinexchain/cet-sdk/modules/market"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type Order struct {
-	TradingPair string         `json:"trading_pair"`
-	Sender      sdk.AccAddress `json:"sender"`
-	OrderID     string         `json:"order_id"`
-	Price       sdk.Dec        `json:"price"`
-	Quantity    int64          `json:"quantity"`
-	Height      int64          `json:"height"`
-	IsBuy       bool           `json:"side"`
+	TradingPair          string         `json:"trading_pair"`
+	Sequence             int64          `json:"sequence"`
+	Identify             byte           `json:"identify"`
+	Sender               sdk.AccAddress `json:"sender"`
+	Price                sdk.Dec        `json:"price"`
+	Quantity             int64          `json:"quantity"`
+	Height               int64          `json:"height"`
+	IsBuy                bool           `json:"side"`
+	OrderIndexInOneBlock int32          `json:"order_index_in_one_block"`
 
 	// These fields will change when order was filled/canceled.
 	LeftStock int64 `json:"left_stock"`
@@ -22,8 +25,17 @@ type Order struct {
 	DealMoney int64 `json:"deal_money"`
 
 	// cache
-	stock string
-	money string
+	stock   string `json:"-"`
+	money   string `json:"-"`
+	orderID string `json:"-"`
+}
+
+func (or *Order) GetOrderID() string {
+	if len(or.orderID) != 0 {
+		return or.orderID
+	}
+	or.orderID = market.AssemblyOrderID(or.Sender.String(), uint64(or.Sequence), or.Identify)
+	return or.orderID
 }
 
 func (or *Order) Stock() string {
@@ -53,8 +65,4 @@ func (or *Order) ActualAmount() sdk.Int {
 		return or.Price.Mul(sdk.NewDec(or.LeftStock)).Ceil().RoundInt()
 	}
 	return sdk.NewInt(or.LeftStock)
-}
-
-func (or *Order) SetOrderID(orderID string) {
-	or.OrderID = orderID
 }

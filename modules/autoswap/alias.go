@@ -23,5 +23,5 @@ type (
 	MsgRemoveLiquidity  = types.MsgRemoveLiquidity
 	MsgSwapTokens       = types.MsgSwapTokens
 	MsgCreateLimitOrder = types.MsgCreateLimitOrder
-	MsgDeleteOrder      = types.MsgDeleteOrder
+	MsgCancelOrder      = types.MsgCancelOrder
 )
