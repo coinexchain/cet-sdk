@@ -5,9 +5,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+
+	mktrest "github.com/coinexchain/cet-sdk/modules/market/client/rest"
 )
 
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
+	// market routes
+	mktrest.RegisterRoutes(cliCtx, r, cdc)
+	// new routes
 	registerTxRoutes(cliCtx, r, cdc)
 	registerQueryRoutes(cliCtx, r, cdc)
 }
@@ -15,9 +20,6 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
 	r.HandleFunc("/autoswap/add-liquidity", addLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
 	r.HandleFunc("/autoswap/remove-liquidity", removeLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
-	r.HandleFunc("/autoswap/swap-tokens", swapTokensHandlerFn(cdc, cliCtx)).Methods("POST")
-	r.HandleFunc("/autoswap/limit-orders", createLimitOrderHandlerFn(cdc, cliCtx)).Methods("POST")
-	r.HandleFunc("/autoswap/cancel-order", cancelOrderHandlerFn(cdc, cliCtx)).Methods("POST")
 }
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {

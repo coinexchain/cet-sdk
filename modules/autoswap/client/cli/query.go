@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	dex "github.com/coinexchain/cet-sdk/types"
 
 	"github.com/spf13/cobra"
 
@@ -11,17 +10,17 @@ import (
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	mktcli "github.com/coinexchain/cet-sdk/modules/market/client/cli"
+	dex "github.com/coinexchain/cet-sdk/types"
 	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
 // get the root query command of this module
 func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	// Group asset queries under a subcommand
-	queryCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "Querying commands for the asset module",
-	}
+	queryCmd := mktcli.GetQueryCmd(cdc)
 
+	// TODO
+	// add new commands
 	queryCmd.AddCommand(client.GetCommands(
 		GetQueryParamsCmd(cdc),
 		GetQueryPoolCmd(cdc),

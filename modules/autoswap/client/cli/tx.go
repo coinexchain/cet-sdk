@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -14,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	mktcli "github.com/coinexchain/cet-sdk/modules/market/client/cli"
 	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
 
@@ -22,34 +21,22 @@ const (
 	flagMoney       = "money"
 	flagNoSwap      = "no-swap"
 	flagNoOrderBook = "no-order-book"
-	flagSwapPath    = "swap-path"
 	flagStockIn     = "stock-in"
 	flagMoneyIn     = "money-in"
 	flagStockMin    = "stock-min"
 	flagMoneyMin    = "money-min"
-	flagOutputMin   = "output-min"
 	flagTo          = "to"
-	flagPairSymbol  = "pair"
 	flagAmount      = "amount"
-	flagSide        = "side"
-	flagOrderID     = "order-id"
-	flagPrice       = "price"
-	flagPrevKey     = "prev-key"
 )
 
 // get the root tx command of this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	txCmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "Asset transactions subcommands",
-	}
+	txCmd := mktcli.GetTxCmd(cdc)
 
+	// add new commands
 	txCmd.AddCommand(client.PostCommands(
 		GetAddLiquidityCmd(cdc),
 		GetRemoveLiquidityCmd(cdc),
-		GetSwapTokensCmd(cdc),
-		GetCreateLimitOrderCmd(cdc),
-		GetDeleteOrderCmd(cdc),
 	)...)
 
 	return txCmd
@@ -120,114 +107,11 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
 	return cmd
 }
 
-func GetSwapTokensCmd(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "swap-tokens",
-		Short: "generate tx to swap tokens in autoswap market",
-		Long: strings.TrimSpace(
-			`generate a tx and sign it to swap tokens in autoswap market in Dex blockchain. 
-
-Example:
-$ cetcli tx autoswap swap-tokens --swap-path='[{"pair":"foo/bar", "noSwap":false, "noOrderBook":false}]' \
-	--side=buy --amount=12345 \
-	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
-`),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			msg, err := getSwapTokensMsg()
-			if err != nil {
-				return err
-			}
-			return cliutil.CliRunCommand(cdc, msg)
-		},
-	}
-
-	//addBasicOrderFlags(cmd)
-	cmd.Flags().String(flagSwapPath, "", "swap path in JSON format")
-	cmd.Flags().String(flagSide, "", "buy or sell")
-	cmd.Flags().String(flagAmount, "", "the amount of the order")
-	cmd.Flags().String(flagOutputMin, "", "the minimum output")
-	markRequiredFlags(cmd, flagSwapPath, flagSide, flagAmount)
-
-	return cmd
-}
-
-func GetCreateLimitOrderCmd(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "create-limit-order",
-		Short: "generate tx to create autoswap limit order",
-		Long: strings.TrimSpace(
-			`generate a tx and sign it to create autoswap limit order in Dex blockchain. 
-
-Example:
-$ cetcli tx autoswap create-limit-order --pool="foo/bar" --no-swap \
-	--side=buy --amount=12345 \
-	--price=10000 --price-precision=8 --order-id=123 --prev-key="4,5,6"
-	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
-`),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			msg, err := getCreateLimitOrderMsg()
-			if err != nil {
-				return err
-			}
-			return cliutil.CliRunCommand(cdc, msg)
-		},
-	}
-
-	addBasicOrderFlags(cmd)
-	cmd.Flags().String(flagAmount, "", "the amount of the order")
-	cmd.Flags().String(flagPrice, "", "the price of the order")
-	cmd.Flags().Int64(flagOrderID, 0, "the order ID")
-	cmd.Flags().String(flagPrevKey, "", "previous keys, at most 3, separated by comma")
-
-	markRequiredFlags(cmd, flagPairSymbol, flagSide,
-		flagAmount, flagPrice, flagOrderID)
-
-	return cmd
-}
-
-func GetDeleteOrderCmd(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "delete-order",
-		Short: "generate tx to delete autoswap order",
-		Long: strings.TrimSpace(
-			`generate a tx and sign it to delete autoswap order in Dex blockchain. 
-
-Example:
-$ cetcli tx autoswap delete-order --pool="foo/bar" --no-swap \
-	--side=buy --amount=12345 \
-	--price=10000 --price-precision=8 --order-id=123 --prev-key="4,5,6"
-	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
-`),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			msg, err := getDeleteOrderMsg()
-			if err != nil {
-				return err
-			}
-			return cliutil.CliRunCommand(cdc, msg)
-		},
-	}
-
-	addBasicOrderFlags(cmd)
-	cmd.Flags().Int64(flagOrderID, 0, "the order ID")
-	cmd.Flags().String(flagPrevKey, "", "previous keys, at most 3, separated by comma")
-
-	markRequiredFlags(cmd, flagPairSymbol, flagSide, flagOrderID)
-
-	return cmd
-}
-
 func addBasicPairFlags(cmd *cobra.Command) {
 	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
 	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
 	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
 	cmd.Flags().Bool(flagNoOrderBook, false, "whether order book is disabled")
-}
-
-func addBasicOrderFlags(cmd *cobra.Command) {
-	cmd.Flags().String(flagPairSymbol, "", "the symbol of the autoswap pair")
-	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
-	cmd.Flags().Bool(flagNoOrderBook, false, "whether order book is disabled")
-	cmd.Flags().String(flagSide, "", "buy or sell")
 }
 
 func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
@@ -262,82 +146,6 @@ func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	return
 }
 
-func getSwapTokensMsg() (msg *types.MsgSwapTokens, err error) {
-	msg = &types.MsgSwapTokens{}
-	if msg.Pairs, err = parseSwapPath(viper.GetString(flagSwapPath)); err != nil {
-		return
-	}
-	if msg.IsBuy, err = parseIsBuy(); err != nil {
-		return
-	}
-	if msg.Amount, err = parseSdkInt(flagAmount); err != nil {
-		return
-	}
-	if msg.MinOutputAmount, err = parseSdkInt(flagOutputMin); err != nil {
-		return
-	}
-	return
-}
-func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
-	type pairInfo struct {
-		Pair string `json:"pair"`
-	}
-
-	var swapPathArr []pairInfo
-	if err = json.Unmarshal([]byte(swapPathStr), &swapPathArr); err != nil {
-		err = errors.New("invalid " + flagSwapPath + ": " + err.Error())
-		return
-	}
-	if len(swapPathArr) == 0 {
-		err = errors.New("empty " + flagSwapPath)
-		return
-	}
-
-	for _, pairInfo := range swapPathArr {
-		ret = append(ret, types.MarketInfo{
-			MarketSymbol: pairInfo.Pair,
-		})
-	}
-	return
-}
-
-func getCreateLimitOrderMsg() (msg *types.MsgCreateLimitOrder, err error) {
-	msg = &types.MsgCreateLimitOrder{}
-	if msg.OrderBasic, err = getOrderBasic(); err != nil {
-		return
-	}
-	msg.IsLimitOrder = true
-	if msg.Price, err = parseSdkDec(flagPrice); err != nil {
-		return
-	}
-	msg.OrderID = viper.GetInt64(flagOrderID)
-	// TODO: PrevKey
-	return
-}
-
-func getDeleteOrderMsg() (msg *types.MsgDeleteOrder, err error) {
-	msg = &types.MsgDeleteOrder{
-		MarketSymbol: viper.GetString(flagPairSymbol),
-		OrderID:      viper.GetInt64(flagOrderID),
-	}
-	if msg.IsBuy, err = parseIsBuy(); err != nil {
-		return
-	}
-	// TODO: PrevKey
-	return msg, nil
-}
-
-func getOrderBasic() (ob types.OrderBasic, err error) {
-	ob.MarketSymbol = viper.GetString(flagPairSymbol)
-	if ob.Amount, err = parseSdkInt(flagAmount); err != nil {
-		return
-	}
-	if ob.IsBuy, err = parseIsBuy(); err != nil {
-		return
-	}
-	return
-}
-
 func markRequiredFlags(cmd *cobra.Command, flagNames ...string) error {
 	for _, flagName := range flagNames {
 		if err := cmd.MarkFlagRequired(flagName); err != nil {
@@ -354,21 +162,4 @@ func parseSdkInt(flagName string) (val sdk.Int, err error) {
 		err = fmt.Errorf("%s must be a valid integer number", flagName)
 	}
 	return
-}
-func parseSdkDec(flagName string) (val sdk.Dec, err error) {
-	flagVal := viper.GetString(flagName)
-	if val, err = sdk.NewDecFromStr(flagVal); err != nil {
-		err = fmt.Errorf("%s must be a valid decimal number", flagName)
-	}
-	return
-}
-func parseIsBuy() (bool, error) {
-	side := strings.ToLower(viper.GetString(flagSide))
-	if side == "buy" {
-		return true, nil
-	}
-	if side == "sell" {
-		return false, nil
-	}
-	return false, fmt.Errorf("%s must be buy or sell", flagSide)
 }
