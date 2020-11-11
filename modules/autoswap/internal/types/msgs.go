@@ -1,6 +1,8 @@
 package types
 
 import (
+	"math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -66,6 +68,17 @@ func (m MsgCreateOrder) GetSignBytes() []byte {
 
 func (m MsgCreateOrder) GetSigners() []sdk.AccAddress {
 	panic("implement me")
+}
+
+func (m MsgCreateOrder) GetOrder() *Order {
+	return &Order{
+		TradingPair: m.TradingPair,
+		Sender:      m.Sender,
+		Price:       sdk.NewDec(m.Price).Quo(sdk.NewDec(int64(math.Pow10(int(m.PricePrecision))))),
+		Quantity:    m.Quantity,
+		IsBuy:       m.Side == BID,
+		LeftStock:   m.Quantity,
+	}
 }
 
 type MsgCancelOrder struct {
