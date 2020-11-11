@@ -172,11 +172,11 @@ func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		OrderBasic: types.OrderBasic{
-			MarketSymbol:    pair,
-			IsLimitOrder:    true,
-			IsBuy:           isBuy,
-			Sender:          sender,
-			Amount:          amt,
+			MarketSymbol: pair,
+			IsLimitOrder: true,
+			IsBuy:        isBuy,
+			Sender:       sender,
+			Amount:       amt,
 		},
 		Price:   price,
 		OrderID: id,
@@ -191,11 +191,11 @@ func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		OrderBasic: types.OrderBasic{
-			MarketSymbol:    pair,
-			IsLimitOrder:    false,
-			IsBuy:           isBuy,
-			Sender:          sender,
-			Amount:          amt,
+			MarketSymbol: pair,
+			IsLimitOrder: false,
+			IsBuy:        isBuy,
+			Sender:       sender,
+			Amount:       amt,
 		},
 		// TODO
 	})
@@ -205,11 +205,11 @@ func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 func removeOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
 	err := ask.DeleteOrder(ctx, &types.MsgDeleteOrder{
-		MarketSymbol:    pair,
-		Sender:          sender,
-		IsBuy:           isBuy,
-		OrderID:         id,
-		PrevKey:         prevKey,
+		MarketSymbol: pair,
+		Sender:       sender,
+		IsBuy:        isBuy,
+		OrderID:      id,
+		PrevKey:      prevKey,
 	})
 	require.NoError(t, err)
 }

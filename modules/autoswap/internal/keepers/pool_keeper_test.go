@@ -46,7 +46,7 @@ func TestPoolKeeper_Pool(t *testing.T) {
 	var bear = sdk.AccAddress("bear")
 	//step4: set liquidity
 	var liquidity = sdk.NewInt(100)
-	k.SetLiquidity(ctx, marketKey,  bear, liquidity)
+	k.SetLiquidity(ctx, marketKey, bear, liquidity)
 	l := k.GetLiquidity(ctx, marketKey, bear)
 	require.Equal(t, liquidity.Int64(), l.Int64())
 	//step5: get liquidity in pool exist

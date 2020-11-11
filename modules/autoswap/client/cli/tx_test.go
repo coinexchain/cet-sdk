@@ -59,11 +59,11 @@ func TestRemoveLiquidityCmd(t *testing.T) {
 	err := txCmd.Execute()
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &types.MsgRemoveLiquidity{
-		Sender:          fromAddr,
-		To:              fromAddr,
-		Stock:           "foo",
-		Money:           "bar",
-		Amount:          sdk.NewInt(12345),
+		Sender: fromAddr,
+		To:     fromAddr,
+		Stock:  "foo",
+		Money:  "bar",
+		Amount: sdk.NewInt(12345),
 	}, resultMsg)
 }
 
@@ -92,7 +92,7 @@ func TestSwapTokensCmd(t *testing.T) {
 		assert.Equal(t, &types.MsgSwapTokens{
 			Pairs: []types.MarketInfo{
 				{
-					MarketSymbol:    "foo/bar",
+					MarketSymbol: "foo/bar",
 				},
 			},
 			Sender:          fromAddr,
@@ -123,11 +123,11 @@ func TestCreateLimitOrderCmd(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &types.MsgCreateLimitOrder{
 		OrderBasic: types.OrderBasic{
-			Sender:          fromAddr,
-			MarketSymbol:    "foo/bar",
-			IsBuy:           true,
-			IsLimitOrder:    true,
-			Amount:          sdk.NewInt(12345),
+			Sender:       fromAddr,
+			MarketSymbol: "foo/bar",
+			IsBuy:        true,
+			IsLimitOrder: true,
+			Amount:       sdk.NewInt(12345),
 		},
 		Price:   sdk.MustNewDecFromStr("678.9"),
 		OrderID: 6789,
@@ -151,9 +151,9 @@ func TestDeleteOrderCmd(t *testing.T) {
 	err := txCmd.Execute()
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &types.MsgDeleteOrder{
-		Sender:          fromAddr,
-		MarketSymbol:    "foo/bar",
-		IsBuy:           true,
-		OrderID:         6789,
+		Sender:       fromAddr,
+		MarketSymbol: "foo/bar",
+		IsBuy:        true,
+		OrderID:      6789,
 	}, resultMsg)
 }

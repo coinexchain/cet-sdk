@@ -58,7 +58,7 @@ func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgCreateOrder {
 }
 func convertMsgCancelOrder(msg market.MsgCancelOrder) types.MsgCancelOrder {
 	return types.MsgCancelOrder{
-		Sender: msg.Sender,
+		Sender:  msg.Sender,
 		OrderID: msg.OrderID,
 	}
 }

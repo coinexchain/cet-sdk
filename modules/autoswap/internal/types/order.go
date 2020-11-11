@@ -7,10 +7,10 @@ import (
 )
 
 type OrderBasic struct {
-	MarketSymbol    string         `json:"market_symbol"`
-	Sender          sdk.AccAddress `json:"sender"`
-	IsBuy           bool           `json:"is_buy"`
-	IsLimitOrder    bool           `json:"is_limit_order"`
+	MarketSymbol string         `json:"market_symbol"`
+	Sender       sdk.AccAddress `json:"sender"`
+	IsBuy        bool           `json:"is_buy"`
+	IsLimitOrder bool           `json:"is_limit_order"`
 
 	// if the order is market_order, the amount is the actual input amount with special token(
 	// ie: sell order, amount = stockTokenAmount, buy order = moneyTokenAmount)

@@ -42,7 +42,7 @@ func queryParameters(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 }
 
 type QueryPoolInfoParam struct {
-	Symbol        string `json:"Symbol"`
+	Symbol string `json:"Symbol"`
 }
 
 func queryPoolInfo(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {

@@ -82,9 +82,9 @@ func (req *removeLiquidityReq) GetBaseReq() *rest.BaseReq {
 
 func (req *removeLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgRemoveLiquidity{
-		Sender:          sender,
-		Stock:           req.Stock,
-		Money:           req.Money,
+		Sender: sender,
+		Stock:  req.Stock,
+		Money:  req.Money,
 	}
 
 	var err error
@@ -127,7 +127,7 @@ func (req *swapTokensReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Ms
 	}
 	for _, pairInfo := range req.Path {
 		msg.Pairs = append(msg.Pairs, types.MarketInfo{
-			MarketSymbol:    pairInfo.Symbol,
+			MarketSymbol: pairInfo.Symbol,
 		})
 	}
 
@@ -170,9 +170,9 @@ func (req *createLimitOrderReq) GetBaseReq() *rest.BaseReq {
 func (req *createLimitOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgCreateLimitOrder{
 		OrderBasic: types.OrderBasic{
-			Sender:          sender,
-			MarketSymbol:    req.PairSymbol,
-			IsLimitOrder:    true,
+			Sender:       sender,
+			MarketSymbol: req.PairSymbol,
+			IsLimitOrder: true,
 		},
 	}
 	var err error
@@ -215,8 +215,8 @@ func (req *cancelOrderReq) GetBaseReq() *rest.BaseReq {
 
 func (req *cancelOrderReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.Msg, error) {
 	msg := &types.MsgDeleteOrder{
-		Sender:          sender,
-		MarketSymbol:    req.PairSymbol,
+		Sender:       sender,
+		MarketSymbol: req.PairSymbol,
 	}
 	var err error
 	if msg.IsBuy, err = parseIsBuy(req.Side); err != nil {

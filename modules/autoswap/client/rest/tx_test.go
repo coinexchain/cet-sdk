@@ -46,11 +46,11 @@ func TestRemoveLiquidityReq(t *testing.T) {
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgRemoveLiquidity{
-		Sender:          addr,
-		Stock:           "foo",
-		Money:           "bar",
-		Amount:          sdk.NewInt(789),
-		To:              addr,
+		Sender: addr,
+		Stock:  "foo",
+		Money:  "bar",
+		Amount: sdk.NewInt(789),
+		To:     addr,
 	}, msg)
 }
 
@@ -72,7 +72,7 @@ func TestSwapTokensReq(t *testing.T) {
 	assert.Equal(t, &types.MsgSwapTokens{
 		Pairs: []types.MarketInfo{
 			{
-				MarketSymbol:    "foo/bar",
+				MarketSymbol: "foo/bar",
 			},
 		},
 		Sender:          addr,
@@ -96,11 +96,11 @@ func TestCreateLimitOrderReq(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgCreateLimitOrder{
 		OrderBasic: types.OrderBasic{
-			Sender:          addr,
-			MarketSymbol:    "foo/bar",
-			IsBuy:           false,
-			IsLimitOrder:    true,
-			Amount:          sdk.NewInt(123),
+			Sender:       addr,
+			MarketSymbol: "foo/bar",
+			IsBuy:        false,
+			IsLimitOrder: true,
+			Amount:       sdk.NewInt(123),
 		},
 		OrderID: 888,
 		Price:   sdk.MustNewDecFromStr("999.9"),
@@ -118,9 +118,9 @@ func TestCancelOrderReq(t *testing.T) {
 	msg, err := req.GetMsg(nil, addr)
 	assert.NoError(t, err)
 	assert.Equal(t, &types.MsgDeleteOrder{
-		Sender:          addr,
-		MarketSymbol:    "foo/bar",
-		IsBuy:           false,
-		OrderID:         888,
+		Sender:       addr,
+		MarketSymbol: "foo/bar",
+		IsBuy:        false,
+		OrderID:      888,
 	}, msg)
 }

@@ -15,7 +15,7 @@ import (
 var _ IPairKeeper = &PairKeeper{}
 
 type Pair struct {
-	Symbol          string
+	Symbol string
 }
 
 type IPairKeeper interface {

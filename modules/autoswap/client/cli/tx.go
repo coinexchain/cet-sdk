@@ -232,8 +232,8 @@ func addBasicOrderFlags(cmd *cobra.Command) {
 
 func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 	msg = &types.MsgAddLiquidity{
-		Stock:           viper.GetString(flagStock),
-		Money:           viper.GetString(flagMoney),
+		Stock: viper.GetString(flagStock),
+		Money: viper.GetString(flagMoney),
 	}
 
 	if msg.StockIn, err = parseSdkInt(flagStockIn); err != nil {
@@ -250,8 +250,8 @@ func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {
 
 func getRemoveLiquidityMsg() (msg *types.MsgRemoveLiquidity, err error) {
 	msg = &types.MsgRemoveLiquidity{
-		Stock:           viper.GetString(flagStock),
-		Money:           viper.GetString(flagMoney),
+		Stock: viper.GetString(flagStock),
+		Money: viper.GetString(flagMoney),
 	}
 	if msg.Amount, err = parseSdkInt(flagAmount); err != nil {
 		return
@@ -280,7 +280,7 @@ func getSwapTokensMsg() (msg *types.MsgSwapTokens, err error) {
 }
 func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
 	type pairInfo struct {
-		Pair        string `json:"pair"`
+		Pair string `json:"pair"`
 	}
 
 	var swapPathArr []pairInfo
@@ -295,7 +295,7 @@ func parseSwapPath(swapPathStr string) (ret []types.MarketInfo, err error) {
 
 	for _, pairInfo := range swapPathArr {
 		ret = append(ret, types.MarketInfo{
-			MarketSymbol:    pairInfo.Pair,
+			MarketSymbol: pairInfo.Pair,
 		})
 	}
 	return
@@ -317,8 +317,8 @@ func getCreateLimitOrderMsg() (msg *types.MsgCreateLimitOrder, err error) {
 
 func getDeleteOrderMsg() (msg *types.MsgDeleteOrder, err error) {
 	msg = &types.MsgDeleteOrder{
-		MarketSymbol:    viper.GetString(flagPairSymbol),
-		OrderID:         viper.GetInt64(flagOrderID),
+		MarketSymbol: viper.GetString(flagPairSymbol),
+		OrderID:      viper.GetInt64(flagOrderID),
 	}
 	if msg.IsBuy, err = parseIsBuy(); err != nil {
 		return
