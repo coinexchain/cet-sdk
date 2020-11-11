@@ -14,20 +14,24 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
+		case types.MsgCreateTradingPair:
+			return handleMsgCreateTradingPair(ctx, k, msg)
 		case types.MsgAddLiquidity:
 			return handleMsgAddLiquidity(ctx, k, msg)
 		case types.MsgRemoveLiquidity:
 			return handleMsgRemoveLiquidity(ctx, k, msg)
-		case types.MsgCreateLimitOrder:
-			return handleMsgCreateLimitOrder(ctx, k, msg)
-		case types.MsgSwapTokens:
-			return handlerMsgSwapTokens(ctx, k, msg)
-		case types.MsgDeleteOrder:
-			return handlerMsgDeleteOrder(ctx, k, msg)
+		case types.MsgCreateOrder:
+			return handleMsgCreateOrder(ctx, k, msg)
+		case types.MsgCancelOrder:
+			return handleMsgCancelOrder(ctx, k, msg)
 		default:
 			return dex.ErrUnknownRequest(types.ModuleName, msg)
 		}
 	}
+}
+
+func handleMsgCreateTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateTradingPair) sdk.Result {
+	panic("TODO")
 }
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
@@ -107,6 +111,13 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	return sdk.Result{
 		Events: ctx.EventManager().Events(),
 	}
+}
+
+func handleMsgCreateOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateOrder) sdk.Result {
+	panic("TODO")
+}
+func handleMsgCancelOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
+	panic("TODO")
 }
 
 func handleMsgCreateLimitOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateLimitOrder) sdk.Result {
