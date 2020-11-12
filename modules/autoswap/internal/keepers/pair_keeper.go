@@ -17,7 +17,7 @@ type Pair struct {
 type IPairKeeper interface {
 	IPoolKeeper
 	AddLimitOrder(ctx sdk.Context, order *types.Order) sdk.Error
-	DeleteOrder(ctx sdk.Context, order *types.MsgCancelOrder) sdk.Error
+	DeleteOrder(ctx sdk.Context, order types.MsgCancelOrder) sdk.Error
 	HasOrder(ctx sdk.Context, orderID string) bool
 	GetOrder(ctx sdk.Context, orderID string) *types.Order
 
@@ -355,7 +355,7 @@ func (pk PairKeeper) GetOrder(ctx sdk.Context, orderID string) *types.Order {
 	})
 }
 
-func (pk *PairKeeper) DeleteOrder(ctx sdk.Context, msg *types.MsgCancelOrder) sdk.Error {
+func (pk *PairKeeper) DeleteOrder(ctx sdk.Context, msg types.MsgCancelOrder) sdk.Error {
 	order := pk.GetOrder(ctx, msg.OrderID)
 	if order == nil {
 		return types.ErrInvalidOrderID(msg.OrderID)

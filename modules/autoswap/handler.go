@@ -114,35 +114,13 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 }
 
 func handleMsgCreateOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateOrder) sdk.Result {
-	panic("TODO")
-}
-func handleMsgCancelOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
-	panic("TODO")
-}
-
-func handleMsgCreateLimitOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateLimitOrder) sdk.Result {
-	if err := k.AddLimitOrder(ctx, msg.OrderInfo()); err != nil {
+	if err := k.AddLimitOrder(ctx, msg.GetOrder()); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{}
 }
-
-func handlerMsgSwapTokens(ctx sdk.Context, k keepers.Keeper, msg types.MsgSwapTokens) sdk.Result {
-	orders := msg.GetOrderInfos()
-	for i := 0; i < len(orders); i++ {
-		outAmount, err := k.AddMarketOrder(ctx, orders[i])
-		if err != nil {
-			return err.Result()
-		}
-		if i < len(orders)-1 {
-			orders[i+1].Amount = outAmount
-		}
-	}
-	return sdk.Result{}
-}
-
-func handlerMsgDeleteOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgDeleteOrder) sdk.Result {
-	if err := k.DeleteOrder(ctx, &msg); err != nil {
+func handleMsgCancelOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
+	if err := k.DeleteOrder(ctx, msg); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{}
