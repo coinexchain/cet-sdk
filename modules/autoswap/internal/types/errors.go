@@ -44,9 +44,9 @@ func ErrInvalidOutputAmount(amount sdk.Int) sdk.Error {
 		"MinOutputAmount: %s, expected: [0: +∞]", amount.String()))
 }
 
-func ErrInvalidSender(sender sdk.AccAddress) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderSender, fmt.Sprintf("Invalid order "+
-		"sender: %s", sender.String()))
+func ErrInvalidSender(sender, expected sdk.AccAddress) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderSender, fmt.Sprintf("Invalid sender "+
+		"sender: %s, expected: %s", sender.String(), expected.String()))
 }
 
 func ErrInvalidMarket(market string) sdk.Error {
@@ -54,18 +54,14 @@ func ErrInvalidMarket(market string) sdk.Error {
 		"Invalid market: %s", market))
 }
 
-func ErrInvalidSwap(pairs []MarketInfo) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidSwap, fmt.Sprintf("invalid swap: %v", pairs))
-}
-
 func ErrInvalidPrevKey(prevKey [3]int64) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrevKey, fmt.Sprintf(""+
 		"prevKey: [%d, %d, %d]", prevKey[0], prevKey[1], prevKey[2]))
 }
 
-func ErrInvalidOrderID(orderID int64) sdk.Error {
+func ErrInvalidOrderID(orderID string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderID, "Not found valid orderID in create_limit_order msg or "+
-		"invalid orderID in delete_order msg: %d", orderID)
+		"invalid orderID in delete_order msg: %s", orderID)
 }
 
 func ErrMarshalFailed() sdk.Error {

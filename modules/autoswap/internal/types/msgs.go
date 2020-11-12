@@ -71,14 +71,17 @@ func (m MsgCreateOrder) GetSigners() []sdk.AccAddress {
 }
 
 func (m MsgCreateOrder) GetOrder() *Order {
-	return &Order{
+	or := &Order{
 		TradingPair: m.TradingPair,
+		Identify:    m.Identify,
 		Sender:      m.Sender,
 		Price:       sdk.NewDec(m.Price).Quo(sdk.NewDec(int64(math.Pow10(int(m.PricePrecision))))),
 		Quantity:    m.Quantity,
 		IsBuy:       m.Side == BID,
 		LeftStock:   m.Quantity,
 	}
+	or.Freeze = or.ActualAmount().Int64()
+	return or
 }
 
 type MsgCancelOrder struct {

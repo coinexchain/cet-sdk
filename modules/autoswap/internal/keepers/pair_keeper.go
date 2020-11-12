@@ -1,10 +1,6 @@
 package keepers
 
 import (
-	"encoding/binary"
-	"fmt"
-	"math"
-
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,12 +16,11 @@ type Pair struct {
 
 type IPairKeeper interface {
 	IPoolKeeper
-	AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error)
 	AddLimitOrder(ctx sdk.Context, order *types.Order) sdk.Error
-	GetFirstOrderID(ctx sdk.Context, symbol string, isBuy bool) int64
-	DeleteOrder(ctx sdk.Context, order *types.MsgDeleteOrder) sdk.Error
-	HasOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) bool
-	GetOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) *types.Order
+	DeleteOrder(ctx sdk.Context, order *types.MsgCancelOrder) sdk.Error
+	HasOrder(ctx sdk.Context, orderID string) bool
+	GetOrder(ctx sdk.Context, orderID string) *types.Order
+
 	SetParams(ctx sdk.Context, params types.Params)
 	GetParams(ctx sdk.Context) types.Params
 	GetTakerFee(ctx sdk.Context) sdk.Dec
@@ -41,6 +36,8 @@ type FeeFunc func(sdk.Context) sdk.Dec
 
 type PairKeeper struct {
 	IPoolKeeper
+	IOrderBookKeeper
+	types.ExpectedAccountKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
 	codec    *codec.Codec
@@ -59,7 +56,10 @@ func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types
 		SupplyKeeper:       supplyK,
 		ExpectedBankKeeper: bnk,
 		subspace:           paramSubspace.WithKeyTable(types.ParamKeyTable()),
-
+		IOrderBookKeeper: &OrderKeeper{
+			codec:    codec,
+			storeKey: storeKey,
+		},
 		DealPairs: make(map[Pair]struct{}),
 	}
 }
@@ -71,48 +71,48 @@ func (pk *PairKeeper) ClearPairList() {
 	pk.DealPairs = make(map[Pair]struct{})
 }
 
-func (keeper *PairKeeper) SetParams(ctx sdk.Context, params types.Params) {
-	keeper.subspace.SetParamSet(ctx, &params)
+func (pk *PairKeeper) SetParams(ctx sdk.Context, params types.Params) {
+	pk.subspace.SetParamSet(ctx, &params)
 }
 
-func (keeper *PairKeeper) GetParams(ctx sdk.Context) (param types.Params) {
-	keeper.subspace.GetParamSet(ctx, &param)
+func (pk *PairKeeper) GetParams(ctx sdk.Context) (param types.Params) {
+	pk.subspace.GetParamSet(ctx, &param)
 	return
 }
 
-func (keeper *PairKeeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).TakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+func (pk *PairKeeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(pk.GetParams(ctx).TakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
 }
 
-func (keeper *PairKeeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+func (pk *PairKeeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(pk.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
 }
 
-func (keeper *PairKeeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(keeper.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
+func (pk *PairKeeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
+	return sdk.NewDec(pk.GetParams(ctx).DealWithPoolFeeRate).QuoInt64(types.DefaultFeePrecision)
 }
 
-func (keeper *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
-	param := keeper.GetParams(ctx)
+func (pk *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
+	param := pk.GetParams(ctx)
 	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
 }
 
-func (keeper *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) sdk.Error {
-	feeToVal := keeper.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
+func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) sdk.Error {
+	feeToVal := pk.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
 	feeToPool := totalAmount.Sub(feeToVal)
-	err := keeper.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
+	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
 	if err != nil {
 		return err
 	}
-	err = keeper.SendCoinsFromAccountToModule(ctx, sender, types.PoolModuleAcc, sdk.NewCoins(sdk.NewCoin(denom, feeToPool)))
+	err = pk.SendCoinsFromAccountToModule(ctx, sender, types.PoolModuleAcc, sdk.NewCoins(sdk.NewCoin(denom, feeToPool)))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (keeper *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
-	err := keeper.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, fee)
+func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
+	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, fee)
 	if err != nil {
 		return err
 	}
@@ -132,62 +132,37 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 		}
 	}()
 
-	var poolInfo *PoolInfo
-	if poolInfo = pk.GetPoolInfo(ctx, order.MarketSymbol); poolInfo == nil {
-		return types.ErrInvalidMarket(order.MarketSymbol)
-	}
-	if order.OrderID = pk.getUnusedOrderID(ctx, order); order.OrderID <= 0 {
-		return types.ErrInvalidOrderID(order.OrderID)
-	}
-
-	//1. will calculate and check order amount
-	// freeze order balance in sender account
+	order.Sequence = int64(pk.GetAccount(ctx, order.Sender).GetSequence())
 	actualAmount, err := pk.freezeOrderCoin(ctx, order)
 	if err != nil {
 		return err
 	}
+	dealInfo := &types.DealInfo{
+		RemainAmount:    actualAmount,
+		AmountInToPool:  sdk.ZeroInt(),
+		DealMoneyInBook: sdk.ZeroInt(),
+		DealStockInBook: sdk.ZeroInt(),
+	}
 
-	//2. calculate insert order position, try insert order if the order can't deal.
-	if order.HasPrevKey() {
-		if pk.insertOrderFromGivePos(ctx, order) {
-			//3. when insert order later, update pool info
-			if order.IsBuy {
-				poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Add(actualAmount)
-			} else {
-				poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Add(actualAmount)
-			}
-			pk.SetPoolInfo(ctx, order.MarketSymbol, poolInfo)
-			return nil
+	// 1. get matched opposite orders.
+	oppositeOrders := pk.GetMatchedOrder(ctx, order)
+
+	// 2. deal order with pool
+	poolInfo := pk.GetPoolInfo(ctx, order.TradingPair)
+	for _, opOrder := range oppositeOrders {
+		if allDeal, err := pk.dealOrderWithOrderBookAndPool(ctx, order, opOrder, dealInfo, poolInfo); allDeal {
+			break
+		} else if err != nil {
+			return err
 		}
 	}
-	//4. deal the order and insert remained order to orderBook.
-	amountToTaker, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo)
-	if err != nil {
-		return err
-	}
-	if amountToTaker.IsPositive() {
-		pk.DealPairs[Pair{
-			Symbol: order.MarketSymbol,
-		}] = struct{}{}
-	}
+
+	// 3. final deal with pool and order
+	pk.finalDealWithPool(ctx, order, dealInfo, poolInfo)
+
+	// 4. store order in keeper if need
+	pk.storeOrderIfNeed(ctx, order)
 	return nil
-}
-
-func (pk PairKeeper) getUnusedOrderID(ctx sdk.Context, order *types.Order) int64 {
-	var id = order.OrderID
-	if order.OrderID == 0 {
-		id = int64(binary.BigEndian.Uint64(ctx.BlockHeader().AppHash[:8]) ^
-			binary.BigEndian.Uint64(order.Sender[:8]))
-	}
-
-	for i := 0; i < 100 && id > 0; i++ {
-		if pk.HasOrder(ctx, order.MarketSymbol, order.IsBuy, id) {
-			id++
-			continue
-		}
-		return id
-	}
-	return -1
 }
 
 func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error) {
@@ -204,116 +179,16 @@ func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.I
 	return orderAmount, nil
 }
 
-// insertOrderFromGivePos will insert order to given position
-// If insert success, return ture. Otherwise, return false
-func (pk PairKeeper) insertOrderFromGivePos(ctx sdk.Context, order *types.Order) bool {
-	var prevOrder *types.Order
-	if prevOrder = pk.getPrevOrder3Times(ctx, order); prevOrder == nil {
-		return false
+func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order,
+	oppositeOrder *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (allDeal bool, err sdk.Error) {
+	if poolInfo != nil {
+		pk.tryDealInPool(dealInfo, oppositeOrder.Price, order.IsBuy, poolInfo)
 	}
-	return pk.insertOrder(ctx, order, prevOrder)
-}
-
-func (pk PairKeeper) getPrevOrder3Times(ctx sdk.Context, order *types.Order) (prevOrder *types.Order) {
-	for _, v := range order.PrevKey {
-		if prevOrder = pk.GetOrder(ctx, order.MarketSymbol, order.IsBuy, v); prevOrder != nil {
-			return prevOrder
-		}
+	pk.dealInOrderBook(ctx, order, oppositeOrder, dealInfo, poolInfo != nil)
+	if oppositeOrder.LeftStock == 0 {
+		pk.DelOrder(ctx, order)
 	}
-	return nil
-}
-
-func (pk PairKeeper) insertOrder(ctx sdk.Context, order, prevOrder *types.Order) bool {
-	prevOrderId := prevOrder.OrderID
-	var nextOrder *types.Order
-	for prevOrderId > 0 {
-		canFollow := (order.IsBuy && (order.Price.LTE(prevOrder.Price))) ||
-			(!order.IsBuy && (order.Price.GTE(prevOrder.Price)))
-		if !canFollow {
-			break
-		}
-		if prevOrder.NextOrderID > 0 {
-			nextOrder = pk.GetOrder(ctx, prevOrder.MarketSymbol, prevOrder.IsBuy, prevOrder.NextOrderID)
-			canPrecede := (order.IsBuy && (order.Price.GT(nextOrder.Price))) ||
-				(!order.IsBuy && (order.Price.LT(nextOrder.Price)))
-			canFollow = canFollow && canPrecede
-		}
-		if canFollow {
-			order.NextOrderID = prevOrder.NextOrderID
-			pk.SetOrder(ctx, order)
-			prevOrder.NextOrderID = order.OrderID
-			pk.SetOrder(ctx, prevOrder)
-			return true
-		}
-		prevOrderId = prevOrder.NextOrderID
-		prevOrder = nextOrder
-	}
-	return false
-}
-
-// dealOrderAndAddRemainedOrder Deal the order and
-// insert the remainder order into the order book
-func (pk PairKeeper) dealOrderAndAddRemainedOrder(ctx sdk.Context, order *types.Order, poolInfo *PoolInfo) (sdk.Int, sdk.Error) {
-	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, !order.IsBuy)
-	currOrderID := firstOrderID
-	dealInfo := &types.DealInfo{
-		RemainAmount:    order.ActualAmount(),
-		AmountInToPool:  sdk.ZeroInt(),
-		DealMoneyInBook: sdk.ZeroInt(),
-		DealStockInBook: sdk.ZeroInt(),
-	}
-	if !order.IsLimitOrder {
-		dealInfo.RemainAmount = order.Amount
-	}
-	for currOrderID > 0 {
-		orderInBook := pk.GetOrder(ctx, order.MarketSymbol, !order.IsBuy, currOrderID)
-		canDealInBook := (order.IsBuy && order.Price.GTE(orderInBook.Price)) ||
-			(!order.IsBuy && order.Price.LTE(orderInBook.Price))
-		// can't deal with order book
-		if !canDealInBook {
-			break
-		}
-		// full deal in pool
-		if allDeal := pk.tryDealInPool(dealInfo, orderInBook.Price, order.IsBuy, poolInfo); allDeal {
-			break
-		}
-		// deal in order book
-		isPoolExists := true
-		if poolInfo == nil || poolInfo.StockAmmReserve.IsZero() {
-			isPoolExists = false
-		}
-		pk.dealInOrderBook(ctx, order, orderInBook, dealInfo, isPoolExists)
-
-		// the order in order book didn't fully deal, then the new order did fully deal.
-		// update remained order info to order book.
-		if orderInBook.Amount.IsPositive() {
-			pk.SetOrder(ctx, orderInBook)
-			break
-		}
-		// the order in order book have fully deal, so delete the order info.
-		// update the curr order id that will deal next round.
-		pk.deleteOrder(ctx, orderInBook)
-		currOrderID = orderInBook.NextOrderID
-	}
-
-	if order.IsLimitOrder {
-		pk.tryDealInPool(dealInfo, order.Price, order.IsBuy, poolInfo)
-		pk.insertOrderToBook(ctx, order, dealInfo, poolInfo)
-	} else {
-		dealInfo.AmountInToPool = dealInfo.AmountInToPool.Add(order.ActualAmount())
-		dealInfo.RemainAmount = sdk.ZeroInt()
-	}
-	amountToTaker := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
-	if order.IsBuy {
-		poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Sub(dealInfo.DealStockInBook)
-	} else {
-		poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Sub(dealInfo.DealMoneyInBook)
-	}
-	if firstOrderID != currOrderID {
-		pk.SetFirstOrderID(ctx, order.MarketSymbol, !order.IsBuy, currOrderID)
-	}
-	pk.SetPoolInfo(ctx, order.MarketSymbol, poolInfo)
-	return amountToTaker, nil
+	return order.LeftStock == 0, nil
 }
 
 func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, isBuy bool, info *PoolInfo) bool {
@@ -345,26 +220,19 @@ func (pk PairKeeper) intoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info
 }
 
 func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *types.Order, dealInfo *types.DealInfo, isPoolExists bool) {
-	dealInfo.HasDealInOrderBook = true
-	stockAmount := sdk.Int{}
-	// will calculate stock amount
-	if currOrder.IsBuy {
-		//the stock amount might be smaller than actual
-		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(currOrder.Price).TruncateInt()
-	} else {
-		stockAmount = dealInfo.RemainAmount
+	// calculate stock amount
+	dealStockAmount := currOrder.LeftStock
+	if orderInBook.LeftStock < currOrder.LeftStock {
+		dealStockAmount = orderInBook.LeftStock
 	}
-	if orderInBook.Amount.LT(stockAmount) {
-		stockAmount = orderInBook.Amount
-	}
-	orderInBook.Amount = orderInBook.Amount.Sub(stockAmount)
-	currOrder.Amount = currOrder.Amount.Sub(stockAmount)
+	currOrder.LeftStock -= dealStockAmount
+	orderInBook.LeftStock -= dealStockAmount
 
 	var (
 		stockFee   sdk.Int
 		moneyFee   sdk.Int
-		stockTrans = stockAmount
-		moneyTrans = sdk.NewDecFromInt(stockAmount).Mul(orderInBook.Price).TruncateInt()
+		stockTrans = sdk.NewInt(dealStockAmount)
+		moneyTrans = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt()
 	)
 	if currOrder.IsBuy {
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
@@ -395,7 +263,6 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 				panic(err)
 			}
 		}
-
 	} else {
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
@@ -408,70 +275,12 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	}
 }
 
-func (pk PairKeeper) transferToken(ctx sdk.Context, from, to sdk.AccAddress, token string, amount sdk.Int) {
-	coin := newCoins(token, amount)
-	if err := pk.UnFreezeCoins(ctx, from, coin); err != nil {
-		panic(err)
+func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
+	pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
+	if dealInfo.AmountInToPool.IsPositive() {
+		// todo emit deal with pool log
 	}
-	if err := pk.SendCoins(ctx, from, to, coin); err != nil {
-		panic(err)
-	}
-}
-
-func newCoins(token string, amount sdk.Int) sdk.Coins {
-	return sdk.NewCoins(sdk.NewCoin(token, amount))
-}
-
-func (pk PairKeeper) insertOrderToBook(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
-	var (
-		moneyAmount sdk.Int
-		stockAmount sdk.Int
-	)
-	if order.IsBuy {
-		moneyAmount = dealInfo.RemainAmount
-		stockAmount = sdk.NewDecFromInt(dealInfo.RemainAmount).Quo(order.Price).TruncateInt()
-	} else {
-		stockAmount = dealInfo.RemainAmount
-	}
-	if stockAmount.IsPositive() {
-		order.Amount = stockAmount
-		if dealInfo.HasDealInOrderBook {
-			pk.insertOrderAtHead(ctx, order)
-		} else {
-			pk.insertOrderFromHead(ctx, order)
-		}
-	}
-	if order.IsBuy {
-		poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Add(moneyAmount)
-	} else {
-		poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Add(stockAmount)
-	}
-}
-
-func (pk PairKeeper) insertOrderAtHead(ctx sdk.Context, order *types.Order) {
-	order.NextOrderID = pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsBuy)
-	pk.SetOrder(ctx, order)
-	pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsBuy, order.OrderID)
-}
-
-func (pk PairKeeper) insertOrderFromHead(ctx sdk.Context, order *types.Order) {
-	firstOrderID := pk.GetFirstOrderID(ctx, order.MarketSymbol, order.IsBuy)
-	var (
-		firstOrder *types.Order
-		canBeFirst = firstOrderID <= 0
-	)
-	if !canBeFirst {
-		firstOrder = pk.GetOrder(ctx, order.MarketSymbol, order.IsBuy, firstOrderID)
-		canBeFirst = (order.IsBuy && order.Price.GT(firstOrder.Price)) ||
-			(!order.IsBuy && order.Price.LT(firstOrder.Price))
-	}
-	if canBeFirst {
-		order.NextOrderID = firstOrderID
-		pk.SetOrder(ctx, order)
-		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsBuy, order.OrderID)
-		return
-	}
-	pk.insertOrder(ctx, order, firstOrder)
+	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
 }
 
 func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) sdk.Int {
@@ -482,9 +291,8 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	outAmount := sdk.ZeroInt()
 	if !dealInfo.AmountInToPool.IsZero() {
 		outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
-	}
-	if dealInfo.AmountInToPool.IsPositive() {
-		// todo emit deal with pool log
+	} else {
+		return sdk.ZeroInt()
 	}
 
 	// add fee calculate
@@ -507,7 +315,6 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 	} else {
-		fmt.Println(newCoins(order.Money(), outAmount).String())
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
@@ -518,138 +325,62 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	return amountToTaker
 }
 
-func (pk PairKeeper) AddMarketOrder(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error) {
-	order.Price = sdk.ZeroDec()
-	if order.IsBuy {
-		order.Price = sdk.NewDec(math.MaxInt64)
+func (pk PairKeeper) storeOrderIfNeed(ctx sdk.Context, order *types.Order) {
+	if order.LeftStock > 0 {
+		pk.AddOrder(ctx, order)
 	}
-	order.IsLimitOrder = false
-	poolInfo := pk.GetPoolInfo(ctx, order.MarketSymbol)
-	amountToTaker, err := pk.dealOrderAndAddRemainedOrder(ctx, order, poolInfo)
-	if err != nil {
-		return sdk.Int{}, err
-	}
-	if amountToTaker.LT(order.MinOutputAmount) {
-		return sdk.Int{}, types.ErrAmountOutIsSmallerThanExpected(order.MinOutputAmount, amountToTaker)
-	}
-	if amountToTaker.IsPositive() {
-		pk.DealPairs[Pair{
-			Symbol: order.MarketSymbol,
-		}] = struct{}{}
-	}
-	return amountToTaker, nil
 }
 
-func (pk PairKeeper) HasOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) bool {
-	return pk.GetOrder(ctx, symbol, isBuy, orderID) != nil
+func (pk PairKeeper) transferToken(ctx sdk.Context, from, to sdk.AccAddress, token string, amount sdk.Int) {
+	coin := newCoins(token, amount)
+	if err := pk.UnFreezeCoins(ctx, from, coin); err != nil {
+		panic(err)
+	}
+	if err := pk.SendCoins(ctx, from, to, coin); err != nil {
+		panic(err)
+	}
 }
 
-func (pk PairKeeper) GetOrder(ctx sdk.Context, symbol string, isBuy bool, orderID int64) *types.Order {
-	var recordOrder *types.Order
-	store := ctx.KVStore(pk.storeKey)
-	key := getOrderKey(&types.Order{
-		OrderBasic: types.OrderBasic{
-			MarketSymbol: symbol,
-			IsBuy:        isBuy,
-		},
+func newCoins(token string, amount sdk.Int) sdk.Coins {
+	return sdk.NewCoins(sdk.NewCoin(token, amount))
+}
+
+func (pk PairKeeper) HasOrder(ctx sdk.Context, orderID string) bool {
+	return pk.GetOrder(ctx, orderID) != nil
+}
+
+func (pk PairKeeper) GetOrder(ctx sdk.Context, orderID string) *types.Order {
+	return pk.IOrderBookKeeper.GetOrder(ctx, &QueryOrderInfo{
 		OrderID: orderID,
 	})
-	val := store.Get(key)
-	if len(val) == 0 {
-		return nil
-	}
-	pk.codec.MustUnmarshalBinaryBare(val, &recordOrder)
-	return recordOrder
 }
 
-func (pk PairKeeper) SetOrder(ctx sdk.Context, order *types.Order) {
-	store := ctx.KVStore(pk.storeKey)
-	key := getOrderKey(order)
-	val := pk.codec.MustMarshalBinaryBare(order)
-	store.Set(key, val)
-}
-
-func (pk PairKeeper) DeleteOrder(ctx sdk.Context, delOrder *types.MsgDeleteOrder) sdk.Error {
-	order := pk.GetOrder(ctx, delOrder.MarketSymbol, delOrder.IsBuy, delOrder.OrderID)
-	if order == nil || order.Sender.Equals(delOrder.Sender) {
-		var sender sdk.AccAddress
-		if order == nil {
-			sender = sdk.AccAddress{}
-		} else {
-			sender = order.Sender
-		}
-		return types.ErrInvalidOrderNews(fmt.Sprintf("market: %s, isBuy: %v, orderID: %d, orderSender: %s",
-			delOrder.MarketSymbol, delOrder.IsBuy, delOrder.OrderID, sender.String()))
+func (pk *PairKeeper) DeleteOrder(ctx sdk.Context, msg *types.MsgCancelOrder) sdk.Error {
+	order := pk.GetOrder(ctx, msg.OrderID)
+	if order == nil {
+		return types.ErrInvalidOrderID(msg.OrderID)
 	}
-	if !order.HasPrevKey() {
-		firstOrderID := pk.GetFirstOrderID(ctx, delOrder.MarketSymbol, delOrder.IsBuy)
-		if firstOrderID != order.OrderID {
-			return types.ErrNotFoundOrder(fmt.Sprintf("the delete order is not the first in the orderBook: currentID: %d, "+
-				"firstOrderID: %d, shoule fill the prev_key in MsgDeleteOrder", delOrder.OrderID, firstOrderID))
-		}
-		pk.SetFirstOrderID(ctx, order.MarketSymbol, order.IsBuy, order.NextOrderID)
-	} else {
-		orderInBook := pk.getPrevOrder3Times(ctx, order)
-		if orderInBook == nil {
-			return types.ErrInvalidPrevKey(order.PrevKey)
-		}
-		currentOrderID := orderInBook.OrderID
-		for currentOrderID > 0 {
-			if orderInBook.NextOrderID == order.OrderID {
-				orderInBook.NextOrderID = order.NextOrderID
-				pk.SetOrder(ctx, orderInBook)
-				break
-			}
-			orderInBook = pk.GetOrder(ctx, order.MarketSymbol, order.IsBuy, orderInBook.NextOrderID)
-			if orderInBook == nil {
-				return types.ErrNotFoundOrder(fmt.Sprintf("the delete order not found by prev_key in MsgDeleteOrder, receive"+
-					" data is: %v", delOrder.PrevKey))
-			}
-			currentOrderID = orderInBook.OrderID
-		}
+	if !order.Sender.Equals(msg.Sender) {
+		return types.ErrInvalidSender(msg.Sender, order.Sender)
 	}
+	pk.IOrderBookKeeper.DelOrder(ctx, order)
 	return pk.updateOrderBookReserveByOrderDel(ctx, order)
 }
 
 func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder *types.Order) sdk.Error {
-	info := pk.GetPoolInfo(ctx, delOrder.MarketSymbol)
-	amount := delOrder.Amount
+	info := pk.GetPoolInfo(ctx, delOrder.TradingPair)
 	if delOrder.IsBuy {
-		amount = delOrder.ActualAmount()
+		amount := delOrder.ActualAmount()
 		info.MoneyOrderBookReserve = info.MoneyOrderBookReserve.Sub(amount)
-		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Money(), delOrder.Amount)); err != nil {
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Money(), amount)); err != nil {
 			return err
 		}
 	} else {
-		info.StockOrderBookReserve = info.StockOrderBookReserve.Sub(delOrder.Amount)
-		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Stock(), delOrder.Amount)); err != nil {
+		info.StockOrderBookReserve = info.StockOrderBookReserve.Sub(sdk.NewInt(delOrder.LeftStock))
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Stock(), sdk.NewInt(delOrder.LeftStock))); err != nil {
 			return err
 		}
 	}
-	pk.SetPoolInfo(ctx, delOrder.MarketSymbol, info)
+	pk.SetPoolInfo(ctx, delOrder.TradingPair, info)
 	return nil
-}
-
-func (pk PairKeeper) deleteOrder(ctx sdk.Context, order *types.Order) {
-	store := ctx.KVStore(pk.storeKey)
-	key := getOrderKey(order)
-	store.Delete(key)
-}
-
-func (pk PairKeeper) GetFirstOrderID(ctx sdk.Context, symbol string, isBuy bool) int64 {
-	store := ctx.KVStore(pk.storeKey)
-	key := getBestOrderPriceKey(symbol, isBuy)
-	val := store.Get(key)
-	if len(val) == 0 {
-		return -1
-	}
-	return int64(binary.BigEndian.Uint64(val))
-}
-
-func (pk PairKeeper) SetFirstOrderID(ctx sdk.Context, symbol string, isBuy bool, orderID int64) {
-	store := ctx.KVStore(pk.storeKey)
-	key := getBestOrderPriceKey(symbol, isBuy)
-	val := make([]byte, 8)
-	binary.BigEndian.PutUint64(val, uint64(orderID))
-	store.Set(key, val)
 }
