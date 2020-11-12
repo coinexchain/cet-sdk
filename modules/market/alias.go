@@ -7,8 +7,10 @@ import (
 )
 
 const (
-	StoreKey   = types.StoreKey
-	ModuleName = types.ModuleName
+	ModuleName   = types.ModuleName
+	StoreKey     = types.StoreKey
+	RouterKey    = types.RouterKey
+	QuerierRoute = types.QuerierRoute
 )
 
 const (
@@ -34,6 +36,7 @@ var (
 	GetSymbol           = dex.GetSymbol
 	SplitSymbol         = dex.SplitSymbol
 	AssemblyOrderID     = types.AssemblyOrderID
+	RegisterCodec       = types.RegisterCodec
 )
 
 type (

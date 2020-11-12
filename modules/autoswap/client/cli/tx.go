@@ -17,16 +17,12 @@ import (
 )
 
 const (
-	flagStock       = "stock"
-	flagMoney       = "money"
-	flagNoSwap      = "no-swap"
-	flagNoOrderBook = "no-order-book"
-	flagStockIn     = "stock-in"
-	flagMoneyIn     = "money-in"
-	flagStockMin    = "stock-min"
-	flagMoneyMin    = "money-min"
-	flagTo          = "to"
-	flagAmount      = "amount"
+	flagStock   = "stock"
+	flagMoney   = "money"
+	flagStockIn = "stock-in"
+	flagMoneyIn = "money-in"
+	flagTo      = "to"
+	flagAmount  = "amount"
 )
 
 // get the root tx command of this module
@@ -50,7 +46,7 @@ func GetAddLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 			`generate a tx and sign it to add liquidity into autoswap pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" --no-swap \
+$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
 	--stock-in=100000000 --money-in=100000000 \
 	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
@@ -82,8 +78,8 @@ func GetRemoveLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 			`generate a tx and sign it to remove liquidity from autoswap pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
-	--stock-in=100000000 --money-in=100000000 \
+$ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" \
+	--amount=12345 \
 	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
 `),
@@ -97,12 +93,9 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
 	}
 
 	addBasicPairFlags(cmd)
-	cmd.Flags().String(flagStockMin, "", "the minimum amount of got stock")
-	cmd.Flags().String(flagMoneyMin, "", "the minimum amount of got money")
 	cmd.Flags().String(flagAmount, "", "the amount of liquidity to be removed")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney,
-		flagStockMin, flagMoneyMin, flagAmount, flagTo)
+	markRequiredFlags(cmd, flagStock, flagMoney, flagAmount, flagTo)
 
 	return cmd
 }
@@ -110,8 +103,6 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" --no-swap \
 func addBasicPairFlags(cmd *cobra.Command) {
 	cmd.Flags().String(flagStock, "", "the stock symbol of the pool")
 	cmd.Flags().String(flagMoney, "", "the money symbol of the pool")
-	cmd.Flags().Bool(flagNoSwap, false, "whether swap function is disabled")
-	cmd.Flags().Bool(flagNoOrderBook, false, "whether order book is disabled")
 }
 
 func getAddLiquidityMsg() (msg *types.MsgAddLiquidity, err error) {

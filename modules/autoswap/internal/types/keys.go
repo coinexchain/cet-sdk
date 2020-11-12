@@ -3,7 +3,7 @@ package types
 const (
 	// Query
 	// ModuleName is the name of the module
-	ModuleName = "autoswap" // TODO: change to "market"
+	ModuleName = "autoswap"
 
 	// StoreKey is string representation of the store key for asset
 	StoreKey = ModuleName

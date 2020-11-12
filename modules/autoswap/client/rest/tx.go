@@ -2,11 +2,12 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	"net/http"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cosmos-utils/client/restutil"
@@ -15,14 +16,12 @@ import (
 /* addLiquidityReq */
 
 type addLiquidityReq struct {
-	BaseReq     rest.BaseReq `json:"base_req"`
-	Stock       string       `json:"stock"`
-	Money       string       `json:"money"`
-	NoSwap      bool         `json:"no_swap"`
-	NoOrderBook bool         `json:"no_order_book"`
-	StockIn     string       `json:"stock_in"`
-	MoneyIn     string       `json:"money_in"`
-	To          string       `json:"to"`
+	BaseReq rest.BaseReq `json:"base_req"`
+	Stock   string       `json:"stock"`
+	Money   string       `json:"money"`
+	StockIn string       `json:"stock_in"`
+	MoneyIn string       `json:"money_in"`
+	To      string       `json:"to"`
 }
 
 func (req *addLiquidityReq) New() restutil.RestReq {
@@ -41,10 +40,10 @@ func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.
 	}
 
 	var err error
-	if msg.StockIn, err = parseSdkInt("init_stock", req.StockIn); err != nil {
+	if msg.StockIn, err = parseSdkInt("stock_in", req.StockIn); err != nil {
 		return nil, err
 	}
-	if msg.MoneyIn, err = parseSdkInt("init_money", req.MoneyIn); err != nil {
+	if msg.MoneyIn, err = parseSdkInt("money_in", req.MoneyIn); err != nil {
 		return nil, err
 	}
 	if msg.To, err = sdk.AccAddressFromBech32(req.To); err != nil {
@@ -57,15 +56,11 @@ func (req *addLiquidityReq) GetMsg(_ *http.Request, sender sdk.AccAddress) (sdk.
 /* removeLiquidityReq */
 
 type removeLiquidityReq struct {
-	BaseReq     rest.BaseReq `json:"base_req"`
-	Stock       string       `json:"stock"`
-	Money       string       `json:"money"`
-	NoSwap      bool         `json:"no_swap"`
-	NoOrderBook bool         `json:"no_order_book"`
-	StockMin    string       `json:"stock_min"`
-	MoneyMin    string       `json:"money_min"`
-	Amount      string       `json:"amount"`
-	To          string       `json:"to"`
+	BaseReq rest.BaseReq `json:"base_req"`
+	Stock   string       `json:"stock"`
+	Money   string       `json:"money"`
+	Amount  string       `json:"amount"`
+	To      string       `json:"to"`
 }
 
 func (req *removeLiquidityReq) New() restutil.RestReq {

@@ -10,30 +10,40 @@ import (
 )
 
 func NewHandler2(k keepers.Keeper) sdk.Handler {
+	h1 := NewHandler(k)
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
-		switch msg := msg.(type) {
-		// market messages
-		case market.MsgCreateTradingPair:
-			return handleMsgCreateTradingPair(ctx, k, convertMsgCreateTP(msg))
-		case market.MsgCancelTradingPair:
-			panic("TODO")
-		case market.MsgModifyPricePrecision:
-			panic("TODO")
-		case market.MsgCreateOrder:
-			return handleMsgCreateOrder(ctx, k, convertMsgCreateOrder(msg))
-		case market.MsgCancelOrder:
-			return handleMsgCancelOrder(ctx, k, convertMsgCancelOrder(msg))
-		// new messages
-		case types.MsgAddLiquidity:
-			return handleMsgAddLiquidity(ctx, k, msg)
-		case types.MsgRemoveLiquidity:
-			return handleMsgRemoveLiquidity(ctx, k, msg)
-		default:
+		msg2, ok := convertMarketMsg(msg)
+		if !ok {
 			return dex.ErrUnknownRequest(types.ModuleName, msg)
 		}
+
+		return h1(ctx, msg2)
 	}
+}
+
+func convertMarketMsg(msg sdk.Msg) (msg2 sdk.Msg, ok bool) {
+	ok = true
+	switch msg := msg.(type) {
+	// market messages
+	case market.MsgCreateTradingPair:
+		msg2 = convertMsgCreateTP(msg)
+	//case market.MsgCancelTradingPair:
+	//	panic("TODO")
+	//case market.MsgModifyPricePrecision:
+	//	panic("TODO")
+	case market.MsgCreateOrder:
+		msg2 = convertMsgCreateOrder(msg)
+	case market.MsgCancelOrder:
+		msg2 = convertMsgCancelOrder(msg)
+	// new messages
+	case types.MsgAddLiquidity, types.MsgRemoveLiquidity:
+		msg2 = msg
+	default:
+		ok = false
+	}
+	return
 }
 
 func convertMsgCreateTP(msg market.MsgCreateTradingPair) types.MsgCreateTradingPair {

@@ -15,12 +15,14 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/autoswap/client/rest"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market"
 )
 
 type AppModuleBasic struct{}
 
+// old "market" module will be replaced by new "autoswap" module
 func (AppModuleBasic) Name() string {
-	return types.ModuleName
+	return market.ModuleName
 }
 
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
@@ -69,19 +71,19 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 }
 
 func (am AppModule) Route() string {
-	return types.RouterKey
+	return market.RouterKey
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.blKeeper)
+	return NewHandler2(am.blKeeper)
 }
 
 func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
+	return market.QuerierRoute
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keepers.NewQuerier(am.blKeeper)
+	return keepers.NewQuerier2(am.blKeeper)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
