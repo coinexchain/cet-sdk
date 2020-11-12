@@ -2,7 +2,22 @@ package types
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
-type CreateOrderInfo struct {
+const (
+	// msg keys for Kafka
+	CreateMarketInfoKey = "create_order_info"
+	CancelMarketInfoKey = "cancel_market_info"
+	CreateOrderInfoKey  = "create_order_info"
+	FillOrderInfoKey    = "fill_order_info"
+	DealMarketInfoKey   = "deal_market_info"
+	CancelOrderInfoKey  = "del_order_info"
+)
+
+const (
+	CancelOrderByManual    = "Manually cancel the order"
+	CancelOrderByAllFilled = "The order was fully filled"
+)
+
+type CreateOrderInfoMq struct {
 	OrderID     string  `json:"order_id"`
 	Sender      string  `json:"sender"`
 	TradingPair string  `json:"trading_pair"`
@@ -13,7 +28,7 @@ type CreateOrderInfo struct {
 	Freeze      int64   `json:"freeze"`
 }
 
-type FillOrderInfo struct {
+type FillOrderInfoMq struct {
 	OrderID     string  `json:"order_id"`
 	TradingPair string  `json:"trading_pair"`
 	Height      int64   `json:"height"`
@@ -31,7 +46,7 @@ type FillOrderInfo struct {
 	CurrUsedCommission int64   `json:"curr_used_commission"`
 }
 
-type MarketDealInfo struct {
+type MarketDealInfoMq struct {
 	TradingPair     string
 	MakerOrderID    string
 	TakerOrderID    string
@@ -39,7 +54,7 @@ type MarketDealInfo struct {
 	DealHeight      int64
 }
 
-type CancelOrderInfo struct {
+type CancelOrderInfoMq struct {
 	OrderID     string  `json:"order_id"`
 	TradingPair string  `json:"trading_pair"`
 	Height      int64   `json:"height"`

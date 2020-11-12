@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cet-sdk/msgqueue"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -40,9 +41,10 @@ type PairKeeper struct {
 	types.ExpectedAccountKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
-	codec    *codec.Codec
-	storeKey sdk.StoreKey
-	subspace params.Subspace
+	codec       *codec.Codec
+	storeKey    sdk.StoreKey
+	subspace    params.Subspace
+	msgProducer msgqueue.MsgSender
 	// record deal pairs in one block.
 	DealPairs map[Pair]struct{}
 }
@@ -165,6 +167,17 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	return nil
 }
 
+func (pk PairKeeper) sendCreateOrderInfo(ctx sdk.Context, order *types.Order) {
+	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
+		return
+	}
+	info := types.CreateOrderInfoMq{
+		TradingPair: order.TradingPair,
+		Height:      ctx.BlockHeight(),
+	}
+	msgqueue.FillMsgs(ctx, types.CreateMarketInfoKey, info)
+}
+
 func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error) {
 	orderAmount := order.ActualAmount()
 	if order.IsBuy {
@@ -273,8 +286,94 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 			panic(err)
 		}
 	}
+	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, 0, 0)
 }
 
+func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock int64, takerFee, makerFee int64) {
+	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
+		return
+	}
+	taker := types.FillOrderInfoMq{
+		OrderID:     order.GetOrderID(),
+		TradingPair: order.TradingPair,
+		Height:      ctx.BlockHeight(),
+		Price:       order.Price,
+
+		LeftStock: order.LeftStock,
+		// todo. freeze should be update in deal
+		Freeze:             order.Freeze,
+		DealStock:          order.DealStock,
+		DealMoney:          order.DealMoney,
+		CurrMoney:          0,
+		CurrStock:          dealStock,
+		FillPrice:          dealOrder.Price,
+		CurrUsedCommission: takerFee,
+	}
+
+	maker := types.FillOrderInfoMq{
+		OrderID:     dealOrder.GetOrderID(),
+		TradingPair: dealOrder.TradingPair,
+		Height:      ctx.BlockHeight(),
+		Price:       dealOrder.Price,
+
+		LeftStock: dealOrder.LeftStock,
+		// todo. freeze should be update in deal
+		Freeze:             dealOrder.Freeze,
+		DealStock:          dealOrder.DealStock,
+		DealMoney:          dealOrder.DealMoney,
+		CurrMoney:          0,
+		CurrStock:          dealStock,
+		FillPrice:          dealOrder.Price,
+		CurrUsedCommission: makerFee,
+	}
+	dealMarketInfo := types.MarketDealInfoMq{
+		TradingPair:     order.TradingPair,
+		TakerOrderID:    order.GetOrderID(),
+		MakerOrderID:    dealOrder.GetOrderID(),
+		DealStockAmount: dealStock,
+		DealHeight:      ctx.BlockHeight(),
+	}
+	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, taker)
+	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, maker)
+	msgqueue.FillMsgs(ctx, types.DealMarketInfoKey, dealMarketInfo)
+
+	if order.LeftStock == 0 {
+		pk.sendDelOrderInfo(ctx, order, types.CancelOrderByAllFilled)
+	}
+	if dealOrder.LeftStock == 0 {
+		pk.sendDelOrderInfo(ctx, dealOrder, types.CancelOrderByAllFilled)
+	}
+}
+
+func (pk PairKeeper) sendDelOrderInfo(ctx sdk.Context, order *types.Order, delReason string) {
+	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
+		return
+	}
+	info := types.CancelOrderInfoMq{
+		DelReason:   delReason,
+		OrderID:     order.GetOrderID(),
+		TradingPair: order.TradingPair,
+	}
+	msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, info)
+}
+
+//type FillOrderInfoMq struct {
+//	OrderID     string  `json:"order_id"`
+//	TradingPair string  `json:"trading_pair"`
+//	Height      int64   `json:"height"`
+//	Side        byte    `json:"side"`
+//	Price       sdk.Dec `json:"price"`
+//
+//	// These fields will change when order was filled/canceled.
+//	LeftStock          int64   `json:"left_stock"`
+//	Freeze             int64   `json:"freeze"`
+//	DealStock          int64   `json:"deal_stock"`
+//	DealMoney          int64   `json:"deal_money"`
+//	CurrStock          int64   `json:"curr_stock"`
+//	CurrMoney          int64   `json:"curr_money"`
+//	FillPrice          sdk.Dec `json:"fill_price"`
+//	CurrUsedCommission int64   `json:"curr_used_commission"`
+//}
 func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
 	pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if dealInfo.AmountInToPool.IsPositive() {
@@ -364,7 +463,11 @@ func (pk *PairKeeper) DeleteOrder(ctx sdk.Context, msg types.MsgCancelOrder) sdk
 		return types.ErrInvalidSender(msg.Sender, order.Sender)
 	}
 	pk.IOrderBookKeeper.DelOrder(ctx, order)
-	return pk.updateOrderBookReserveByOrderDel(ctx, order)
+	if err := pk.updateOrderBookReserveByOrderDel(ctx, order); err != nil {
+		return err
+	}
+	pk.sendDelOrderInfo(ctx, order, types.CancelOrderByManual)
+	return nil
 }
 
 func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder *types.Order) sdk.Error {
