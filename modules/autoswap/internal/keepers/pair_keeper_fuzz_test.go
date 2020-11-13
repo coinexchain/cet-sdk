@@ -184,15 +184,15 @@ func addLimitOrderTest(t *testing.T, app *App, market string, isOpenSwap, isOpen
 	require.Nil(t, app.BankKeeper.SendCoins(app.ctx, from, to, newCoins(stockSymbol, moneyBalance.Quo(sdk.NewInt(2)))), "transfer money token failed")
 	for i := 0; i < testNum; i++ {
 		order := &types.Order{
-			OrderBasic: types.OrderBasic{
-				IsLimitOrder: true,
-				Sender:       from,
-				MarketSymbol: market,
-				Amount:       getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
-			},
-			OrderID: int64(i) + 1,
-			Price:   getRandomPrice(maxPrice),
-			PrevKey: [3]int64{int64(i), 0, 0},
+			//OrderBasic: types.OrderBasic{
+			//	IsLimitOrder: true,
+			//	Sender:       from,
+			//	MarketSymbol: market,
+			//	Amount:       getRandom(maxTokenAmount).Mul(sdk.NewInt(1e9)),
+			//},
+			//OrderID: int64(i) + 1,
+			//Price:   getRandomPrice(maxPrice),
+			//PrevKey: [3]int64{int64(i), 0, 0},
 		}
 		token := order.Stock()
 		if i%2 == 0 {
