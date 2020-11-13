@@ -10,6 +10,8 @@ const (
 	FillOrderInfoKey    = "fill_order_info"
 	DealMarketInfoKey   = "deal_market_info"
 	CancelOrderInfoKey  = "del_order_info"
+
+	ReservePoolID = "reserve_pool"
 )
 
 const (
@@ -43,6 +45,18 @@ type FillOrderInfoMq struct {
 	CurrStock          int64   `json:"curr_stock"`
 	CurrMoney          int64   `json:"curr_money"`
 	FillPrice          sdk.Dec `json:"fill_price"`
+	CurrUsedCommission int64   `json:"curr_used_commission"`
+}
+
+type FillOrderInfoWithPoolMq struct {
+	OrderID            string  `json:"order_id"`
+	TradingPair        string  `json:"trading_pair"`
+	Height             int64   `json:"height"`
+	Side               byte    `json:"side"`
+	FillPrice          sdk.Dec `json:"fill_price"`
+	LeftStock          int64   `json:"left_stock"`
+	Freeze             int64   `json:"freeze"`
+	DealAmountWithPool int64   `json:"deal_amount_with_pool"`
 	CurrUsedCommission int64   `json:"curr_used_commission"`
 }
 

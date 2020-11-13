@@ -175,7 +175,7 @@ func (pk PairKeeper) sendCreateOrderInfo(ctx sdk.Context, order *types.Order) {
 		TradingPair: order.TradingPair,
 		Height:      ctx.BlockHeight(),
 	}
-	msgqueue.FillMsgs(ctx, types.CreateMarketInfoKey, info)
+	msgqueue.FillMsgs(ctx, types.CreateOrderInfoKey, info)
 }
 
 func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.Int, sdk.Error) {
@@ -195,7 +195,7 @@ func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.I
 func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order,
 	oppositeOrder *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (allDeal bool, err sdk.Error) {
 	if poolInfo != nil {
-		pk.tryDealInPool(dealInfo, oppositeOrder.Price, order.IsBuy, poolInfo)
+		pk.tryDealInPool(dealInfo, oppositeOrder.Price, order, poolInfo)
 	}
 	pk.dealInOrderBook(ctx, order, oppositeOrder, dealInfo, poolInfo != nil)
 	if oppositeOrder.LeftStock == 0 {
@@ -204,8 +204,8 @@ func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order,
 	return order.LeftStock == 0, nil
 }
 
-func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, isBuy bool, info *PoolInfo) bool {
-	currTokenCanTradeWithPool := pk.intoPoolAmountTillPrice(dealPrice, isBuy, info)
+func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, order *types.Order, info *PoolInfo) bool {
+	currTokenCanTradeWithPool := pk.intoPoolAmountTillPrice(dealPrice, order.IsBuy, info)
 	// will check deal token amount later.
 	if currTokenCanTradeWithPool.GT(types.MaxAmount) {
 		panic("deal amount with pool is too large")
@@ -215,6 +215,18 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 		allDeal := diffTokenTradeWithPool.GT(dealInfo.RemainAmount)
 		if allDeal {
 			diffTokenTradeWithPool = dealInfo.RemainAmount
+		}
+		before := getAmountOutInPool(dealInfo.AmountInToPool, info, order.IsBuy)
+		after := getAmountOutInPool(currTokenCanTradeWithPool, info, order.IsBuy)
+		order.Freeze -= diffTokenTradeWithPool.Int64()
+		if order.IsBuy {
+			order.LeftStock -= after.Sub(before).Int64()
+			order.DealStock += after.Sub(before).Int64()
+			order.DealMoney += currTokenCanTradeWithPool.Sub(dealInfo.AmountInToPool).Int64()
+		} else {
+			order.LeftStock -= currTokenCanTradeWithPool.Sub(dealInfo.AmountInToPool).Int64()
+			order.DealStock += currTokenCanTradeWithPool.Sub(dealInfo.AmountInToPool).Int64()
+			order.DealMoney += after.Sub(before).Int64()
 		}
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(diffTokenTradeWithPool)
 		dealInfo.AmountInToPool = dealInfo.AmountInToPool.Add(diffTokenTradeWithPool)
@@ -232,26 +244,45 @@ func (pk PairKeeper) intoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info
 	return sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.Int)).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt()
 }
 
+func getAmountOutInPool(amountIn sdk.Int, poolInfo *PoolInfo, isBuy bool) sdk.Int {
+	outPoolTokenReserve, inPoolTokenReserve := poolInfo.MoneyAmmReserve, poolInfo.StockAmmReserve
+	if isBuy {
+		outPoolTokenReserve, inPoolTokenReserve = poolInfo.StockAmmReserve, poolInfo.MoneyAmmReserve
+	}
+	return outPoolTokenReserve.Mul(amountIn).Quo(inPoolTokenReserve.Add(amountIn))
+}
+
 func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *types.Order, dealInfo *types.DealInfo, isPoolExists bool) {
 	// calculate stock amount
 	dealStockAmount := currOrder.LeftStock
 	if orderInBook.LeftStock < currOrder.LeftStock {
 		dealStockAmount = orderInBook.LeftStock
 	}
-	currOrder.LeftStock -= dealStockAmount
-	orderInBook.LeftStock -= dealStockAmount
 
 	var (
 		stockFee   sdk.Int
 		moneyFee   sdk.Int
+		takerFee   sdk.Int
+		makerFee   sdk.Int
 		stockTrans = sdk.NewInt(dealStockAmount)
-		moneyTrans = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt()
+		moneyTrans = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt() // less
 	)
+	currOrder.LeftStock -= dealStockAmount
+	orderInBook.LeftStock -= dealStockAmount
+	currOrder.DealMoney += moneyTrans.Int64()
+	currOrder.DealStock += stockTrans.Int64()
+	orderInBook.DealStock += stockTrans.Int64()
+	orderInBook.DealMoney += moneyTrans.Int64()
+
 	if currOrder.IsBuy {
+		currOrder.Freeze -= moneyTrans.Int64()
+		orderInBook.Freeze -= stockTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
 		moneyFee = pk.GetMakerFee(ctx).MulInt(moneyTrans).TruncateInt()
 		stockFee = pk.GetTakerFee(ctx).MulInt(stockTrans).TruncateInt()
 	} else {
+		currOrder.Freeze -= stockTrans.Int64()
+		orderInBook.Freeze -= moneyTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(stockTrans)
 		stockFee = pk.GetMakerFee(ctx).MulInt(stockTrans).TruncateInt()
 		moneyFee = pk.GetTakerFee(ctx).MulInt(moneyTrans).TruncateInt()
@@ -261,6 +292,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	dealInfo.DealStockInBook = dealInfo.DealStockInBook.Add(stockTrans)
 	// transfer tokens in orders
 	if currOrder.IsBuy {
+		takerFee = stockFee
+		makerFee = moneyFee
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		if isPoolExists {
@@ -277,6 +310,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 			}
 		}
 	} else {
+		takerFee = moneyFee
+		makerFee = stockFee
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender); err != nil {
@@ -286,10 +321,10 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 			panic(err)
 		}
 	}
-	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, 0, 0)
+	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(), takerFee.Int64(), makerFee.Int64())
 }
 
-func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock int64, takerFee, makerFee int64) {
+func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock, dealMoney int64, takerFee, makerFee int64) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
@@ -298,30 +333,29 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 		TradingPair: order.TradingPair,
 		Height:      ctx.BlockHeight(),
 		Price:       order.Price,
+		Side:        getSide(order.IsBuy),
 
-		LeftStock: order.LeftStock,
-		// todo. freeze should be update in deal
+		LeftStock:          order.LeftStock,
 		Freeze:             order.Freeze,
 		DealStock:          order.DealStock,
 		DealMoney:          order.DealMoney,
-		CurrMoney:          0,
+		CurrMoney:          dealMoney,
 		CurrStock:          dealStock,
 		FillPrice:          dealOrder.Price,
 		CurrUsedCommission: takerFee,
 	}
-
 	maker := types.FillOrderInfoMq{
 		OrderID:     dealOrder.GetOrderID(),
 		TradingPair: dealOrder.TradingPair,
 		Height:      ctx.BlockHeight(),
 		Price:       dealOrder.Price,
+		Side:        getSide(dealOrder.IsBuy),
 
-		LeftStock: dealOrder.LeftStock,
-		// todo. freeze should be update in deal
+		LeftStock:          dealOrder.LeftStock,
 		Freeze:             dealOrder.Freeze,
 		DealStock:          dealOrder.DealStock,
 		DealMoney:          dealOrder.DealMoney,
-		CurrMoney:          0,
+		CurrMoney:          dealMoney,
 		CurrStock:          dealStock,
 		FillPrice:          dealOrder.Price,
 		CurrUsedCommission: makerFee,
@@ -345,44 +379,43 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 	}
 }
 
+func getSide(isBuy bool) byte {
+	if isBuy {
+		return types.BID
+	}
+	return types.ASK
+}
+
 func (pk PairKeeper) sendDelOrderInfo(ctx sdk.Context, order *types.Order, delReason string) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
 	info := types.CancelOrderInfoMq{
-		DelReason:   delReason,
 		OrderID:     order.GetOrderID(),
 		TradingPair: order.TradingPair,
+		Height:      ctx.BlockHeight(),
+		Side:        getSide(order.IsBuy),
+		Price:       order.Price,
+
+		DelReason:    delReason,
+		LeftStock:    order.LeftStock,
+		RemainAmount: order.Freeze,
+		DealStock:    order.DealStock,
+		DealMoney:    order.DealMoney,
 	}
 	msgqueue.FillMsgs(ctx, types.CancelOrderInfoKey, info)
 }
 
-//type FillOrderInfoMq struct {
-//	OrderID     string  `json:"order_id"`
-//	TradingPair string  `json:"trading_pair"`
-//	Height      int64   `json:"height"`
-//	Side        byte    `json:"side"`
-//	Price       sdk.Dec `json:"price"`
-//
-//	// These fields will change when order was filled/canceled.
-//	LeftStock          int64   `json:"left_stock"`
-//	Freeze             int64   `json:"freeze"`
-//	DealStock          int64   `json:"deal_stock"`
-//	DealMoney          int64   `json:"deal_money"`
-//	CurrStock          int64   `json:"curr_stock"`
-//	CurrMoney          int64   `json:"curr_money"`
-//	FillPrice          sdk.Dec `json:"fill_price"`
-//	CurrUsedCommission int64   `json:"curr_used_commission"`
-//}
 func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
-	pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
+	_, fee, poolToUser := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if dealInfo.AmountInToPool.IsPositive() {
 		// todo emit deal with pool log
+		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64())
 	}
 	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
 }
 
-func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) sdk.Int {
+func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (totalAmountToTaker sdk.Int, fee sdk.Int, poolToUser sdk.Int) {
 	outPoolTokenReserve, inPoolTokenReserve, otherToTaker := poolInfo.MoneyAmmReserve, poolInfo.StockAmmReserve, dealInfo.DealMoneyInBook
 	if order.IsBuy {
 		outPoolTokenReserve, inPoolTokenReserve, otherToTaker = poolInfo.StockAmmReserve, poolInfo.MoneyAmmReserve, dealInfo.DealStockInBook
@@ -391,11 +424,12 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	if !dealInfo.AmountInToPool.IsZero() {
 		outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
 	} else {
-		return sdk.ZeroInt()
+		return sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt()
 	}
 
 	// add fee calculate
-	fee := pk.GetDealWithPoolFee(ctx).MulInt(outAmount).TruncateInt()
+	poolToUser = outAmount
+	fee = pk.GetDealWithPoolFee(ctx).MulInt(outAmount).TruncateInt()
 	amountToTaker := outAmount.Add(otherToTaker).Sub(fee)
 	outAmount = outAmount.Sub(fee)
 	if order.IsBuy {
@@ -421,7 +455,43 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 	}
-	return amountToTaker
+	return amountToTaker, fee, poolToUser
+}
+
+func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo, order *types.Order, commission, poolToUser int64) {
+	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
+		return
+	}
+	currStock := poolToUser
+	currMoney := dealInfo.AmountInToPool.Int64()
+	if !order.IsBuy {
+		currStock = dealInfo.AmountInToPool.Int64()
+		currMoney = poolToUser
+	}
+	dealOrderInfo := types.FillOrderInfoMq{
+		OrderID:            order.GetOrderID(),
+		TradingPair:        order.TradingPair,
+		Height:             ctx.BlockHeight(),
+		Side:               getSide(order.IsBuy),
+		Price:              order.Price,
+		Freeze:             order.Freeze,
+		LeftStock:          order.LeftStock,
+		DealMoney:          order.DealMoney,
+		DealStock:          order.DealStock,
+		CurrStock:          currStock,
+		CurrMoney:          currMoney,
+		FillPrice:          order.Price,
+		CurrUsedCommission: commission,
+	}
+	dealMarketInfo := types.MarketDealInfoMq{
+		TradingPair:     order.TradingPair,
+		MakerOrderID:    order.GetOrderID(),
+		TakerOrderID:    types.ReservePoolID,
+		DealStockAmount: currStock,
+		DealHeight:      ctx.BlockHeight(),
+	}
+	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, dealOrderInfo)
+	msgqueue.FillMsgs(ctx, types.DealMarketInfoKey, dealMarketInfo)
 }
 
 func (pk PairKeeper) storeOrderIfNeed(ctx sdk.Context, order *types.Order) {
