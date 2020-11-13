@@ -416,13 +416,14 @@ func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, deal
 }
 
 func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (totalAmountToTaker sdk.Int, fee sdk.Int, poolToUser sdk.Int) {
-	outPoolTokenReserve, inPoolTokenReserve, otherToTaker := poolInfo.MoneyAmmReserve, poolInfo.StockAmmReserve, dealInfo.DealMoneyInBook
+	otherToTaker := dealInfo.DealMoneyInBook
 	if order.IsBuy {
-		outPoolTokenReserve, inPoolTokenReserve, otherToTaker = poolInfo.StockAmmReserve, poolInfo.MoneyAmmReserve, dealInfo.DealStockInBook
+		otherToTaker = dealInfo.DealStockInBook
 	}
 	outAmount := sdk.ZeroInt()
-	if !dealInfo.AmountInToPool.IsZero() {
-		outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
+	if dealInfo.AmountInToPool.IsPositive() {
+		outAmount = getAmountOutInPool(dealInfo.AmountInToPool, poolInfo, order.IsBuy)
+		//outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
 	} else {
 		return sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt()
 	}

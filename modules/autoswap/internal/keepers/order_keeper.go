@@ -2,7 +2,6 @@ package keepers
 
 import (
 	"bytes"
-	"math/big"
 	"sort"
 
 	"github.com/coinexchain/cet-sdk/modules/market"
@@ -30,6 +29,10 @@ type OrderKeeper struct {
 	ordersIndexInOneBlock int32
 }
 
+func NewOrderKeeper(codec *codec.Codec, storeKey sdk.StoreKey) *OrderKeeper {
+	return &OrderKeeper{codec: codec, storeKey: storeKey}
+}
+
 func (o *OrderKeeper) OrderIndexInOneBlock() int32 {
 	index := o.ordersIndexInOneBlock
 	o.ordersIndexInOneBlock++
@@ -40,12 +43,12 @@ func (o *OrderKeeper) ResetOrderIndexInOneBlock() {
 	o.ordersIndexInOneBlock = 0
 }
 
-func (o OrderKeeper) AddOrder(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) AddOrder(ctx sdk.Context, order *types.Order) {
 	o.storeBidOrAskQueue(ctx, order)
 	o.storeToOrderBook(ctx, order)
 }
 
-func (o OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
 	var (
 		sideKey []byte
 		store   = ctx.KVStore(o.storeKey)
@@ -59,25 +62,25 @@ func (o OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
 	store.Set(sideKey, []byte{0x0})
 }
 
-func (o OrderKeeper) storeToOrderBook(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) storeToOrderBook(ctx sdk.Context, order *types.Order) {
 	store := ctx.KVStore(o.storeKey)
 	key := getOrderBookKey(order.GetOrderID())
 	val := o.codec.MustMarshalBinaryBare(order)
 	store.Set(key, val)
 }
 
-func (o OrderKeeper) DelOrder(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) DelOrder(ctx sdk.Context, order *types.Order) {
 	o.delOrderBook(ctx, order)
 	o.delBidOrAskQueue(ctx, order)
 }
 
-func (o OrderKeeper) delOrderBook(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) delOrderBook(ctx sdk.Context, order *types.Order) {
 	store := ctx.KVStore(o.storeKey)
 	key := getOrderBookKey(order.GetOrderID())
 	store.Delete(key)
 }
 
-func (o OrderKeeper) delBidOrAskQueue(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) delBidOrAskQueue(ctx sdk.Context, order *types.Order) {
 	var (
 		sideKey []byte
 		store   = ctx.KVStore(o.storeKey)
@@ -97,6 +100,9 @@ func (o OrderKeeper) GetOrder(ctx sdk.Context, info *QueryOrderInfo) *types.Orde
 	)
 	key := getOrderBookKey(info.OrderID)
 	val := store.Get(key)
+	if len(val) == 0 {
+		return nil
+	}
 	o.codec.MustUnmarshalBinaryBare(val, &order)
 	return &order
 }
@@ -116,9 +122,14 @@ func (o OrderKeeper) GetBestPrice(ctx sdk.Context, tradingPair string, isBuy boo
 	defer iter.Close()
 	if iter.Valid() {
 		key = iter.Key()
+	} else {
+		panic("invalid iterator")
 	}
-	pos := getPricePos(tradingPair)
-	return sdk.NewDecFromBigInt(big.NewInt(0).SetBytes(key[pos[0]:pos[1]]))
+	pos := getOrderIDPos(tradingPair)
+	if order := o.GetOrder(ctx, &QueryOrderInfo{OrderID: string(key[pos:])}); order != nil {
+		return order.Price
+	}
+	panic(types.ErrInvalidOrderID(string(key[pos:])))
 }
 
 func getBidOrAskQueueBeginEndKey(tradingPair string, isBuy bool) ([]byte, []byte) {

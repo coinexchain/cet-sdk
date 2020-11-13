@@ -89,6 +89,7 @@ func (p Pair) getLiquidity(addr sdk.AccAddress) sdk.Int {
 func (p Pair) getPoolInfo() *autoswap.PoolInfo {
 	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym)
 }
+
 func (p Pair) getFirstBuyID() int64 {
 	return 0 // TODO
 	//return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true)
@@ -97,12 +98,12 @@ func (p Pair) getFirstSellID() int64 {
 	return 0 // TODO
 	//return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, false)
 }
+
 func (p Pair) getReserves() PairReserves {
 	pi := p.getPoolInfo()
 	return PairReserves{
 		reserveStock: int(pi.StockAmmReserve.Int64()),
 		reserveMoney: int(pi.MoneyAmmReserve.Int64()),
-		firstSellID:  int(p.getFirstSellID()),
 	}
 }
 func (p Pair) getBooked() PairBooked {
@@ -110,7 +111,6 @@ func (p Pair) getBooked() PairBooked {
 	return PairBooked{
 		bookedStock: int(pi.StockOrderBookReserve.Int64()),
 		bookedMoney: int(pi.MoneyOrderBookReserve.Int64()),
-		firstBuyID:  int(p.getFirstBuyID()),
 	}
 }
 func (p Pair) getOrder(isBuy bool, orderID int64) *types.Order {
@@ -199,7 +199,7 @@ func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 func removeOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
 	err := ask.DeleteOrder(ctx, types.MsgCancelOrder{
-		Sender:  sender,
+		Sender: sender,
 		//OrderID: id,
 	})
 	require.NoError(t, err)
