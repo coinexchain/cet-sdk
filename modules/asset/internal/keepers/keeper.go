@@ -144,6 +144,27 @@ func (keeper BaseKeeper) TransferOwnership(ctx sdk.Context, symbol string, origi
 	return keeper.SetToken(ctx, token)
 }
 
+// MintToken - mint token used by other modules
+func (keeper BaseKeeper) MintTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleAddr string) sdk.Error {
+	token := keeper.GetToken(ctx, symbol)
+	if !token.GetMintable() {
+		return types.ErrTokenMintNotSupported(symbol)
+	}
+	if err := token.SetTotalMint(token.GetTotalMint().Add(amount)); err != nil {
+		return err
+	}
+
+	if err := token.SetTotalSupply(token.GetTotalSupply().Add(amount)); err != nil {
+		return err
+	}
+
+	if err := keeper.SetToken(ctx, token); err != nil {
+		return err
+	}
+
+	return keeper.sk.MintCoins(ctx, moduleAddr, types.NewTokenCoins(symbol, amount))
+}
+
 // MintToken - mint token
 func (keeper BaseKeeper) MintToken(ctx sdk.Context, symbol string, owner sdk.AccAddress, amount sdk.Int) sdk.Error {
 	token, err := keeper.checkPrecondition(ctx, symbol, owner)
@@ -194,6 +215,30 @@ func (keeper BaseKeeper) BurnToken(ctx sdk.Context, symbol string, owner sdk.Acc
 	}
 
 	return keeper.sk.BurnCoins(ctx, types.ModuleName, types.NewTokenCoins(symbol, amount))
+
+}
+
+// BurnToken - burn token used by other modules
+func (keeper BaseKeeper) BurnTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleName string,) sdk.Error {
+	token := keeper.GetToken(ctx, symbol)
+
+	if !token.GetBurnable() {
+		return types.ErrTokenBurnNotSupported(symbol)
+	}
+
+	if err := token.SetTotalBurn(token.GetTotalBurn().Add(amount)); err != nil {
+		return err
+	}
+
+	if err := token.SetTotalSupply(token.GetTotalSupply().Sub(amount)); err != nil {
+		return err
+	}
+
+	if err := keeper.SetToken(ctx, token); err != nil {
+		return err
+	}
+
+	return keeper.sk.BurnCoins(ctx, moduleName, types.NewTokenCoins(symbol, amount))
 
 }
 
@@ -501,7 +546,6 @@ func (keeper BaseKeeper) removeForbiddenAddress(ctx sdk.Context, symbol string, 
 
 	return nil
 }
-
 // -----------------------------------------------------------------------------
 
 // TokenKeeper defines a module interface that facilitates read only access to token store info.
@@ -739,4 +783,10 @@ func (keeper BaseTokenKeeper) iterateAddrKey(ctx sdk.Context, prefix []byte, pro
 		}
 		iter.Next()
 	}
+}
+
+func (keeper BaseTokenKeeper) UpdateCETMintable(ctx sdk.Context) sdk.Error {
+	token := keeper.GetToken(ctx, dex.DefaultBondDenom)
+	token.SetMintable(true)
+	return keeper.SetToken(ctx, token)
 }

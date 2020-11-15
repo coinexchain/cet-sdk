@@ -23,3 +23,9 @@ type SupplyKeeper interface {
 	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) sdk.Error
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) sdk.Error
 }
+
+type AssetKeeper interface {
+	MintTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleAddr string) sdk.Error
+	BurnTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleAddr string) sdk.Error
+	UpdateCETMintable(ctx sdk.Context) sdk.Error
+}

@@ -19,11 +19,12 @@ type Keeper struct {
 	paramSubspace params.Subspace
 	types.BankKeeper
 	types.SupplyKeeper
+	types.AssetKeeper
 	feeCollectorName string
 }
 
 func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace,
-	bk types.BankKeeper, supplyKeeper types.SupplyKeeper, feeCollectorName string) Keeper {
+	bk types.BankKeeper, supplyKeeper types.SupplyKeeper, assetKeeper types.AssetKeeper, feeCollectorName string) Keeper {
 
 	return Keeper{
 		cdc:              cdc,
@@ -31,6 +32,7 @@ func NewKeeper(cdc *codec.Codec, key sdk.StoreKey, paramSubspace params.Subspace
 		paramSubspace:    paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		BankKeeper:       bk,
 		SupplyKeeper:     supplyKeeper,
+		AssetKeeper:      assetKeeper,
 		feeCollectorName: feeCollectorName,
 	}
 }

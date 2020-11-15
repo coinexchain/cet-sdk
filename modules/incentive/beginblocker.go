@@ -20,14 +20,14 @@ func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
 	if ctx.BlockHeight() == Dex3StartHeight {
 		clearIncentiveState(ctx, k)
 	}
-
 	collectRewardsFromPool(ctx, k)
 }
 
 func collectRewardsFromPool(ctx sdk.Context, k Keeper) {
 	rewardAmount := k.GetParams(ctx).DefaultRewardPerBlock
 	blockRewards := sdk.NewCoins(sdk.NewInt64Coin(dex.DefaultBondDenom, rewardAmount))
-	err := k.MintCoins(ctx, ModuleName, blockRewards)
+
+	err := k.MintTokenByModule(ctx, dex.DefaultBondDenom, sdk.NewInt(rewardAmount), ModuleName)
 	if err != nil {
 		panic(err)
 	}
@@ -36,19 +36,29 @@ func collectRewardsFromPool(ctx sdk.Context, k Keeper) {
 	if err != nil {
 		panic(err)
 	}
+
 }
 func clearIncentiveState(ctx sdk.Context, k Keeper) {
-	// burn all coins in PoolAddr
-	allCoins := k.GetCoins(ctx, PoolAddr)
-	err := k.SendCoinsFromAccountToModule(ctx, PoolAddr, types.ModuleName, allCoins)
-	if err != nil {
-		panic(err)
-	}
-	err = k.BurnCoins(ctx, types.ModuleName, allCoins)
-	if err != nil {
-		panic(err)
-	}
-
 	// clear unused plans & params
 	k.SetParams(ctx, types.DefaultParams())
+
+	// burn pool's cet token
+	allCoins := k.GetCoins(ctx, PoolAddr)
+	for _, coin := range allCoins {
+		if coin.Denom == dex.DefaultBondDenom {
+			err := k.SendCoinsFromAccountToModule(ctx, PoolAddr, ModuleName, sdk.NewCoins(coin))
+			if err != nil {
+				panic(err)
+			}
+			err = k.BurnTokenByModule(ctx, coin.Denom, coin.Amount, ModuleName)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	// update cet to be mintable
+	err := k.UpdateCETMintable(ctx)
+	if err != nil {
+		panic(err)
+	}
 }
