@@ -156,8 +156,7 @@ func createPair(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
 
-	_, err := ask.Mint(ctx, pair,
-		stockIn, moneyIn, to)
+	_, err := ask.Mint(ctx, pair, stockIn, moneyIn, to)
 	require.NoError(t, err)
 }
 
