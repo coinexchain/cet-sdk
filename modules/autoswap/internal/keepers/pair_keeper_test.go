@@ -109,12 +109,15 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 func TestPairKeeper_DealOrders(t *testing.T) {
 	app := prepareTestApp(t)
 	ctx := app.ctx
-	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
+	param := types.DefaultParams()
+	app.AutoSwapKeeper.SetParams(ctx, param)
 	k := app.AutoSwapKeeper
 
 	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
-	//beforeMoneyBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
-	//beforeStockBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	beforeMoneyBalanceFrom := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
+	beforeStockBalanceFrom := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	beforeMoneyBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(moneySymbol)
+	beforeStockBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
 	msgCreateOrder := types.MsgCreateOrder{
 		TradingPair: market,
 		Price:       100,
@@ -124,11 +127,13 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 		Sender:      from,
 	}
 
+	// -------- full deal
+
 	// 1. add buy, sell order in price: 100; full deal
 	buyOrderMsg := msgCreateOrder
 	require.NoError(t, k.AddLimitOrder(ctx, buyOrderMsg.GetOrder()))
 	poolInfo := k.GetPoolInfo(ctx, market)
-	require.EqualValues(t, 1000*100, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book shoule be 0")
+	require.EqualValues(t, 1000*100, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book should be 0")
 
 	sellOrderMsg := msgCreateOrder
 	sellOrderMsg.Side = types.ASK
@@ -137,9 +142,58 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 
 	// 2. check pool for full deal orders
 	poolInfo = k.GetPoolInfo(ctx, market)
-	require.EqualValues(t, 0, poolInfo.StockOrderBookReserve.Int64(), "stock amount in order book shoule be 0")
-	require.EqualValues(t, 0, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book shoule be 0")
+	require.EqualValues(t, 0, poolInfo.StockOrderBookReserve.Int64(), "stock amount in order book should be 0")
+	require.EqualValues(t, 0, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book should be 0")
 
+	// 3. check account balance
+	afterMoneyBalanceFrom := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
+	afterStockBalanceFrom := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	afterMoneyBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(moneySymbol)
+	afterStockBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
+	fmt.Println(beforeStockBalanceFrom, beforeMoneyBalanceFrom, afterStockBalanceFrom, afterMoneyBalanceFrom)
+	fmt.Println(beforeStockBalanceTo, beforeMoneyBalanceTo, afterStockBalanceTo, afterMoneyBalanceTo)
+	makeFee := buyOrderMsg.Quantity * param.MakerFeeRateRate / types.DefaultFeePrecision                        // will charge stock
+	takerFee := sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRateRate / types.DefaultFeePrecision // will charge money
+	fmt.Println(makeFee, takerFee)
+	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 1000, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 1000-makeFee, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 100*1000-takerFee, afterMoneyBalanceTo.Sub(beforeMoneyBalanceTo).Int64(), "balance in account isn't correct")
+
+	// ------- half deal
+
+	// get users balance
+	beforeMoneyBalanceFrom = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
+	beforeStockBalanceFrom = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	beforeMoneyBalanceTo = app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(moneySymbol)
+	beforeStockBalanceTo = app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
+
+	// 3. add buy, sell orders
+	buyOrderMsg.Identify = 2
+	require.NoError(t, k.AddLimitOrder(ctx, buyOrderMsg.GetOrder()))
+	sellOrderMsg.Identify = 2
+	sellOrderMsg.Quantity = 500
+	require.NoError(t, k.AddLimitOrder(ctx, sellOrderMsg.GetOrder()))
+
+	// 4. check pool info for half deal
+	poolInfo = k.GetPoolInfo(ctx, market)
+	require.EqualValues(t, 0, poolInfo.StockOrderBookReserve.Int64(), "stock amount in order book shoule be 0")
+	require.EqualValues(t, 500*100, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book shoule be 0")
+
+	// 3. check account balance
+	afterMoneyBalanceFrom = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
+	afterStockBalanceFrom = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	afterMoneyBalanceTo = app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(moneySymbol)
+	afterStockBalanceTo = app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
+	fmt.Println(beforeStockBalanceFrom, beforeMoneyBalanceFrom, afterStockBalanceFrom, afterMoneyBalanceFrom)
+	fmt.Println(beforeStockBalanceTo, beforeMoneyBalanceTo, afterStockBalanceTo, afterMoneyBalanceTo)
+	makeFee = buyOrderMsg.Quantity / 2 * param.MakerFeeRateRate / types.DefaultFeePrecision                    // will charge stock
+	takerFee = sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRateRate / types.DefaultFeePrecision // will charge money
+	fmt.Println(makeFee, takerFee)
+	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 500, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 500-makeFee, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 100*500-takerFee, afterMoneyBalanceTo.Sub(beforeMoneyBalanceTo).Int64(), "balance in account isn't correct")
 }
 
 func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {
