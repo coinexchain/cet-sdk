@@ -51,14 +51,15 @@ type PairKeeper struct {
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
-	codec *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace) *PairKeeper {
+	accK types.ExpectedAccountKeeper, codec *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace) *PairKeeper {
 	return &PairKeeper{
-		codec:              codec,
-		storeKey:           storeKey,
-		IPoolKeeper:        poolKeeper,
-		SupplyKeeper:       supplyK,
-		ExpectedBankKeeper: bnk,
-		subspace:           paramSubspace.WithKeyTable(types.ParamKeyTable()),
+		codec:                 codec,
+		storeKey:              storeKey,
+		IPoolKeeper:           poolKeeper,
+		SupplyKeeper:          supplyK,
+		ExpectedBankKeeper:    bnk,
+		ExpectedAccountKeeper: accK,
+		subspace:              paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		IOrderBookKeeper: &OrderKeeper{
 			codec:    codec,
 			storeKey: storeKey,
@@ -122,7 +123,7 @@ func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sen
 	return nil
 }
 
-func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
+func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
 	defer func() {
 		r := recover()
 		switch r.(type) {
@@ -135,6 +136,10 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 		}
 	}()
 
+	poolInfo := pk.GetPoolInfo(ctx, order.TradingPair)
+	if poolInfo == nil {
+		return types.ErrInvalidMarket(order.TradingPair)
+	}
 	order.Sequence = int64(pk.GetAccount(ctx, order.Sender).GetSequence())
 	actualAmount, err := pk.freezeOrderCoin(ctx, order)
 	if err != nil {
@@ -151,7 +156,6 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	oppositeOrders := pk.GetMatchedOrder(ctx, order)
 
 	// 2. deal order with pool
-	poolInfo := pk.GetPoolInfo(ctx, order.TradingPair)
 	for _, opOrder := range oppositeOrders {
 		if allDeal, err := pk.dealOrderWithOrderBookAndPool(ctx, order, opOrder, dealInfo, poolInfo); allDeal {
 			break
@@ -164,7 +168,8 @@ func (pk PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk
 	pk.finalDealWithPool(ctx, order, dealInfo, poolInfo)
 
 	// 4. store order in keeper if need
-	pk.storeOrderIfNeed(ctx, order)
+	pk.storeOrderIfNeed(ctx, order, poolInfo)
+	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
 	return nil
 }
 
@@ -195,12 +200,12 @@ func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.I
 
 func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order,
 	oppositeOrder *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (allDeal bool, err sdk.Error) {
-	if poolInfo != nil {
-		pk.tryDealInPool(dealInfo, oppositeOrder.Price, order, poolInfo)
-	}
-	pk.dealInOrderBook(ctx, order, oppositeOrder, dealInfo, poolInfo != nil)
+	pk.tryDealInPool(dealInfo, oppositeOrder.Price, order, poolInfo)
+	pk.dealInOrderBook(ctx, order, oppositeOrder, poolInfo, dealInfo, poolInfo.IsNoReservePool())
 	if oppositeOrder.LeftStock == 0 {
 		pk.DelOrder(ctx, order)
+	} else {
+		pk.StoreToOrderBook(ctx, oppositeOrder)
 	}
 	return order.LeftStock == 0, nil
 }
@@ -253,7 +258,8 @@ func getAmountOutInPool(amountIn sdk.Int, poolInfo *PoolInfo, isBuy bool) sdk.In
 	return outPoolTokenReserve.Mul(amountIn).Quo(inPoolTokenReserve.Add(amountIn))
 }
 
-func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *types.Order, dealInfo *types.DealInfo, isPoolExists bool) {
+func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
+	orderInBook *types.Order, poolInfo *PoolInfo, dealInfo *types.DealInfo, isPoolExists bool) {
 	// calculate stock amount
 	dealStockAmount := currOrder.LeftStock
 	if orderInBook.LeftStock < currOrder.LeftStock {
@@ -274,6 +280,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder, orderInBook *ty
 	currOrder.DealStock += stockTrans.Int64()
 	orderInBook.DealStock += stockTrans.Int64()
 	orderInBook.DealMoney += moneyTrans.Int64()
+	poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Sub(stockTrans)
+	poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Sub(moneyTrans)
 
 	if currOrder.IsBuy {
 		currOrder.Freeze -= moneyTrans.Int64()
@@ -413,7 +421,6 @@ func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, deal
 		// todo emit deal with pool log
 		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64())
 	}
-	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
 }
 
 func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (totalAmountToTaker sdk.Int, fee sdk.Int, poolToUser sdk.Int) {
@@ -496,8 +503,13 @@ func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealI
 	msgqueue.FillMsgs(ctx, types.DealMarketInfoKey, dealMarketInfo)
 }
 
-func (pk PairKeeper) storeOrderIfNeed(ctx sdk.Context, order *types.Order) {
+func (pk PairKeeper) storeOrderIfNeed(ctx sdk.Context, order *types.Order, info *PoolInfo) {
 	if order.LeftStock > 0 {
+		if order.IsBuy {
+			info.MoneyOrderBookReserve = info.MoneyOrderBookReserve.Add(order.ActualAmount())
+		} else {
+			info.StockOrderBookReserve = info.StockOrderBookReserve.Add(order.ActualAmount())
+		}
 		pk.AddOrder(ctx, order)
 	}
 }

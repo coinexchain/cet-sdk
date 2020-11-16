@@ -16,6 +16,7 @@ var _ IOrderBookKeeper = &OrderKeeper{}
 type IOrderBookKeeper interface {
 	AddOrder(sdk.Context, *types.Order)
 	DelOrder(sdk.Context, *types.Order)
+	StoreToOrderBook(ctx sdk.Context, order *types.Order)
 	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
 	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
 	GetMatchedOrder(ctx sdk.Context, order *types.Order) []*types.Order
@@ -45,7 +46,7 @@ func (o *OrderKeeper) ResetOrderIndexInOneBlock() {
 
 func (o *OrderKeeper) AddOrder(ctx sdk.Context, order *types.Order) {
 	o.storeBidOrAskQueue(ctx, order)
-	o.storeToOrderBook(ctx, order)
+	o.StoreToOrderBook(ctx, order)
 }
 
 func (o *OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
@@ -62,7 +63,7 @@ func (o *OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
 	store.Set(sideKey, []byte{0x0})
 }
 
-func (o *OrderKeeper) storeToOrderBook(ctx sdk.Context, order *types.Order) {
+func (o *OrderKeeper) StoreToOrderBook(ctx sdk.Context, order *types.Order) {
 	store := ctx.KVStore(o.storeKey)
 	key := getOrderBookKey(order.GetOrderID())
 	val := o.codec.MustMarshalBinaryBare(order)

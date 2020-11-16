@@ -208,6 +208,10 @@ func (p PoolInfo) String() string {
 		p.MoneyOrderBookReserve, p.TotalSupply)
 }
 
+func (p PoolInfo) IsNoReservePool() bool {
+	return p.MoneyAmmReserve.IsZero() && p.StockAmmReserve.IsZero()
+}
+
 type AddLiquidityInfo struct {
 	Sender    sdk.AccAddress `json:"sender"`
 	Stock     string         `json:"stock"`

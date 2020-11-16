@@ -18,16 +18,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-//type IOrderBookKeeper interface {
-//	AddOrder(sdk.Context, *types.Order)
-//	DelOrder(sdk.Context, *types.Order)
-//	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
-//	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
-//	GetMatchedOrder(ctx sdk.Context, order *types.Order) []*types.Order
-//	OrderIndexInOneBlock() int32
-//	ResetOrderIndexInOneBlock()
-//}
-
 func newContextAndStoreKey(t *testing.T) (sdk.Context, sdk.StoreKey) {
 	db := dbm.NewMemDB()
 	ms := sdkstore.NewCommitMultiStore(db)
@@ -313,4 +303,9 @@ func TestOrderKeeper_GetMatchedOrder(t *testing.T) {
 	require.EqualValues(t, 2, len(orderKeeper.GetMatchedOrder(ctx, buyOrders[1])), "should have 2 matched order")
 	require.EqualValues(t, 1, len(orderKeeper.GetMatchedOrder(ctx, sellOrders[2])), "should have 1 matched order")
 	require.EqualValues(t, 1, len(orderKeeper.GetMatchedOrder(ctx, sellOrders[4])), "should have 1 matched order")
+
+	// modify sell order quantity
+	sellOrders[4].LeftStock = 16000
+	orderKeeper.AddOrder(ctx, sellOrders[4])
+	require.EqualValues(t, 2, len(orderKeeper.GetMatchedOrder(ctx, sellOrders[4])), "should have 1 matched order")
 }

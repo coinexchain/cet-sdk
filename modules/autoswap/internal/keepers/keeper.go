@@ -19,7 +19,7 @@ type Keeper struct {
 }
 
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
-	bk types.ExpectedBankKeeper, sk types.SupplyKeeper) *Keeper {
+	bk types.ExpectedBankKeeper, accK types.ExpectedAccountKeeper, sk types.SupplyKeeper) *Keeper {
 
 	poolK := PoolKeeper{
 		key:          storeKey,
@@ -37,7 +37,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 		sk:               sk,
 		FactoryInterface: factoryK,
 	}
-	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, cdc, storeKey, paramSubspace)
+	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, accK, cdc, storeKey, paramSubspace)
 	return &k
 }
 
