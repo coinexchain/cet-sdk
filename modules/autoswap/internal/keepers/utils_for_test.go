@@ -75,14 +75,14 @@ type PairBooked struct {
 func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
 	mint(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
 }
-func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
-	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id, prevKey)
+func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64) {
+	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
 }
 func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
 	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt)
 }
-func (p Pair) removeOrder(isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
-	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, prevKey, sender)
+func (p Pair) removeOrder(isBuy bool, id int64, sender sdk.AccAddress) {
+	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, sender)
 }
 func (p Pair) getLiquidity(addr sdk.AccAddress) sdk.Int {
 	return p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, addr)
@@ -161,7 +161,7 @@ func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 }
 
 func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
+	pair string, isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64) {
 
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		Sender:      sender,
@@ -188,16 +188,12 @@ func addMarketOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 }
 
 func removeOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
+	pair string, isBuy bool, id int64, sender sdk.AccAddress) {
 	err := ask.DeleteOrder(ctx, types.MsgCancelOrder{
 		Sender: sender,
 		//OrderID: id,
 	})
 	require.NoError(t, err)
-}
-
-func merge3(a, b, c int64) [3]int64 {
-	return [3]int64{a, b, c}
 }
 
 // TODO
