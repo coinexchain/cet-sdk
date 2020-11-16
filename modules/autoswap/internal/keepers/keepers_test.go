@@ -46,16 +46,17 @@ func TestPair(t *testing.T) {
 	fee := pair.th.app.AutoSwapKeeper.GetDealWithPoolFee(pair.th.ctx)
 	fmt.Println(fee)
 
-	pair.addLimitOrder(false, maker, 100, makePrice32(10000000, 18), 1)
-	pair.addLimitOrder(false, maker, 100, makePrice32(10300000, 18), 2)
-	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 3)
-	pair.addLimitOrder(false, maker, 100, makePrice32(10700000, 18), 4)
-	pair.addLimitOrder(false, maker, 100, makePrice32(10900000, 18), 5)
-	pair.addLimitOrder(false, maker, 1, makePrice32(10200000, 18), 6)
-	pair.addLimitOrder(false, maker, 1, makePrice32(10400000, 18), 7)
-	pair.addLimitOrder(false, maker, 1, makePrice32(10600000, 18), 8)
-	pair.addLimitOrder(false, maker, 1, makePrice32(10800000, 18), 9)
-	require.Equal(t, 9496, btc.balanceOf(maker))
+	require.Equal(t, 10000, btc.balanceOf(maker))
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(100), 1)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(103), 2)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(105), 3)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(107), 4)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(109), 5)
+	pair.addLimitOrder(false, maker, 1, sdk.NewDec(102), 6)
+	pair.addLimitOrder(false, maker, 1, sdk.NewDec(104), 7)
+	pair.addLimitOrder(false, maker, 1, sdk.NewDec(106), 8)
+	pair.addLimitOrder(false, maker, 1, sdk.NewDec(108), 9)
+	require.Equal(t, 9496, btc.balanceOf(maker)) // 10000 - 504
 	require.Equal(t, 0, usd.balanceOf(maker))
 	reserves = pair.getReserves()
 	require.Equal(t, 10000, reserves.reserveStock)
@@ -70,7 +71,7 @@ func TestPair(t *testing.T) {
 
 	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
 	//usd.transfer(taker, 5000, boss)
-	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 11)
+	pair.addLimitOrder(true, taker, 50, sdk.NewDec(100), 11)
 	require.Equal(t, 9995000, usd.balanceOf(taker)) // TODO
 	require.Equal(t, 49, btc.balanceOf(taker))      // TODO
 	reserves = pair.getReserves()
@@ -84,7 +85,7 @@ func TestPair(t *testing.T) {
 
 	// it("insert buy order with only 1 complete deal with orderbook", async () => {
 	usd.transfer(taker, 5100, boss)
-	pair.addLimitOrder(true, taker, 51, makePrice32(10000000, 18), 12)
+	pair.addLimitOrder(true, taker, 51, sdk.NewDec(100), 12)
 	reserves = pair.getReserves()
 	require.Equal(t, 10001, reserves.reserveStock)
 	require.Equal(t, 1000100, reserves.reserveMoney)
@@ -98,7 +99,7 @@ func TestPair(t *testing.T) {
 
 	// it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
 	usd.transfer(taker, 99000, boss)
-	pair.addLimitOrder(true, taker, 900, makePrice32(11000000, 18), 12)
+	pair.addLimitOrder(true, taker, 900, sdk.NewDec(110), 12)
 	reserves = pair.getReserves()
 	require.Equal(t, 9538, reserves.reserveStock)
 	require.Equal(t, 1049020, reserves.reserveMoney)
@@ -145,24 +146,24 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 
 	// it("insert sell order with duplicated id", async () => {
 	btc.transfer(maker, 100, boss)
-	pair.addLimitOrder(false, maker, 100, makePrice32(11000000, 18), 1)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(110), 1)
 	btc.transfer(maker, 50, boss)
-	pair.addLimitOrder(false, maker, 50, makePrice32(12000000, 18), 1)
+	pair.addLimitOrder(false, maker, 50, sdk.NewDec(120), 1)
 
 	// it("insert sell order with invalid prevkey", async () => {
 	btc.transfer(maker, 100, boss)
-	pair.addLimitOrder(false, maker, 100, makePrice32(10500000, 18), 1)
+	pair.addLimitOrder(false, maker, 100, sdk.NewDec(105), 1)
 
 	// it("insert buy order with invalid price", async () => {
 	// "OneSwap: INVALID_PRICE"
-	pair.addLimitOrder(true, taker, 100, makePrice32(105000, 18), 1)
+	pair.addLimitOrder(true, taker, 100, makePrice32(105000, 18), 1) // TODO
 	// "OneSwap: INVALID_PRICE"
-	pair.addLimitOrder(true, taker, 100, makePrice32(105000000, 18), 1)
+	pair.addLimitOrder(true, taker, 100, makePrice32(105000000, 18), 1) // TODO
 
 	// it("insert buy order with unenough usd", async () => {
 	usd.transfer(taker, 500, boss)
 	// "OneSwap: DEPOSIT_NOT_ENOUGH"
-	pair.addLimitOrder(true, taker, 50, makePrice32(10000000, 18), 1)
+	pair.addLimitOrder(true, taker, 50, sdk.NewDec(100), 1)
 
 	// it("remove buy order with non existed id", async () => {
 	// "OneSwap: NO_SUCH_ORDER"
@@ -233,7 +234,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 
 	// it("insert sell order at pool current price", async () => {
 	btc.transfer(maker, 90000000000000, boss)
-	pair.addLimitOrder(false, maker, 10, makePrice32(10000000, 18), 1)
+	pair.addLimitOrder(false, maker, 10, sdk.NewDec(100), 1)
 	require.Equal(t, 1, usd.balanceOf(maker))
 	booked := pair.getBooked()
 	require.Equal(t, 0, booked.bookedMoney)
@@ -242,18 +243,18 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	// it("insert three small buy order at lower price", async () => {
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, makePrice32(20000000, 16), 1)
+	pair.addLimitOrder(true, maker, 10, sdk.NewDec(2), 1)
 	booked = pair.getBooked()
 	require.Equal(t, 20, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, makePrice32(30000000, 16), 1)
+	pair.addLimitOrder(true, maker, 10, sdk.NewDec(3), 1)
 	booked = pair.getBooked()
 	require.Equal(t, 50, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, makePrice32(40000000, 16), 1)
+	pair.addLimitOrder(true, maker, 10, sdk.NewDec(4), 1)
 	booked = pair.getBooked()
 	require.Equal(t, 90, booked.bookedMoney)
 
 	// it("insert big sell order not deal", async () => {
-	pair.addLimitOrder(false, maker, 1000000000, makePrice32(10100000, 18), 2)
+	pair.addLimitOrder(false, maker, 1000000000, sdk.NewDec(101), 2)
 	require.Equal(t, 0, usd.balanceOf(maker))
 	booked = pair.getBooked()
 	require.Equal(t, 90, booked.bookedMoney)
@@ -262,7 +263,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 
 	// it("insert big order deal with biggest sell order ", async () => {
 	usd.transfer(taker, 100000_0000_0000, boss)
-	pair.addLimitOrder(true, taker, 10_0000_0000, makePrice32(10100000, 18), 1)
+	pair.addLimitOrder(true, taker, 10_0000_0000, sdk.NewDec(101), 1)
 	balance := btc.balanceOf(taker)
 	require.Equal(t, 9_9700_0000, balance)
 
@@ -301,19 +302,19 @@ func TestDealWithPool(t *testing.T) {
 	// TODO
 
 	//  it("insert buy order which can not be dealt", async ()=>{
-	pair.addLimitOrder(true, maker, 100, makePrice32(1000_0000, 18), 1)
+	pair.addLimitOrder(true, maker, 100, sdk.NewDec(100), 1)
 	// TODO
 
 	// it("insert sell order which can deal totally", async ()=>{
-	pair.addLimitOrder(false, maker, 10, makePrice32(9000_0000, 17), 1)
+	pair.addLimitOrder(false, maker, 10, sdk.NewDec(90), 1)
 	// TODO
 
 	// it("insert sell order which eats all buy order", async ()=>{
-	pair.addLimitOrder(false, maker, 90, makePrice32(1000_0000, 18), 1)
+	pair.addLimitOrder(false, maker, 90, sdk.NewDec(100), 1)
 	// TODO
 
 	// it("insert buy order which can not be dealt", async ()=>{
-	pair.addLimitOrder(true, maker, 10, makePrice32(1010_0000, 18), 1)
+	pair.addLimitOrder(true, maker, 10, sdk.NewDec(101), 1)
 	reserves := pair.getReserves()
 	require.Equal(t, 100, reserves.reserveStock)
 	require.Equal(t, 10131, reserves.reserveMoney)

@@ -199,10 +199,13 @@ func removeOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 // TODO
 func makePrice32(s, e int64) sdk.Dec {
 	// s * 10^(e - 23)
-	return sdk.NewDecWithPrec(s, 23-e)
+	d := sdk.NewDecWithPrec(s, 23-e)
+	//println(d.String())
+	return d
 }
 
 func TestMakePrice32(t *testing.T) {
-	require.Equal(t, sdk.MustNewDecFromStr("100.0"),
-		makePrice32(10000000, 18))
+	require.Equal(t, sdk.MustNewDecFromStr("100.0"), makePrice32(10000000, 18))
+	require.Equal(t, sdk.MustNewDecFromStr("10.0"), makePrice32(10000000, 17))
+	require.Equal(t, sdk.MustNewDecFromStr("1.0"), makePrice32(10000000, 16))
 }
