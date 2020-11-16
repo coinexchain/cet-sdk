@@ -268,14 +268,6 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.ParamsKeeper.Subspace(slashing.DefaultParamspace),
 		slashing.DefaultCodespace,
 	)
-	app.IncentiveKeeper = incentive.NewKeeper(
-		app.Cdc, app.keyIncentive,
-		app.ParamsKeeper.Subspace(incentive.DefaultParamspace),
-		app.BankKeeper,
-		app.SupplyKeeper,
-		app.AssetKeeper,
-		auth.FeeCollectorName,
-	)
 	app.TokenKeeper = asset.NewBaseTokenKeeper(
 		app.Cdc, app.keyAsset,
 	)
@@ -296,6 +288,14 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.ParamsKeeper.Subspace(asset.DefaultParamspace),
 		app.BankxKeeper,
 		app.SupplyKeeper,
+	)
+	app.IncentiveKeeper = incentive.NewKeeper(
+		app.Cdc, app.keyIncentive,
+		app.ParamsKeeper.Subspace(incentive.DefaultParamspace),
+		app.BankKeeper,
+		app.SupplyKeeper,
+		app.AssetKeeper,
+		auth.FeeCollectorName,
 	)
 	app.StakingXKeeper = stakingx.NewKeeper(
 		app.keyStakingX,
