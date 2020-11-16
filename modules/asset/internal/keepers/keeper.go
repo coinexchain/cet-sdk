@@ -219,7 +219,7 @@ func (keeper BaseKeeper) BurnToken(ctx sdk.Context, symbol string, owner sdk.Acc
 }
 
 // BurnToken - burn token used by other modules
-func (keeper BaseKeeper) BurnTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleName string,) sdk.Error {
+func (keeper BaseKeeper) BurnTokenByModule(ctx sdk.Context, symbol string, amount sdk.Int, moduleName string) sdk.Error {
 	token := keeper.GetToken(ctx, symbol)
 
 	if !token.GetBurnable() {

@@ -102,6 +102,9 @@ func (pk *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 }
 
 func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) sdk.Error {
+	if err := pk.UnFreezeCoins(ctx, sender, sdk.NewCoins(sdk.NewCoin(denom, totalAmount))); err != nil {
+		panic(err)
+	}
 	feeToVal := pk.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
 	feeToPool := totalAmount.Sub(feeToVal)
 	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
@@ -116,6 +119,9 @@ func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom strin
 }
 
 func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
+	if err := pk.UnFreezeCoins(ctx, sender, fee); err != nil {
+		panic(err)
+	}
 	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, fee)
 	if err != nil {
 		return err
