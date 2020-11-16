@@ -104,7 +104,9 @@ func (p PoolKeeper) SetLiquidity(ctx sdk.Context, marketSymbol string, address s
 
 func (p PoolKeeper) GetLiquidity(ctx sdk.Context, marketSymbol string, address sdk.AccAddress) sdk.Int {
 	store := ctx.KVStore(p.key)
-	info := LiquidityInfo{}
+	info := LiquidityInfo{
+		Liquidity: sdk.ZeroInt(),
+	}
 	bytes := store.Get(getLiquidityKey(marketSymbol, address))
 	if bytes != nil {
 		p.codec.MustUnmarshalBinaryBare(bytes, &info)
