@@ -41,7 +41,7 @@ type MsgCreateTradingPair struct {
 	Money          string         `json:"money"`
 	Creator        sdk.AccAddress `json:"creator"`
 	PricePrecision byte           `json:"price_precision"`
-	OrderPrecision byte           `json:"order_precision"`
+	OrderPrecision byte           `json:"order_precision"` // not used
 }
 
 func NewMsgCreateTradingPair(stock, money string, creator sdk.AccAddress, pricePrecision byte, orderPrecision byte) MsgCreateTradingPair {
