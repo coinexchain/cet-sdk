@@ -273,6 +273,7 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 		app.ParamsKeeper.Subspace(incentive.DefaultParamspace),
 		app.BankKeeper,
 		app.SupplyKeeper,
+		app.AssetKeeper,
 		auth.FeeCollectorName,
 	)
 	app.TokenKeeper = asset.NewBaseTokenKeeper(
