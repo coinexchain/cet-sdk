@@ -75,7 +75,7 @@ type PairBooked struct {
 func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
 	mint(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
 }
-func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price, id int64) {
+func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
 	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
 }
 func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
@@ -161,13 +161,13 @@ func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 }
 
 func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, sender sdk.AccAddress, amt, price, id int64) {
+	pair string, isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
 
 	msg := types.MsgCreateOrder{
 		TradingPair: pair,
 		Price:       price,
 		Quantity:    amt,
-		Identify:    1,
+		Identify:    id,
 		Sender:      sender,
 	}
 	if isBuy {

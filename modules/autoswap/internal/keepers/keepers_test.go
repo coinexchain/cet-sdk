@@ -72,6 +72,7 @@ func TestPair(t *testing.T) {
 	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
 	//usd.transfer(taker, 5000, boss)
 	require.Equal(t, 10000000, usd.balanceOf(taker))
+	require.Equal(t, 0, btc.balanceOf(taker))
 	pair.addLimitOrder(true, taker, 50, 100, 11)
 	require.Equal(t, 9995000, usd.balanceOf(taker)) // TODO
 	require.Equal(t, 49, btc.balanceOf(taker))      // TODO
