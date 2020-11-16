@@ -147,7 +147,7 @@ func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+func createPair(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	owner sdk.AccAddress, stock, money string) {
 
 	_, err := ask.CreatePair(ctx, types.MsgAddLiquidity{
@@ -161,7 +161,7 @@ func createPair(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, stockIn, moneyIn sdk.Int, to sdk.AccAddress) {
 
 	_, err := ask.Mint(ctx, pair,
@@ -169,7 +169,7 @@ func mint(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, sender sdk.AccAddress, amt int64, price sdk.Dec, id int64, prevKey [3]int64) {
 
 	err := ask.AddLimitOrder(ctx, &types.Order{
@@ -183,7 +183,7 @@ func addLimitOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 }
 
 // TODO
-func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+func addMarketOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, sender sdk.AccAddress, amt int64) {
 
 	err := ask.AddLimitOrder(ctx, &types.Order{
@@ -196,7 +196,7 @@ func addMarketOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func removeOrder(t *testing.T, ask autoswap.Keeper, ctx sdk.Context,
+func removeOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, id int64, prevKey [3]int64, sender sdk.AccAddress) {
 	err := ask.DeleteOrder(ctx, types.MsgCancelOrder{
 		Sender: sender,

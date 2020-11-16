@@ -101,7 +101,7 @@ type TestApp struct {
 	MsgQueProducer  msgqueue.MsgSender
 	AliasKeeper     alias.Keeper
 	CommentKeeper   comment.Keeper
-	AutoSwapKeeper  autoswap.Keeper
+	AutoSwapKeeper  *autoswap.Keeper
 }
 
 func NewTestApp() *TestApp {

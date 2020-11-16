@@ -184,14 +184,14 @@ func (o OrderKeeper) GetMatchedOrder(ctx sdk.Context, order *types.Order) []*typ
 			oppositeOrders = append(oppositeOrders, opOrder)
 			totalAmount += opOrder.LeftStock
 		} else {
-			if opOrder.Price == oppositeOrders[len(oppositeOrders)-1].Price {
+			if opOrder.Price.Equal(oppositeOrders[len(oppositeOrders)-1].Price) {
 				oppositeOrders = append(oppositeOrders, opOrder)
 			} else {
 				break
 			}
 		}
 	}
-	return o.inChronologicalOrders(order, oppositeOrders)
+	return inChronologicalOrders(order, oppositeOrders)
 }
 
 func (o OrderKeeper) getOrder(store sdk.KVStore, orderID string) *types.Order {
@@ -201,41 +201,57 @@ func (o OrderKeeper) getOrder(store sdk.KVStore, orderID string) *types.Order {
 	return &order
 }
 
-func (o OrderKeeper) inChronologicalOrders(order *types.Order, oppositeOrders []*types.Order) []*types.Order {
-	totalAmount := int64(0)
-	samePriceOrders := make([]*types.Order, 0)
-	index := 0
-	for i := len(oppositeOrders) - 1; i >= 1; i-- {
-		currOrder := oppositeOrders[i]
-		if currOrder.Price.Equal(oppositeOrders[i-1].Price) {
-			samePriceOrders = append(samePriceOrders, currOrder)
-		} else {
-			if len(samePriceOrders) > 0 && samePriceOrders[len(samePriceOrders)-1].Price.Equal(currOrder.Price) {
-				samePriceOrders = append(samePriceOrders, currOrder)
-			}
-			index = i
-			break
-		}
+func inChronologicalOrders(order *types.Order, oppositeOrders []*types.Order) []*types.Order {
+	if len(oppositeOrders) == 0 {
+		return nil
 	}
-	for i := 0; i < index; i++ {
+	totalAmount := int64(0)
+	firstSamePriceIndex := getFirstSamePriceIndex(oppositeOrders)
+	samePriceOrders := oppositeOrders[firstSamePriceIndex:]
+	sortSamePriceOrders := sortOrderWithCreateHeightAndTxIndex(samePriceOrders)
+
+	// statistical other price amount
+	for i := 0; i < firstSamePriceIndex; i++ {
 		totalAmount += oppositeOrders[i].LeftStock
 	}
-	sort.Slice(samePriceOrders, func(i, j int) bool {
-		if samePriceOrders[i].Height < samePriceOrders[j].Height ||
-			(samePriceOrders[i].Height == samePriceOrders[j].Height &&
-				samePriceOrders[i].OrderIndexInOneBlock < samePriceOrders[j].OrderIndexInOneBlock) {
-			return true
-		}
-		return false
-	})
-	ret := oppositeOrders[:index]
-	for i := 0; i < len(samePriceOrders); i++ {
+
+	ret := oppositeOrders[:firstSamePriceIndex]
+	for i := 0; i < len(sortSamePriceOrders); i++ {
 		if totalAmount < order.LeftStock {
-			ret = append(ret, samePriceOrders[i])
-			totalAmount += samePriceOrders[i].LeftStock
+			ret = append(ret, sortSamePriceOrders[i])
+			totalAmount += sortSamePriceOrders[i].LeftStock
 		} else {
 			break
 		}
 	}
 	return ret
+}
+
+func getFirstSamePriceIndex(oppositeOrders []*types.Order) int {
+	firstSamePrice := len(oppositeOrders) - 1
+	for i := len(oppositeOrders) - 1; i >= 1; i-- {
+		currOrder := oppositeOrders[i]
+		if !currOrder.Price.Equal(oppositeOrders[i-1].Price) {
+			firstSamePrice = i
+			break
+		} else {
+			if i == 1 {
+				firstSamePrice = 0
+			}
+		}
+
+	}
+	return firstSamePrice
+}
+
+func sortOrderWithCreateHeightAndTxIndex(orders []*types.Order) []*types.Order {
+	sort.Slice(orders, func(i, j int) bool {
+		if orders[i].Height < orders[j].Height ||
+			(orders[i].Height == orders[j].Height &&
+				orders[i].OrderIndexInOneBlock < orders[j].OrderIndexInOneBlock) {
+			return true
+		}
+		return false
+	})
+	return orders
 }

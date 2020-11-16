@@ -31,6 +31,7 @@ type IPairKeeper interface {
 
 	GetPairList() map[Pair]struct{}
 	ClearPairList()
+	ResetOrderIndexInOneBlock()
 }
 
 type FeeFunc func(sdk.Context) sdk.Dec

@@ -19,7 +19,7 @@ type Keeper struct {
 }
 
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
-	bk types.ExpectedBankKeeper, sk types.SupplyKeeper) Keeper {
+	bk types.ExpectedBankKeeper, sk types.SupplyKeeper) *Keeper {
 
 	poolK := PoolKeeper{
 		key:          storeKey,
@@ -38,7 +38,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 		FactoryInterface: factoryK,
 	}
 	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, cdc, storeKey, paramSubspace)
-	return k
+	return &k
 }
 
 func (keeper Keeper) SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error {
