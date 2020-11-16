@@ -13,7 +13,7 @@ func TestMint(t *testing.T) {
 	addr := sdk.AccAddress("add123")
 	th := newTestHelper(t)
 
-	pair := th.createPair(addr, "foo", "bar")
+	pair := th.createPair(addr, "foo", "bar", 0)
 	pair.mint(10000, 1000000, addr)
 	require.Equal(t, sdk.NewInt(100000), pair.getLiquidity(addr))
 	reserves := pair.getReserves()
@@ -32,7 +32,7 @@ func TestPair(t *testing.T) {
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
 	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym)
+	pair := th.createPair(maker, btc.sym, usd.sym, 0)
 
 	// it("mint", async () => {
 	pair.mint(10000, 1000000, shareReceiver)
@@ -135,7 +135,7 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
 	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym)
+	pair := th.createPair(maker, btc.sym, usd.sym, 0)
 
 	// it("mint", async () => {
 	pair.mint(10000, 1000000, shareReceiver)
@@ -195,7 +195,7 @@ func TestSwapOnLowLiquidity(t *testing.T) {
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
 	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym)
+	pair := th.createPair(maker, btc.sym, usd.sym, 0)
 
 	// it("mint only 1000 shares", async () => {
 	btc.transfer(shareReceiver, 10000, boss)
@@ -222,7 +222,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
 	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym)
+	pair := th.createPair(maker, btc.sym, usd.sym, 0)
 
 	// it("mint only 1000 shares", async () => {
 	btc.transfer(shareReceiver, 10000, boss)
@@ -291,7 +291,7 @@ func TestDealWithPool(t *testing.T) {
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
 	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym)
+	pair := th.createPair(maker, btc.sym, usd.sym, 0)
 
 	// it("mint only 1000 shares", async () => {
 	btc.transfer(shareReceiver, 10000, boss)

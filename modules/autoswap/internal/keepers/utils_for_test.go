@@ -1,6 +1,7 @@
 package keepers_test
 
 import (
+	dex "github.com/coinexchain/cet-sdk/types"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -33,8 +34,8 @@ func (h TestHelper) issueToken(sym string, totalSupply int64, owner sdk.AccAddre
 	issueToken(h.t, h.app.AssetKeeper, h.ctx, sym, sdk.NewInt(totalSupply), owner)
 	return Token{h, sym}
 }
-func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string) Pair {
-	createPair(h.t, h.app.AutoSwapKeeper, h.ctx, owner, stock, money)
+func (h TestHelper) createPair(owner sdk.AccAddress, stock, money string, pricePrecision byte) Pair {
+	createPair(h.t, h.app.AutoSwapKeeper, h.ctx, owner, stock, money, pricePrecision)
 	return Pair{h, stock + "/" + money}
 }
 
@@ -148,17 +149,8 @@ func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
 }
 
 func createPair(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	owner sdk.AccAddress, stock, money string) {
-
-	_, err := ask.CreatePair(ctx, types.MsgAddLiquidity{
-		Sender:  owner,
-		Stock:   stock,
-		Money:   money,
-		StockIn: sdk.NewInt(0),
-		MoneyIn: sdk.NewInt(0),
-		To:      nil,
-	})
-	require.NoError(t, err)
+	_ sdk.AccAddress, stock, money string, pricePrecision byte) {
+	ask.CreatePair(ctx, dex.GetSymbol(stock, money), pricePrecision)
 }
 
 func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,

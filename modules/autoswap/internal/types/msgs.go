@@ -17,27 +17,32 @@ type MsgCreateTradingPair struct {
 	Money          string         `json:"money"`
 	Creator        sdk.AccAddress `json:"creator"`
 	PricePrecision byte           `json:"price_precision"`
-	OrderPrecision byte           `json:"order_precision"`
 }
 
 func (m MsgCreateTradingPair) Route() string {
-	panic("implement me")
+	return ModuleName
 }
 
 func (m MsgCreateTradingPair) Type() string {
-	panic("implement me")
+	return "create_pair"
 }
 
 func (m MsgCreateTradingPair) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Creator.Empty() {
+		return sdk.ErrInvalidAddress("missing creator address")
+	}
+	if len(m.Stock) == 0 || len(m.Money) == 0 {
+		return ErrInvalidToken("token is empty")
+	}
+	return nil
 }
 
 func (m MsgCreateTradingPair) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgCreateTradingPair) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Creator}
 }
 
 type MsgCreateOrder struct {

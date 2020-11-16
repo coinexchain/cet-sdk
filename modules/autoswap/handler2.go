@@ -52,7 +52,6 @@ func convertMsgCreateTP(msg market.MsgCreateTradingPair) types.MsgCreateTradingP
 		Stock:          msg.Stock,
 		Money:          msg.Money,
 		PricePrecision: msg.PricePrecision,
-		OrderPrecision: msg.OrderPrecision,
 	}
 }
 func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgCreateOrder {

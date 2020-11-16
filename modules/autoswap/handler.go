@@ -31,37 +31,36 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 }
 
 func handleMsgCreateTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateTradingPair) sdk.Result {
-	panic("TODO")
+	marKey := dex.GetSymbol(msg.Stock, msg.Money)
+	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
+	if info != nil {
+		return types.ErrPairAlreadyExist().Result()
+	}
+	k.CreatePair(ctx, marKey, msg.PricePrecision)
+	return sdk.Result{}
 }
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
-	//todo: get trading pair, if not exist, return;
+	info := k.GetPoolInfo(ctx, marKey)
+	if info == nil {
+		return types.ErrPairIsNotExist().Result()
+	}
 	var liquidity sdk.Int
 	to := msg.To
 	if to.Empty() {
 		to = msg.Sender
 	}
-	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
-	if info == nil {
-		err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, msg.StockIn), sdk.NewCoin(msg.Money, msg.MoneyIn)))
-		if err != nil {
-			return err.Result()
-		}
-		if liquidity, err = k.CreatePair(ctx, msg); err != nil {
-			return err.Result()
-		}
-	} else {
-		stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
-		err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockR), sdk.NewCoin(msg.Money, moneyR)))
-		if err != nil {
-			return err.Result()
-		}
-		liquidity, err = k.IPairKeeper.Mint(ctx, marKey, stockR, moneyR, to)
-		if err != nil {
-			return err.Result()
-		}
+	stockR, moneyR := info.GetLiquidityAmountIn(msg.StockIn, msg.MoneyIn)
+	err := k.SendCoinsFromUserToPool(ctx, msg.Sender, sdk.NewCoins(sdk.NewCoin(msg.Stock, stockR), sdk.NewCoin(msg.Money, moneyR)))
+	if err != nil {
+		return err.Result()
 	}
+	liquidity, err = k.IPairKeeper.Mint(ctx, marKey, stockR, moneyR, to)
+	if err != nil {
+		return err.Result()
+	}
+
 	infoDisplay := keepers.NewAddLiquidityInfo(msg, liquidity)
 	fillMsgQueue(ctx, k, KafkaAddLiquidity, infoDisplay)
 	ctx.EventManager().EmitEvent(
