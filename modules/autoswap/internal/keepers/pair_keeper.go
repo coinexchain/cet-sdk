@@ -167,12 +167,16 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 	oppositeOrders := pk.GetMatchedOrder(ctx, order)
 
 	// 2. deal order with pool
-	for _, opOrder := range oppositeOrders {
-		if allDeal, err := pk.dealOrderWithOrderBookAndPool(ctx, order, opOrder, dealInfo, poolInfo); allDeal {
-			break
-		} else if err != nil {
-			return err
+	if len(oppositeOrders) > 0 {
+		for _, opOrder := range oppositeOrders {
+			if allDeal, err := pk.dealOrderWithOrderBookAndPool(ctx, order, opOrder, dealInfo, poolInfo); allDeal {
+				break
+			} else if err != nil {
+				return err
+			}
 		}
+	} else {
+		pk.tryDealInPool(dealInfo, order.Price, order, poolInfo)
 	}
 
 	// 3. final deal with pool and order
@@ -429,7 +433,6 @@ func (pk PairKeeper) sendDelOrderInfo(ctx sdk.Context, order *types.Order, delRe
 func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
 	_, fee, poolToUser := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if dealInfo.AmountInToPool.IsPositive() {
-		// todo emit deal with pool log
 		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64())
 	}
 }

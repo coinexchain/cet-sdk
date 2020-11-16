@@ -220,3 +220,37 @@ func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {
 	require.Equal(t, sdk.NewCoins(sdk.NewCoin("money", sdk.NewInt(3)), sdk.NewCoin("stock", sdk.NewInt(6))), poolCoins)
 	require.Equal(t, sdk.NewCoins(sdk.NewCoin("money", sdk.NewInt(2)), sdk.NewCoin("stock", sdk.NewInt(4))), feeCollectorCoins)
 }
+
+func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
+	var (
+		app           = prepareTestApp(t)
+		ctx           = app.ctx
+		k             = app.AutoSwapKeeper
+		reserveAmount = int64(100000000)
+	)
+
+	// 1. init pool with amounts
+	require.NoError(t, k.SendCoinsFromAccountToModule(ctx, from, types.PoolModuleAcc, newCoins(stockSymbol, sdk.NewInt(reserveAmount))))
+	require.NoError(t, k.SendCoinsFromAccountToModule(ctx, from, types.PoolModuleAcc, newCoins(moneySymbol, sdk.NewInt(reserveAmount))))
+	fmt.Println(k.IPairKeeper.(*keepers.PairKeeper).GetAccount(ctx, supply.NewModuleAddress(types.PoolModuleAcc)).GetCoins().String())
+	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
+	k.SetPoolInfo(ctx, market, &keepers.PoolInfo{
+		Symbol:          market,
+		MoneyAmmReserve: sdk.NewInt(reserveAmount),
+		StockAmmReserve: sdk.NewInt(reserveAmount),
+	})
+
+	// 2. add order to deal with pool
+	msgCreateOrder := types.MsgCreateOrder{
+		TradingPair: market,
+		Price:       100,
+		Quantity:    1000,
+		Side:        types.BID,
+		Identify:    1,
+		Sender:      from,
+	}
+	buyOrderMsg := msgCreateOrder
+	require.NoError(t, k.AddLimitOrder(ctx, buyOrderMsg.GetOrder()))
+	poolInfo := k.GetPoolInfo(ctx, market)
+	fmt.Println(poolInfo)
+}

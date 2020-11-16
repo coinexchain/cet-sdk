@@ -54,6 +54,7 @@ func prepareTestApp(t *testing.T) *App {
 		StockOrderBookReserve: sdk.ZeroInt(),
 		MoneyOrderBookReserve: sdk.ZeroInt(),
 	})
+	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
 	return &App{app, ctx}
 }
 
