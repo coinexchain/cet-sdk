@@ -28,17 +28,8 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
 	k := app.AutoSwapKeeper.IPairKeeper.(*keepers.PairKeeper)
 
-	// 1. first set poolInfo
+	// 1. add orders
 	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
-	k.SetPoolInfo(ctx, market, &keepers.PoolInfo{
-		Symbol:                market,
-		StockAmmReserve:       sdk.ZeroInt(),
-		MoneyAmmReserve:       sdk.ZeroInt(),
-		StockOrderBookReserve: sdk.ZeroInt(),
-		MoneyOrderBookReserve: sdk.ZeroInt(),
-	})
-
-	// 2. add orders
 	beforeMoneyBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
 	beforeStockBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
 	msgCreateOrder := types.MsgCreateOrder{
@@ -49,9 +40,11 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 		Identify:    1,
 		Sender:      from,
 	}
+	buyOrderIDs := make([]string, 0, 10)
 	for i := 0; i < 10; i++ {
 		tmpOrder := *msgCreateOrder.GetOrder()
 		tmpOrder.Identify = byte(i)
+		buyOrderIDs = append(buyOrderIDs, tmpOrder.GetOrderID())
 		require.NoError(t, k.AddLimitOrder(ctx, &tmpOrder))
 	}
 
@@ -71,6 +64,11 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 	require.EqualValues(t, int64(10*100*1000), beforeMoneyBalance.Sub(afterMoneyBalance).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 0, beforeStockBalance.Sub(afterStockBalance).Int64(), "balance in account isn't correct")
 
+	// check orders exist
+	for _, id := range buyOrderIDs {
+		require.NotNil(t, k.GetOrder(ctx, id), "order should be exist")
+	}
+
 	// -----------
 
 	// 6. add set order
@@ -78,27 +76,70 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 	beforeStockBalance = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
 	msgCreateOrder.Side = types.ASK
 	msgCreateOrder.Price = 200
+	sellOrderIDs := make([]string, 0, 10)
 	for i := 0; i < 10; i++ {
 		tmpOrder := *msgCreateOrder.GetOrder()
-		tmpOrder.Identify = byte(i)
+		tmpOrder.Identify = byte(i + 20)
+		sellOrderIDs = append(sellOrderIDs, tmpOrder.GetOrderID())
 		require.NoError(t, k.AddLimitOrder(ctx, &tmpOrder))
 	}
 
 	// 7. check orderIndex
 	require.EqualValues(t, 21, k.OrderIndexInOneBlock())
 
-	// 4. check poolInfo
+	// 8. check poolInfo
 	poolInfo = k.GetPoolInfo(ctx, market)
 	require.EqualValues(t, poolInfo.StockAmmReserve.Int64(), 0, "stock pool reserve should be 0")
 	require.EqualValues(t, poolInfo.MoneyAmmReserve.Int64(), 0, "stock pool reserve should be 0")
 	require.EqualValues(t, int64(10*100*1000), poolInfo.MoneyOrderBookReserve.Int64(), "orderBook money amount isn't correct")
 	require.EqualValues(t, int64(10*1000), poolInfo.StockOrderBookReserve.Int64(), "orderBook stock amount isn't correct")
 
-	// 5. check account balance
+	// 9. check account balance
 	afterMoneyBalance = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
 	afterStockBalance = app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
 	require.EqualValues(t, 0, beforeMoneyBalance.Sub(afterMoneyBalance).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 10*1000, beforeStockBalance.Sub(afterStockBalance).Int64(), "balance in account isn't correct")
+
+	// check orders exist
+	for _, id := range sellOrderIDs {
+		require.NotNil(t, k.GetOrder(ctx, id), "order should be exist")
+	}
+}
+
+func TestPairKeeper_DealOrders(t *testing.T) {
+	app := prepareTestApp(t)
+	ctx := app.ctx
+	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
+	k := app.AutoSwapKeeper
+
+	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
+	//beforeMoneyBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
+	//beforeStockBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
+	msgCreateOrder := types.MsgCreateOrder{
+		TradingPair: market,
+		Price:       100,
+		Quantity:    1000,
+		Side:        types.BID,
+		Identify:    1,
+		Sender:      from,
+	}
+
+	// 1. add buy, sell order in price: 100; full deal
+	buyOrderMsg := msgCreateOrder
+	require.NoError(t, k.AddLimitOrder(ctx, buyOrderMsg.GetOrder()))
+	poolInfo := k.GetPoolInfo(ctx, market)
+	require.EqualValues(t, 1000*100, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book shoule be 0")
+
+	sellOrderMsg := msgCreateOrder
+	sellOrderMsg.Side = types.ASK
+	sellOrderMsg.Sender = to
+	require.NoError(t, k.AddLimitOrder(ctx, sellOrderMsg.GetOrder()))
+
+	// 2. check pool for full deal orders
+	poolInfo = k.GetPoolInfo(ctx, market)
+	require.EqualValues(t, 0, poolInfo.StockOrderBookReserve.Int64(), "stock amount in order book shoule be 0")
+	require.EqualValues(t, 0, poolInfo.MoneyOrderBookReserve.Int64(), "money amount in order book shoule be 0")
+
 }
 
 func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {

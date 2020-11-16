@@ -44,11 +44,20 @@ type App struct {
 func prepareTestApp(t *testing.T) *App {
 	app := testapp.NewTestApp()
 	ctx := app.NewCtx()
-	issueAbbToBob(ctx, app, t)
+	issueTokenAndTransfer(ctx, app, t)
+
+	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
+	app.AutoSwapKeeper.SetPoolInfo(ctx, market, &keepers.PoolInfo{
+		Symbol:                market,
+		StockAmmReserve:       sdk.ZeroInt(),
+		MoneyAmmReserve:       sdk.ZeroInt(),
+		StockOrderBookReserve: sdk.ZeroInt(),
+		MoneyOrderBookReserve: sdk.ZeroInt(),
+	})
 	return &App{app, ctx}
 }
 
-func issueAbbToBob(ctx sdk.Context, app *testapp.TestApp, t *testing.T) {
+func issueTokenAndTransfer(ctx sdk.Context, app *testapp.TestApp, t *testing.T) {
 	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
 	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
 
@@ -59,10 +68,14 @@ func issueAbbToBob(ctx sdk.Context, app *testapp.TestApp, t *testing.T) {
 		false, false, false, false, "", "", "456")
 	assert.Nil(t, err)
 
-	bobAcc := app.AccountKeeper.NewAccountWithAddress(ctx, from)
-	require.Nil(t, bobAcc.SetCoins(newCoins(stockSymbol, tokenAmount).Add(
-		newCoins(moneySymbol, tokenAmount))), "set coins to account failed ")
-	app.AccountKeeper.SetAccount(ctx, bobAcc)
+	fromAcc := app.AccountKeeper.NewAccountWithAddress(ctx, from)
+	toAcc := app.AccountKeeper.NewAccountWithAddress(ctx, to)
+	require.NoError(t, fromAcc.SetCoins(newCoins(stockSymbol, tokenAmount.Quo(sdk.NewInt(2))).Add(
+		newCoins(moneySymbol, tokenAmount.Quo(sdk.NewInt(2))))), "set coins to account failed ")
+	require.NoError(t, toAcc.SetCoins(newCoins(stockSymbol, tokenAmount.Quo(sdk.NewInt(2))).Add(
+		newCoins(moneySymbol, tokenAmount.Quo(sdk.NewInt(2))))), "set coins to account failed ")
+	app.AccountKeeper.SetAccount(ctx, fromAcc)
+	app.AccountKeeper.SetAccount(ctx, toAcc)
 }
 
 func newCoins(token string, amount sdk.Int) sdk.Coins {
