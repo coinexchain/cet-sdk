@@ -546,6 +546,7 @@ func (keeper BaseKeeper) removeForbiddenAddress(ctx sdk.Context, symbol string, 
 
 	return nil
 }
+
 // -----------------------------------------------------------------------------
 
 // TokenKeeper defines a module interface that facilitates read only access to token store info.

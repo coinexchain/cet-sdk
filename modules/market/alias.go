@@ -52,4 +52,8 @@ type (
 	CreateOrderInfo         = types.CreateOrderInfo
 	FillOrderInfo           = types.FillOrderInfo
 	CancelOrderInfo         = types.CancelOrderInfo
+	QueryMarketParam        = keepers.QueryMarketParam
+	QueryOrderParam         = keepers.QueryOrderParam
+	QueryMarketInfo         = keepers.QueryMarketInfo
+	ResOrder                = keepers.ResOrder
 )

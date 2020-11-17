@@ -37,6 +37,13 @@ func (or *Order) GetOrderID() string {
 	or.orderID = market.AssemblyOrderID(or.Sender.String(), uint64(or.Sequence), or.Identify)
 	return or.orderID
 }
+func (or *Order) GetSide() byte {
+	if or.IsBuy {
+		return market.BUY
+	} else {
+		return market.SELL
+	}
+}
 
 func (or *Order) Stock() string {
 	if or.stock != "" {

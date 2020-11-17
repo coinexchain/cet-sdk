@@ -11,6 +11,7 @@ import (
 )
 
 type Keeper struct {
+	cdc      *codec.Codec
 	storeKey sdk.StoreKey
 	sk       types.SupplyKeeper
 	FactoryInterface
@@ -33,6 +34,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 	}
 
 	k := Keeper{
+		cdc:              cdc,
 		storeKey:         storeKey,
 		sk:               sk,
 		FactoryInterface: factoryK,
