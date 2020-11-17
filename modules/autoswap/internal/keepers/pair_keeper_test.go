@@ -221,12 +221,13 @@ func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {
 	require.Equal(t, sdk.NewCoins(sdk.NewCoin("money", sdk.NewInt(2)), sdk.NewCoin("stock", sdk.NewInt(4))), feeCollectorCoins)
 }
 
-func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
+func TestPairKeeper_DealOrdersWitPool(t *testing.T) {
 	var (
 		app           = prepareTestApp(t)
 		ctx           = app.ctx
 		k             = app.AutoSwapKeeper
 		reserveAmount = int64(100000000)
+		param         = types.DefaultParams()
 	)
 
 	// 1. init pool with amounts
@@ -250,7 +251,63 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 		Sender:      from,
 	}
 	buyOrderMsg := msgCreateOrder
+
+	beforePoolInfo := k.GetPoolInfo(ctx, market)
+	currDealMoney := k.IPairKeeper.(*keepers.PairKeeper).IntoPoolAmountTillPrice(sdk.NewDec(buyOrderMsg.Price), true, beforePoolInfo)
+	if currDealMoney.GT(buyOrderMsg.GetOrder().ActualAmount()) {
+		currDealMoney = buyOrderMsg.GetOrder().ActualAmount()
+	}
+	outAmount := keepers.GetAmountOutInPool(currDealMoney, beforePoolInfo, buyOrderMsg.Side == types.BID)
+	totalFee := outAmount.Mul(sdk.NewInt(param.DealWithPoolFeeRate)).Quo(sdk.NewInt(types.DefaultFeePrecision))
+	feeToPool := totalFee.Sub(totalFee.MulRaw(param.FeeToValidator).QuoRaw(param.FeeToValidator + param.FeeToPool))
 	require.NoError(t, k.AddLimitOrder(ctx, buyOrderMsg.GetOrder()))
-	poolInfo := k.GetPoolInfo(ctx, market)
-	fmt.Println(poolInfo)
+	fmt.Println(totalFee.String(), feeToPool.String(), outAmount.String())
+
+	afterPoolInfo := k.GetPoolInfo(ctx, market)
+	require.EqualValues(t, 0, afterPoolInfo.StockOrderBookReserve.Int64())
+	require.EqualValues(t, 0, afterPoolInfo.MoneyOrderBookReserve.Int64())
+	fmt.Println(beforePoolInfo.StockAmmReserve.String(), afterPoolInfo.StockAmmReserve.String())
+	require.EqualValues(t, outAmount.Int64(), beforePoolInfo.StockAmmReserve.Sub(afterPoolInfo.StockAmmReserve).Int64())
+	require.EqualValues(t, 100*1000, afterPoolInfo.MoneyAmmReserve.Sub(beforePoolInfo.MoneyAmmReserve).Int64())
+}
+
+func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
+	var (
+		app           = prepareTestApp(t)
+		ctx           = app.ctx
+		k             = app.AutoSwapKeeper
+		reserveAmount = int64(100000000)
+	)
+
+	// 1. add orders
+	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
+	msgCreateOrder := types.MsgCreateOrder{
+		TradingPair: market,
+		Price:       100,
+		Quantity:    1000,
+		Side:        types.BID,
+		Identify:    1,
+		Sender:      from,
+	}
+	buyOrderIDs := make([]string, 0)
+	for i := 0; i < 10; i++ {
+		tmpOrder := *msgCreateOrder.GetOrder()
+		tmpOrder.Identify = byte(i)
+		buyOrderIDs = append(buyOrderIDs, tmpOrder.GetOrderID())
+		require.NoError(t, k.AddLimitOrder(ctx, &tmpOrder))
+	}
+
+	// 2. init pool with amounts
+	require.NoError(t, k.SendCoinsFromAccountToModule(ctx, from, types.PoolModuleAcc, newCoins(stockSymbol, sdk.NewInt(reserveAmount))))
+	require.NoError(t, k.SendCoinsFromAccountToModule(ctx, from, types.PoolModuleAcc, newCoins(moneySymbol, sdk.NewInt(reserveAmount))))
+	fmt.Println(k.IPairKeeper.(*keepers.PairKeeper).GetAccount(ctx, supply.NewModuleAddress(types.PoolModuleAcc)).GetCoins().String())
+	k.SetPoolInfo(ctx, market, &keepers.PoolInfo{
+		Symbol:          market,
+		MoneyAmmReserve: sdk.NewInt(reserveAmount),
+		StockAmmReserve: sdk.NewInt(reserveAmount),
+	})
+
+	// 3. deal orders
+	sellOrderMsg := msgCreateOrder
+	_ = sellOrderMsg
 }
