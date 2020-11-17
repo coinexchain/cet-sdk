@@ -177,13 +177,14 @@ func (p PoolKeeper) GetPoolInfo(ctx sdk.Context, marketSymbol string) *PoolInfo 
 var _ IPoolKeeper = PoolKeeper{}
 
 type PoolInfo struct {
-	Symbol                string  `json:"symbol"`
-	StockAmmReserve       sdk.Int `json:"stock_amm_reserve"`
-	MoneyAmmReserve       sdk.Int `json:"money_amm_reserve"`
-	StockOrderBookReserve sdk.Int `json:"stock_order_book_reserve"`
-	MoneyOrderBookReserve sdk.Int `json:"money_order_book_reserve"`
-	TotalSupply           sdk.Int `json:"total_supply"`
-	PricePrecision        byte    `json:"price_precision"`
+	Owner                 sdk.AccAddress `json:"owner"`
+	Symbol                string         `json:"symbol"`
+	StockAmmReserve       sdk.Int        `json:"stock_amm_reserve"`
+	MoneyAmmReserve       sdk.Int        `json:"money_amm_reserve"`
+	StockOrderBookReserve sdk.Int        `json:"stock_order_book_reserve"`
+	MoneyOrderBookReserve sdk.Int        `json:"money_order_book_reserve"`
+	TotalSupply           sdk.Int        `json:"total_supply"`
+	PricePrecision        byte           `json:"price_precision"`
 }
 
 func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {

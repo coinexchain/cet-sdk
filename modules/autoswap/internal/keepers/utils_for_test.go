@@ -149,8 +149,8 @@ func issueToken(t *testing.T, ak asset.Keeper, ctx sdk.Context,
 }
 
 func createPair(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	_ sdk.AccAddress, stock, money string, pricePrecision byte) {
-	ask.CreatePair(ctx, dex.GetSymbol(stock, money), pricePrecision)
+	owner sdk.AccAddress, stock, money string, pricePrecision byte) {
+	ask.CreatePair(ctx, owner, dex.GetSymbol(stock, money), pricePrecision)
 }
 
 func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,

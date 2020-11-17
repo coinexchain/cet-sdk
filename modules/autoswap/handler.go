@@ -16,6 +16,8 @@ func NewHandler(k keepers.Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case types.MsgCreateTradingPair:
 			return handleMsgCreateTradingPair(ctx, k, msg)
+		case types.MsgCancelTradingPair:
+			return handleMsgCancelTradingPair(ctx, k, msg)
 		case types.MsgAddLiquidity:
 			return handleMsgAddLiquidity(ctx, k, msg)
 		case types.MsgRemoveLiquidity:
@@ -36,8 +38,12 @@ func handleMsgCreateTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.Msg
 	if info != nil {
 		return types.ErrPairAlreadyExist().Result()
 	}
-	k.CreatePair(ctx, marKey, msg.PricePrecision)
+	k.CreatePair(ctx, msg.Creator, marKey, msg.PricePrecision)
 	return sdk.Result{}
+}
+
+func handleMsgCancelTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelTradingPair) sdk.Result {
+	panic("not impl")
 }
 
 func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {

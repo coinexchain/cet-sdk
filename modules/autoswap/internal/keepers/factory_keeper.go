@@ -7,7 +7,7 @@ import (
 //var
 
 type FactoryInterface interface {
-	CreatePair(ctx sdk.Context, symbol string, pricePrecision byte)
+	CreatePair(ctx sdk.Context, owner sdk.AccAddress, symbol string, pricePrecision byte)
 	QueryPair(ctx sdk.Context, marketSymbol string) *PoolInfo
 }
 
@@ -16,8 +16,9 @@ type FactoryKeeper struct {
 	poolKeeper PoolKeeper
 }
 
-func (f FactoryKeeper) CreatePair(ctx sdk.Context, symbol string, pricePrecision byte) {
+func (f FactoryKeeper) CreatePair(ctx sdk.Context, owner sdk.AccAddress, symbol string, pricePrecision byte) {
 	p := &PoolInfo{
+		Owner:                 owner,
 		Symbol:                symbol,
 		StockAmmReserve:       sdk.ZeroInt(),
 		MoneyAmmReserve:       sdk.ZeroInt(),

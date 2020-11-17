@@ -22,12 +22,13 @@ const (
 	CodeInvalidPrevKey         = 1210
 	CodeInvalidOrderNews       = 1211
 	CodeInvalidToken           = 1212
-	CodeInvalidPairFlag        = 1213
+	CodeInvalidPairSymbol      = 1213
 	CodePairAlreadyExist       = 1214
 	CodePairIsNotExist         = 1215
 	CodeInvalidLiquidityAmount = 1216
 	CodeAmountOutIsSmall       = 1217
 	CodeInvalidSwap            = 1218
+	CodeInvalidEffectTime      = 1219
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
@@ -80,8 +81,8 @@ func ErrInvalidToken(reason string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidToken, fmt.Sprintf("reason:%s", reason))
 }
 
-func ErrInvalidPairFlag(reason string) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPairFlag, fmt.Sprintf("reason:%s", reason))
+func ErrInvalidPairSymbol(reason string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPairSymbol, fmt.Sprintf("reason:%s", reason))
 }
 
 func ErrPairAlreadyExist() sdk.Error {
@@ -99,4 +100,8 @@ func ErrInvalidLiquidityAmount() sdk.Error {
 func ErrAmountOutIsSmallerThanExpected(expected, actual sdk.Int) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeAmountOutIsSmall, fmt.Sprintf("amount out is smaller than "+
 		"expected; actual:%s, expected: %s", actual.String(), expected.String()))
+}
+
+func ErrInvalidEffectiveTime() sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidEffectTime, "invalid cancel trading pair effectTime")
 }

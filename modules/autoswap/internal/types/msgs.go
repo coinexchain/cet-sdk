@@ -1,9 +1,8 @@
 package types
 
 import (
-	"math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"math"
 )
 
 var _ sdk.Msg = MsgCreateTradingPair{}
@@ -11,6 +10,7 @@ var _ sdk.Msg = MsgCreateOrder{}
 var _ sdk.Msg = MsgCancelOrder{}
 var _ sdk.Msg = MsgAddLiquidity{}
 var _ sdk.Msg = MsgRemoveLiquidity{}
+var _ sdk.Msg = MsgCancelTradingPair{}
 
 type MsgCreateTradingPair struct {
 	Stock          string         `json:"stock"`
@@ -43,6 +43,41 @@ func (m MsgCreateTradingPair) GetSignBytes() []byte {
 
 func (m MsgCreateTradingPair) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Creator}
+}
+
+type MsgCancelTradingPair struct {
+	Sender        sdk.AccAddress `json:"sender"`
+	TradingPair   string         `json:"trading_pair"`
+	EffectiveTime int64          `json:"effective_time"`
+}
+
+func (m MsgCancelTradingPair) Route() string {
+	return ModuleName
+}
+
+func (m MsgCancelTradingPair) Type() string {
+	return "cancel_pair"
+}
+
+func (m MsgCancelTradingPair) ValidateBasic() sdk.Error {
+	if m.Sender.Empty() {
+		return sdk.ErrInvalidAddress("missing sender address")
+	}
+	if len(m.TradingPair) == 0 {
+		return ErrInvalidPairSymbol("pair symbol is invalid")
+	}
+	if m.EffectiveTime < 0 {
+		return ErrInvalidEffectiveTime()
+	}
+	return nil
+}
+
+func (m MsgCancelTradingPair) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
+}
+
+func (m MsgCancelTradingPair) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Sender}
 }
 
 type MsgCreateOrder struct {

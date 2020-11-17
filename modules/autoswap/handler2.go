@@ -29,8 +29,8 @@ func convertMarketMsg(msg sdk.Msg) (msg2 sdk.Msg, ok bool) {
 	// market messages
 	case market.MsgCreateTradingPair:
 		msg2 = convertMsgCreateTP(msg)
-	//case market.MsgCancelTradingPair:
-	//	panic("TODO")
+	case market.MsgCancelTradingPair:
+		msg2 = convertMsgCancelTP(msg)
 	//case market.MsgModifyPricePrecision:
 	//	panic("TODO")
 	case market.MsgCreateOrder:
@@ -54,6 +54,15 @@ func convertMsgCreateTP(msg market.MsgCreateTradingPair) types.MsgCreateTradingP
 		PricePrecision: msg.PricePrecision,
 	}
 }
+
+func convertMsgCancelTP(msg market.MsgCancelTradingPair) types.MsgCancelTradingPair {
+	return types.MsgCancelTradingPair{
+		Sender:        msg.Sender,
+		TradingPair:   msg.TradingPair,
+		EffectiveTime: msg.EffectiveTime,
+	}
+}
+
 func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgCreateOrder {
 	return types.MsgCreateOrder{
 		Sender:         msg.Sender,
