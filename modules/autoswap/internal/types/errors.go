@@ -29,10 +29,16 @@ const (
 	CodeAmountOutIsSmall       = 1217
 	CodeInvalidSwap            = 1218
 	CodeInvalidEffectTime      = 1219
+	CodeInvalidPricePrecision  = 1220
 )
 
 func ErrInvalidPrice(price string) sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %s", price))
+}
+
+func ErrInvalidPricePrecision(pricePrecision byte, marketPricePrecision byte) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPricePrecision, fmt.Sprintf("Invalid order price precision: %d,"+
+		" market max price precision: %d", pricePrecision, marketPricePrecision))
 }
 
 func ErrInvalidAmount(amount sdk.Int) sdk.Error {

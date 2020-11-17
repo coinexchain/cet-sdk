@@ -143,6 +143,9 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 	if poolInfo == nil {
 		return types.ErrInvalidMarket(order.TradingPair)
 	}
+	if order.PricePrecision > poolInfo.PricePrecision {
+		return types.ErrInvalidPricePrecision(order.PricePrecision, poolInfo.PricePrecision)
+	}
 	order.Sequence = int64(pk.GetAccount(ctx, order.Sender).GetSequence())
 	actualAmount, err := pk.freezeOrderCoin(ctx, order)
 	if err != nil {

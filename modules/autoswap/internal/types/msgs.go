@@ -112,13 +112,14 @@ func (m MsgCreateOrder) GetSigners() []sdk.AccAddress {
 
 func (m MsgCreateOrder) GetOrder() *Order {
 	or := &Order{
-		TradingPair: m.TradingPair,
-		Identify:    m.Identify,
-		Sender:      m.Sender,
-		Price:       sdk.NewDec(m.Price).Quo(sdk.NewDec(int64(math.Pow10(int(m.PricePrecision))))),
-		Quantity:    m.Quantity,
-		IsBuy:       m.Side == BID,
-		LeftStock:   m.Quantity,
+		TradingPair:    m.TradingPair,
+		Identify:       m.Identify,
+		Sender:         m.Sender,
+		Price:          sdk.NewDec(m.Price).Quo(sdk.NewDec(int64(math.Pow10(int(m.PricePrecision))))),
+		Quantity:       m.Quantity,
+		PricePrecision: m.PricePrecision,
+		IsBuy:          m.Side == BID,
+		LeftStock:      m.Quantity,
 	}
 	or.Freeze = or.ActualAmount().Int64()
 	return or

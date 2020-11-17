@@ -13,6 +13,7 @@ type Order struct {
 	Identify             byte           `json:"identify"`
 	Sender               sdk.AccAddress `json:"sender"`
 	Price                sdk.Dec        `json:"price"`
+	PricePrecision       byte           `json:"price_precision"`
 	Quantity             int64          `json:"quantity"`
 	Height               int64          `json:"height"`
 	IsBuy                bool           `json:"side"`
