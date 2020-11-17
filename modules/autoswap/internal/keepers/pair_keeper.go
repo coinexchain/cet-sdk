@@ -462,19 +462,18 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.AmountInToPool)
 		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outAmount)
 	}
-	// transfer token from pool to order sender
 	if order.IsBuy {
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), dealInfo.AmountInToPool, order.Sender); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), fee, order.Sender); err != nil {
 			panic(err)
 		}
 	} else {
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), dealInfo.AmountInToPool, order.Sender); err != nil {
+		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), fee, order.Sender); err != nil {
 			panic(err)
 		}
 	}
