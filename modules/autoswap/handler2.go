@@ -9,6 +9,7 @@ import (
 	dex "github.com/coinexchain/cet-sdk/types"
 )
 
+// convert msg and redirect to NewHandler()
 func NewHandler2(k keepers.Keeper) sdk.Handler {
 	h1 := NewHandler(k)
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {

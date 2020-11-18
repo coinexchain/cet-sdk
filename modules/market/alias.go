@@ -24,6 +24,13 @@ const (
 	BUY                     = types.BUY
 	SELL                    = types.SELL
 	DecByteCount            = types.DecByteCount
+	QueryMarket             = keepers.QueryMarket
+	QueryMarkets            = keepers.QueryMarkets
+	QueryOrdersInMarket     = keepers.QueryOrdersInMarket
+	QueryOrder              = keepers.QueryOrder
+	QueryUserOrders         = keepers.QueryUserOrders
+	QueryWaitCancelMarkets  = keepers.QueryWaitCancelMarkets
+	QueryParameters         = keepers.QueryParameters
 )
 
 var (

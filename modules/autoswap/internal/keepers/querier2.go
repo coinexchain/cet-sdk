@@ -14,32 +14,22 @@ import (
 	dex "github.com/coinexchain/cet-sdk/types"
 )
 
-const (
-	QueryMarket            = "market-info"
-	QueryMarkets           = "market-list"
-	QueryOrdersInMarket    = "orders-in-market"
-	QueryUserOrders        = "user-order-list"
-	QueryWaitCancelMarkets = "wait-cancel-markets"
-	//QueryOrder             = "order-info"
-	//QueryParameters        = "parameters"
-)
-
 func NewQuerier2(mk Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
-		case QueryParameters:
+		case market.QueryParameters:
 			return queryParameters2(ctx, mk)
-		case QueryMarket:
+		case market.QueryMarket:
 			return queryMarket(ctx, req, mk)
-		case QueryMarkets:
+		case market.QueryMarkets:
 			return queryMarketList(ctx, req, mk)
-		case QueryOrdersInMarket:
+		case market.QueryOrdersInMarket:
 			return queryOrdersInMarket(ctx, req, mk)
-		case QueryOrder:
+		case market.QueryOrder:
 			return queryOrder(ctx, req, mk)
-		case QueryUserOrders:
+		case market.QueryUserOrders:
 			return queryUserOrderList(ctx, req, mk)
-		case QueryWaitCancelMarkets:
+		case market.QueryWaitCancelMarkets:
 			return queryWaitCancelMarkets(ctx, req, mk)
 		default:
 			return nil, sdk.ErrUnknownRequest("query symbol : " + path[0])
@@ -47,8 +37,16 @@ func NewQuerier2(mk Keeper) sdk.Querier {
 	}
 }
 
+// TODO
 func queryParameters2(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
-	panic("TODO")
+	params := k.GetParams(ctx)
+
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, params)
+	if err != nil {
+		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("could not marshal result to JSON", err.Error()))
+	}
+
+	return res, nil
 }
 func queryMarket(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
 	var param market.QueryMarketParam
