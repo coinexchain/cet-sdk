@@ -231,7 +231,7 @@ func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order, oppos
 	pk.tryDealInPool(dealInfo, oppositeOrder.Price, order, poolInfo)
 	pk.dealInOrderBook(ctx, order, oppositeOrder, poolInfo, dealInfo, !poolInfo.IsNoReservePool())
 	if oppositeOrder.LeftStock == 0 {
-		pk.DelOrder(ctx, order)
+		pk.DelOrder(ctx, oppositeOrder)
 	} else {
 		pk.StoreToOrderBook(ctx, oppositeOrder)
 	}
