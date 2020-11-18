@@ -66,11 +66,9 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	require.Equal(t, 10000, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
-	//require.Equal(t, 1, reserves.firstSellID)
 	booked := pair.getBooked()
 	require.Equal(t, 504, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	//require.Equal(t, -1, booked.firstBuyID)
 	//th.getOrderList(pair, true)                  // TODO
 	//th.getOrderList(pair, false)                 // TODO
 
@@ -84,11 +82,9 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	require.Equal(t, 10001, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
-	require.Equal(t, 1, reserves.firstSellID)
 	booked = pair.getBooked()
 	require.Equal(t, 454, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	require.Equal(t, 0, booked.firstBuyID)
 
 	// it("insert buy order with only 1 complete deal with orderbook", async () => {
 	usd.transfer(taker, 5100, boss)
@@ -96,11 +92,9 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	require.Equal(t, 10001, reserves.reserveStock)
 	require.Equal(t, 1000100, reserves.reserveMoney)
-	require.Equal(t, 6, reserves.firstSellID)
 	booked = pair.getBooked()
 	require.Equal(t, 404, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	require.Equal(t, 0, booked.firstBuyID)
 	require.Equal(t, 9989900, usd.balanceOf(taker))
 	require.Equal(t, 99, btc.balanceOf(taker))
 
@@ -110,11 +104,9 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	require.Equal(t, 9538, reserves.reserveStock)
 	require.Equal(t, 1049020, reserves.reserveMoney)
-	require.Equal(t, 0, reserves.firstSellID)
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
 	require.Equal(t, 7260, booked.bookedMoney)
-	require.Equal(t, 12, booked.firstBuyID)
 	require.Equal(t, 9890900, usd.balanceOf(taker))
 	require.Equal(t, 966, btc.balanceOf(taker))
 
@@ -123,11 +115,9 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	require.Equal(t, 9538, reserves.reserveStock)
 	require.Equal(t, 1049020, reserves.reserveMoney)
-	require.Equal(t, 0, reserves.firstSellID)
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	require.Equal(t, 0, booked.firstBuyID)
 	require.Equal(t, 9898160, usd.balanceOf(taker))
 	require.Equal(t, 966, btc.balanceOf(taker))
 }
@@ -266,7 +256,6 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	booked = pair.getBooked()
 	require.Equal(t, 90, booked.bookedMoney)
 	require.Equal(t, 1000000010, booked.bookedStock)
-	require.Equal(t, 1, pair.getReserves().firstSellID)
 
 	// it("insert big order deal with biggest sell order ", async () => {
 	usd.transfer(taker, 100000_0000_0000, boss)

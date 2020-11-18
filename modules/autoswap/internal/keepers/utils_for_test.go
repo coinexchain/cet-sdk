@@ -65,12 +65,10 @@ type Pair struct {
 type PairReserves struct {
 	reserveStock int
 	reserveMoney int
-	firstSellID  int
 }
 type PairBooked struct {
 	bookedStock int
 	bookedMoney int
-	firstBuyID  int
 }
 
 func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
