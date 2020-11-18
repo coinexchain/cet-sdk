@@ -1,6 +1,9 @@
 package keepers
 
 import (
+	"fmt"
+	"math/big"
+
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -236,7 +239,7 @@ func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order, oppos
 }
 
 func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, order *types.Order, info *PoolInfo) bool {
-	currTokenCanTradeWithPool := pk.IntoPoolAmountTillPrice(dealPrice, order.IsBuy, info)
+	currTokenCanTradeWithPool := IntoPoolAmountTillPrice(dealPrice, order.IsBuy, info)
 	if currTokenCanTradeWithPool.GT(dealInfo.AmountInToPool) {
 		diffTokenTradeWithPool := currTokenCanTradeWithPool.Sub(dealInfo.AmountInToPool)
 		allDeal := diffTokenTradeWithPool.GT(dealInfo.RemainAmount)
@@ -262,13 +265,25 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 	return false
 }
 
-func (pk PairKeeper) IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
+func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
+	fmt.Println("reserveMoney: ", info.MoneyAmmReserve, "; reserveStock: ", info.StockAmmReserve, "; price: ", dealPrice, "; isBuy: ", isBuy)
 	if isBuy {
 		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve))
-		return sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.Int)).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt()
+		fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
+		if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
+			BigInt())).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
+
+			return ret
+		}
+		return sdk.ZeroInt()
 	}
-	root := sdk.NewDecFromInt(info.StockAmmReserve).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve)).Quo(dealPrice)
-	return sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.Int)).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt()
+	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Quo(sdk.NewDecFromInt(info.StockAmmReserve)).Quo(dealPrice)
+	fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
+	if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
+		BigInt())).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt(); ret.IsPositive() {
+		return ret
+	}
+	return sdk.ZeroInt()
 }
 
 func GetAmountOutInPool(amountIn sdk.Int, poolInfo *PoolInfo, isBuy bool) sdk.Int {

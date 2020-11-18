@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/cosmos/cosmos-sdk/x/supply"
+
 	"github.com/stretchr/testify/require"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -37,6 +40,8 @@ func TestPair(t *testing.T) {
 	// it("mint", async () => {
 	pair.mint(10000, 1000000, shareReceiver)
 	reserves := pair.getReserves()
+	btc.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 10000, boss)
+	usd.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 1000000, boss)
 	require.Equal(t, 10000, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
 

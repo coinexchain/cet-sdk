@@ -253,7 +253,7 @@ func TestPairKeeper_DealOrdersWitPool(t *testing.T) {
 	buyOrderMsg := msgCreateOrder
 
 	beforePoolInfo := k.GetPoolInfo(ctx, market)
-	currDealMoney := k.IPairKeeper.(*keepers.PairKeeper).IntoPoolAmountTillPrice(sdk.NewDec(buyOrderMsg.Price), true, beforePoolInfo)
+	currDealMoney := keepers.IntoPoolAmountTillPrice(sdk.NewDec(buyOrderMsg.Price), true, beforePoolInfo)
 	if currDealMoney.GT(buyOrderMsg.GetOrder().ActualAmount()) {
 		currDealMoney = buyOrderMsg.GetOrder().ActualAmount()
 	}
@@ -276,7 +276,7 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 		app           = prepareTestApp(t)
 		ctx           = app.ctx
 		k             = app.AutoSwapKeeper
-		reserveAmount = int64(100000000)
+		reserveAmount = int64(10000)
 	)
 
 	// 1. add orders
@@ -284,7 +284,7 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 	msgCreateOrder := types.MsgCreateOrder{
 		TradingPair: market,
 		Price:       1,
-		Quantity:    1000,
+		Quantity:    10000,
 		Side:        types.BID,
 		Identify:    1,
 		Sender:      from,
@@ -312,4 +312,26 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 	sellOrderMsg.Sender = to
 	sellOrderMsg.Identify = 1
 	require.NoError(t, k.AddLimitOrder(ctx, sellOrderMsg.GetOrder()))
+	fmt.Println(k.GetPoolInfo(ctx, market))
+}
+
+func TestPairKeeper_IntoPoolAmountTillPrice(t *testing.T) {
+	require.EqualValues(t, 0,
+		keepers.IntoPoolAmountTillPrice(sdk.NewDec(90), true,
+			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
+	require.EqualValues(t, 0,
+		keepers.IntoPoolAmountTillPrice(sdk.NewDec(110), false,
+			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
+	require.EqualValues(t, 0,
+		keepers.IntoPoolAmountTillPrice(sdk.NewDec(100), true,
+			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
+	require.EqualValues(t, 0,
+		keepers.IntoPoolAmountTillPrice(sdk.NewDec(100), false,
+			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
+	//require.EqualValues(t, 48797,
+	//	keepers.IntoPoolAmountTillPrice(sdk.NewDec(110), true,
+	//		&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
+	require.EqualValues(t, 540,
+		keepers.IntoPoolAmountTillPrice(sdk.NewDec(90), false,
+			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
 }

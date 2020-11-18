@@ -1,8 +1,9 @@
 package keepers_test
 
 import (
-	dex "github.com/coinexchain/cet-sdk/types"
 	"testing"
+
+	dex "github.com/coinexchain/cet-sdk/types"
 
 	"github.com/stretchr/testify/require"
 
@@ -133,7 +134,13 @@ func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
 	ctx = sdk.NewContext(app.Cms, abci.Header{}, false, log.NewNopLogger())
 	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
 	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
-	app.AutoSwapKeeper.SetParams(ctx, autoswap.DefaultParams())
+	app.AutoSwapKeeper.SetParams(ctx, types.Params{
+		TakerFeeRateRate:    0,
+		MakerFeeRateRate:    0,
+		DealWithPoolFeeRate: 50,
+		FeeToPool:           1,
+		FeeToValidator:      0,
+	})
 	app.AccountKeeper.SetAccount(ctx, app.AccountKeeper.NewAccount(ctx, supply.NewEmptyModuleAccount(autoswap.PoolModuleAcc)))
 	return
 }
