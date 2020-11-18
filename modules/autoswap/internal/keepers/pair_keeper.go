@@ -101,18 +101,19 @@ func (pk *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
 }
 
-func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) sdk.Error {
+func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) (sdk.Int, sdk.Error) {
 	feeToVal := pk.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
 	feeToPool := totalAmount.Sub(feeToVal)
 	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
 	if err != nil {
-		return err
+		return sdk.ZeroInt(), err
 	}
 	err = pk.SendCoinsFromAccountToModule(ctx, sender, types.PoolModuleAcc, sdk.NewCoins(sdk.NewCoin(denom, feeToPool)))
 	if err != nil {
-		return err
+		return sdk.ZeroInt(), err
 	}
-	return nil
+
+	return feeToPool, nil
 }
 
 func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
@@ -329,15 +330,21 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		if isPoolExists {
-			if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender); err != nil {
+			moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender)
+			if err != nil {
 				panic(err)
 			}
-			if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender); err != nil {
+			stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender)
+			if err != nil {
 				panic(err)
 			}
+			poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
+			poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
 		} else {
-			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee),
-				sdk.NewCoin(currOrder.Stock(), stockFee)), currOrder.Sender); err != nil {
+			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee)), currOrder.Sender); err != nil {
+				panic(err)
+			}
+			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Stock(), stockFee)), orderInBook.Sender); err != nil {
 				panic(err)
 			}
 		}
@@ -346,11 +353,24 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		makerFee = stockFee
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender); err != nil {
-			panic(err)
-		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, orderInBook.Sender); err != nil {
-			panic(err)
+		if isPoolExists {
+			stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender)
+			if err != nil {
+				panic(err)
+			}
+			moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, orderInBook.Sender)
+			if err != nil {
+				panic(err)
+			}
+			poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
+			poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
+		} else {
+			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Stock(), stockFee)), currOrder.Sender); err != nil {
+				panic(err)
+			}
+			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee)), orderInBook.Sender); err != nil {
+				panic(err)
+			}
 		}
 	}
 	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(), takerFee.Int64(), makerFee.Int64())
@@ -472,9 +492,11 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), fee, order.Sender); err != nil {
+		stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), fee, order.Sender)
+		if err != nil {
 			panic(err)
 		}
+		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
@@ -482,9 +504,11 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
-		if err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), fee, order.Sender); err != nil {
+		moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), fee, order.Sender)
+		if err != nil {
 			panic(err)
 		}
+		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
