@@ -321,19 +321,25 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 	orderInBook.DealMoney += moneyTrans.Int64()
 	poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Sub(stockTrans)
 	poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Sub(moneyTrans)
-
+	makeFeeRate := sdk.NewDec(pk.GetParams(ctx).MakerFeeRateRate)
+	takerFeeRate := sdk.NewDec(pk.GetParams(ctx).TakerFeeRateRate)
 	if currOrder.IsBuy {
 		currOrder.Freeze -= moneyTrans.Int64()
 		orderInBook.Freeze -= stockTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
-		moneyFee = pk.GetMakerFee(ctx).MulInt(moneyTrans).TruncateInt()
-		stockFee = pk.GetTakerFee(ctx).MulInt(stockTrans).TruncateInt()
+		moneyFee = makeFeeRate.MulInt(moneyTrans).Add(
+			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
+		//moneyFee = pk.GetMakerFee(ctx).MulInt(moneyTrans).Add(sdk.NewDec(1)).TruncateInt()
+		stockFee = takerFeeRate.MulInt(stockTrans).Add(
+			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
 	} else {
 		currOrder.Freeze -= stockTrans.Int64()
 		orderInBook.Freeze -= moneyTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(stockTrans)
-		stockFee = pk.GetMakerFee(ctx).MulInt(stockTrans).TruncateInt()
-		moneyFee = pk.GetTakerFee(ctx).MulInt(moneyTrans).TruncateInt()
+		stockFee = makeFeeRate.MulInt(stockTrans).Add(
+			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
+		moneyFee = takerFeeRate.MulInt(moneyTrans).Add(
+			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
 	}
 
 	dealInfo.DealMoneyInBook = dealInfo.DealMoneyInBook.Add(moneyTrans)

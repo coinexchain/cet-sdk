@@ -49,6 +49,7 @@ func TestPair(t *testing.T) {
 	btc.transfer(maker, 10000, boss)
 	usd.transfer(taker, 10000000, boss)
 	fee := pair.th.app.AutoSwapKeeper.GetDealWithPoolFee(pair.th.ctx)
+	fmt.Println("takerFeeRate: ", pair.th.app.AutoSwapKeeper.GetTakerFee(pair.th.ctx), "; poolFeeRate: ", fee)
 	fmt.Println(fee)
 
 	require.Equal(t, 10000, btc.balanceOf(maker))
