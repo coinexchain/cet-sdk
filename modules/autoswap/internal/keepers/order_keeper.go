@@ -16,6 +16,7 @@ var _ IOrderBookKeeper = &OrderKeeper{}
 type IOrderBookKeeper interface {
 	AddOrder(sdk.Context, *types.Order)
 	DelOrder(sdk.Context, *types.Order)
+	GetAllOrdersInMarket(ctx sdk.Context, market string) []*types.Order
 	StoreToOrderBook(ctx sdk.Context, order *types.Order)
 	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
 	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
@@ -47,6 +48,7 @@ func (o *OrderKeeper) ResetOrderIndexInOneBlock() {
 func (o *OrderKeeper) AddOrder(ctx sdk.Context, order *types.Order) {
 	o.storeBidOrAskQueue(ctx, order)
 	o.StoreToOrderBook(ctx, order)
+	o.storeOrderToMarket(ctx, order)
 }
 
 func (o *OrderKeeper) storeBidOrAskQueue(ctx sdk.Context, order *types.Order) {
@@ -68,6 +70,12 @@ func (o *OrderKeeper) StoreToOrderBook(ctx sdk.Context, order *types.Order) {
 	key := getOrderBookKey(order.GetOrderID())
 	val := o.codec.MustMarshalBinaryBare(order)
 	store.Set(key, val)
+}
+
+func (o *OrderKeeper) storeOrderToMarket(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(o.storeKey)
+	key := getOrderKeyInMarket(order.TradingPair, order.GetOrderID())
+	store.Set(key, []byte{0x0})
 }
 
 func (o *OrderKeeper) DelOrder(ctx sdk.Context, order *types.Order) {
@@ -92,6 +100,12 @@ func (o *OrderKeeper) delBidOrAskQueue(ctx sdk.Context, order *types.Order) {
 		sideKey = getAskOrderKey(order)
 	}
 	store.Delete(sideKey)
+}
+
+func (o *OrderKeeper) delOrderInMarket(ctx sdk.Context, order *types.Order) {
+	store := ctx.KVStore(o.storeKey)
+	key := getOrderKeyInMarket(order.TradingPair, order.GetOrderID())
+	store.Delete(key)
 }
 
 func (o OrderKeeper) GetOrder(ctx sdk.Context, info *QueryOrderInfo) *types.Order {
@@ -255,4 +269,29 @@ func sortOrderWithCreateHeightAndTxIndex(orders []*types.Order) []*types.Order {
 		return false
 	})
 	return orders
+}
+
+func (o *OrderKeeper) GetAllOrdersInMarket(ctx sdk.Context, market string) []*types.Order {
+	store := ctx.KVStore(o.storeKey)
+	begin := getOrderKeyInMarketBegin(market)
+	end := getOrderKeyInMarketEnd(market)
+	iter := store.Iterator(begin, end)
+	defer iter.Close()
+
+	orderIDs := make([]string, 0)
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		orderID := key[getOrderIdPosInMarket(market):]
+		orderIDs = append(orderIDs, string(orderID))
+	}
+
+	ret := make([]*types.Order, 0, len(orderIDs))
+	for _, id := range orderIDs {
+		order := o.getOrder(store, id)
+		if order == nil {
+			panic(types.ErrInvalidOrderID(id))
+		}
+		ret = append(ret, order)
+	}
+	return ret
 }

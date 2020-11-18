@@ -16,6 +16,7 @@ var (
 	PoolLiquidityEndKey = []byte{0x06}
 	BidOrderKey         = []byte{0x07}
 	AskOrderKey         = []byte{0x08}
+	OrderMarketKey      = []byte{0x09}
 )
 
 var (
@@ -100,4 +101,22 @@ func getOrderIDPos(tradingPair string) int {
 // value = order info
 func getOrderBookKey(orderID string) []byte {
 	return append(OrderBookKey, orderID...)
+}
+
+// getOrderKeyInMarket key = OrderMarketKey | 0x0 | market, orderID
+// value = nil
+func getOrderKeyInMarket(market, orderID string) []byte {
+	return append(append(append(OrderMarketKey, 0x0), market...), orderID...)
+}
+
+func getOrderKeyInMarketBegin(market string) []byte {
+	return append(append(OrderMarketKey, 0x0), market...)
+}
+
+func getOrderKeyInMarketEnd(market string) []byte {
+	return append(append(OrderMarketKey, 0x1), market...)
+}
+
+func getOrderIdPosInMarket(market string) int {
+	return 2 + len(market)
 }
