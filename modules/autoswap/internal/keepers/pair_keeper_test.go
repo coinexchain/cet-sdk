@@ -156,9 +156,9 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 	takerFee := sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRateRate / types.DefaultFeePrecision // will charge money
 	fmt.Println(makeFee, takerFee)
 	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
-	require.EqualValues(t, 1000, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 1000-makeFee, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 100*1000-takerFee, afterMoneyBalanceTo.Sub(beforeMoneyBalanceTo).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 1000, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
 
 	// ------- half deal
 
@@ -283,7 +283,7 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
 	msgCreateOrder := types.MsgCreateOrder{
 		TradingPair: market,
-		Price:       100,
+		Price:       1,
 		Quantity:    1000,
 		Side:        types.BID,
 		Identify:    1,
@@ -309,5 +309,7 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 
 	// 3. deal orders
 	sellOrderMsg := msgCreateOrder
-	_ = sellOrderMsg
+	sellOrderMsg.Sender = to
+	sellOrderMsg.Identify = 1
+	require.NoError(t, k.AddLimitOrder(ctx, sellOrderMsg.GetOrder()))
 }

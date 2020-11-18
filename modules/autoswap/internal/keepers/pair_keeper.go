@@ -226,7 +226,7 @@ func (pk PairKeeper) freezeOrderCoin(ctx sdk.Context, order *types.Order) (sdk.I
 func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order, oppositeOrder *types.Order,
 	dealInfo *types.DealInfo, poolInfo *PoolInfo) (allDeal bool, err sdk.Error) {
 	pk.tryDealInPool(dealInfo, oppositeOrder.Price, order, poolInfo)
-	pk.dealInOrderBook(ctx, order, oppositeOrder, poolInfo, dealInfo, poolInfo.IsNoReservePool())
+	pk.dealInOrderBook(ctx, order, oppositeOrder, poolInfo, dealInfo, !poolInfo.IsNoReservePool())
 	if oppositeOrder.LeftStock == 0 {
 		pk.DelOrder(ctx, order)
 	} else {
