@@ -149,10 +149,12 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 		return err
 	}
 	dealInfo := &types.DealInfo{
-		RemainAmount:    actualAmount,
-		AmountInToPool:  sdk.ZeroInt(),
-		DealMoneyInBook: sdk.ZeroInt(),
-		DealStockInBook: sdk.ZeroInt(),
+		RemainAmount:      actualAmount,
+		AmountInToPool:    sdk.ZeroInt(),
+		DealMoneyInBook:   sdk.ZeroInt(),
+		DealStockInBook:   sdk.ZeroInt(),
+		FeeToStockReserve: sdk.ZeroInt(),
+		FeeToMoneyReserve: sdk.ZeroInt(),
 	}
 
 	// 1. get matched opposite orders.
@@ -356,8 +358,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 			if err != nil {
 				panic(err)
 			}
-			poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
-			poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
+			dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
+			dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
 		} else {
 			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee)), currOrder.Sender); err != nil {
 				panic(err)
@@ -380,8 +382,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 			if err != nil {
 				panic(err)
 			}
-			poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
-			poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
+			dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
+			dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
 		} else {
 			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Stock(), stockFee)), currOrder.Sender); err != nil {
 				panic(err)
@@ -485,6 +487,8 @@ func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, deal
 	if dealInfo.AmountInToPool.IsPositive() {
 		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64(), poolInfo)
 	}
+	poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(dealInfo.FeeToMoneyReserve)
+	poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.FeeToStockReserve)
 }
 
 func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (totalAmountToTaker sdk.Int, fee sdk.Int, poolToUser sdk.Int) {
@@ -518,7 +522,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err != nil {
 			panic(err)
 		}
-		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(stockToPool)
+		dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
@@ -530,7 +534,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err != nil {
 			panic(err)
 		}
-		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(moneyToPool)
+		dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
