@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
@@ -24,6 +25,7 @@ type IPairKeeper interface {
 	DeleteOrder(ctx sdk.Context, order types.MsgCancelOrder) sdk.Error
 	HasOrder(ctx sdk.Context, orderID string) bool
 	GetOrder(ctx sdk.Context, orderID string) *types.Order
+	GetAllOrders(ctx sdk.Context, market string) []*types.Order
 
 	SetParams(ctx sdk.Context, params types.Params)
 	GetParams(ctx sdk.Context) types.Params
@@ -32,8 +34,6 @@ type IPairKeeper interface {
 	GetDealWithPoolFee(ctx sdk.Context) sdk.Dec
 	GetFeeToValidator(ctx sdk.Context) sdk.Dec
 
-	GetPairList() map[Pair]struct{}
-	ClearPairList()
 	ResetOrderIndexInOneBlock()
 }
 
@@ -49,8 +49,6 @@ type PairKeeper struct {
 	storeKey    sdk.StoreKey
 	subspace    params.Subspace
 	msgProducer msgqueue.MsgSender
-	// record deal pairs in one block.
-	DealPairs map[Pair]struct{}
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
@@ -67,15 +65,7 @@ func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types
 			codec:    codec,
 			storeKey: storeKey,
 		},
-		DealPairs: make(map[Pair]struct{}),
 	}
-}
-
-func (pk *PairKeeper) GetPairList() map[Pair]struct{} {
-	return pk.DealPairs
-}
-func (pk *PairKeeper) ClearPairList() {
-	pk.DealPairs = make(map[Pair]struct{})
 }
 
 func (pk *PairKeeper) SetParams(ctx sdk.Context, params types.Params) {
@@ -269,21 +259,27 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 }
 
 func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
-	//fmt.Println("reserveMoney: ", info.MoneyAmmReserve, "; reserveStock: ", info.StockAmmReserve, "; price: ", dealPrice, "; isBuy: ", isBuy)
 	if isBuy {
-		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve))
-		fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
-		if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
-			BigInt())).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
-
+		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve)).MulInt64(int64(math.Pow10(16)))
+		//fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
+		//if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
+		//	BigInt())).Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
+		root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
+		if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
+			return sdk.ZeroInt()
+		}
+		if ret := root.Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
 			return ret
 		}
 		return sdk.ZeroInt()
 	}
-	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Quo(sdk.NewDecFromInt(info.StockAmmReserve)).Quo(dealPrice)
+	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Mul(sdk.NewDecFromInt(info.StockAmmReserve)).MulInt64(int64(math.Pow10(16))).Quo(dealPrice)
 	fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
-	if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
-		BigInt())).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt(); ret.IsPositive() {
+	root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
+	if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
+		return sdk.ZeroInt()
+	}
+	if ret := root.Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt(); ret.IsPositive() {
 		return ret
 	}
 	return sdk.ZeroInt()
@@ -645,4 +641,8 @@ func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder 
 	}
 	pk.SetPoolInfo(ctx, delOrder.TradingPair, info)
 	return nil
+}
+
+func (pk *PairKeeper) GetAllOrders(ctx sdk.Context, market string) []*types.Order {
+	return pk.GetAllOrdersInMarket(ctx, market)
 }
