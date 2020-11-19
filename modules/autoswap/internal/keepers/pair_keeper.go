@@ -1,6 +1,7 @@
 package keepers
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
@@ -130,11 +131,12 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 			err = sdk.NewError(types.RouterKey, types.CodeUnKnownError, r.(error).Error())
 		}
 	}()
-
+	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	poolInfo := pk.GetPoolInfo(ctx, order.TradingPair)
 	if poolInfo == nil {
 		return types.ErrInvalidMarket(order.TradingPair)
 	}
+	fmt.Println(poolInfo)
 	if order.PricePrecision > poolInfo.PricePrecision {
 		return types.ErrInvalidPricePrecision(order.PricePrecision, poolInfo.PricePrecision)
 	}
@@ -146,6 +148,7 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 	if err != nil {
 		return err
 	}
+	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	dealInfo := &types.DealInfo{
 		RemainAmount:      actualAmount,
 		AmountInToPool:    sdk.ZeroInt(),
@@ -168,7 +171,7 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 		}
 	}
 	pk.tryDealInPool(dealInfo, order.Price, order, poolInfo)
-
+	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	// 3. update poolInfo with new order
 	if dealInfo.AmountInToPool.IsPositive() {
 		if order.IsBuy {
@@ -186,7 +189,7 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 
 	// 3. final deal with pool and order
 	pk.finalDealWithPool(ctx, order, dealInfo, poolInfo)
-
+	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	// 4. store order in keeper if need
 	pk.storeOrderIfNeed(ctx, order, poolInfo)
 	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
@@ -249,8 +252,12 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 		if allDeal {
 			diffTokenTradeWithPool = dealInfo.RemainAmount
 		}
+		fmt.Println(diffTokenTradeWithPool)
 		before := GetAmountOutInPool(dealInfo.AmountInToPool, info, order.IsBuy)
 		after := GetAmountOutInPool(currTokenCanTradeWithPool, info, order.IsBuy)
+		if after.Sub(before).IsZero() {
+			return false
+		}
 		order.Freeze -= diffTokenTradeWithPool.Int64()
 		if order.IsBuy {
 			order.LeftStock -= after.Sub(before).Int64()
@@ -271,9 +278,6 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
 	if isBuy {
 		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve)).MulInt64(int64(math.Pow10(16)))
-		//fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
-		//if ret := sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().
-		//	BigInt())).Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
 		root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
 		if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
 			return sdk.ZeroInt()
@@ -284,7 +288,6 @@ func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.
 		return sdk.ZeroInt()
 	}
 	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Mul(sdk.NewDecFromInt(info.StockAmmReserve)).MulInt64(int64(math.Pow10(16))).Quo(dealPrice)
-	//fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
 	root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
 	if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
 		return sdk.ZeroInt()
@@ -508,13 +511,13 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	outAmount := sdk.ZeroInt()
 	if dealInfo.AmountInToPool.IsPositive() {
 		outAmount = GetAmountOutInPool(dealInfo.AmountInToPool, poolInfo, order.IsBuy)
-		//outAmount = outPoolTokenReserve.Mul(dealInfo.AmountInToPool).Quo(inPoolTokenReserve.Add(dealInfo.AmountInToPool))
 	} else {
 		return sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt()
 	}
 
 	// add fee calculate
-	fee = pk.GetDealWithPoolFee(ctx).MulInt(outAmount).TruncateInt()
+	feeRate := pk.GetParams(ctx).DealWithPoolFeeRate
+	fee = outAmount.Mul(sdk.NewInt(feeRate)).Add(sdk.NewInt(9999)).Quo(sdk.NewInt(types.DefaultFeePrecision))
 	amountToTaker := outAmount.Add(otherToTaker).Sub(fee)
 	if order.IsBuy {
 		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(dealInfo.AmountInToPool)
@@ -532,6 +535,9 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 		dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
+		if err := pk.UnFreezeCoins(ctx, order.Sender, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
+			panic(err)
+		}
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Money(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}
@@ -544,6 +550,9 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 		dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
+		if err := pk.UnFreezeCoins(ctx, order.Sender, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
+			panic(err)
+		}
 		if err := pk.SendCoinsFromAccountToModule(ctx, order.Sender, types.PoolModuleAcc, newCoins(order.Stock(), dealInfo.AmountInToPool)); err != nil {
 			panic(err)
 		}

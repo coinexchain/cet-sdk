@@ -70,16 +70,14 @@ func TestPair(t *testing.T) {
 	booked := pair.getBooked()
 	require.Equal(t, 504, booked.bookedStock)
 	require.Equal(t, 0, booked.bookedMoney)
-	//th.getOrderList(pair, true)                  // TODO
-	//th.getOrderList(pair, false)                 // TODO
 
 	// it("insert buy order with only 1 incomplete deal with orderbook", async () => {
 	//usd.transfer(taker, 5000, boss)
 	require.Equal(t, 10000000, usd.balanceOf(taker))
 	require.Equal(t, 0, btc.balanceOf(taker))
 	pair.addLimitOrder(true, taker, 50, 100, 11)
-	require.Equal(t, 9995000, usd.balanceOf(taker)) // TODO
-	require.Equal(t, 49, btc.balanceOf(taker))      // TODO
+	require.Equal(t, 9995000, usd.balanceOf(taker))
+	require.Equal(t, 49, btc.balanceOf(taker))
 	reserves = pair.getReserves()
 	require.Equal(t, 10001, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
@@ -91,38 +89,45 @@ func TestPair(t *testing.T) {
 	reserves = pair.getReserves()
 	fmt.Println("reserve stock: ", reserves.reserveStock, "; reserves money: ", reserves.reserveMoney)
 	usd.transfer(taker, 5100, boss)
+	fmt.Println("usd balance: ", usd.balanceOf(taker), "; btc balance: ", btc.balanceOf(taker))
 	pair.addLimitOrder(true, taker, 51, 100, 12)
 	reserves = pair.getReserves()
-	//require.Equal(t, 10001, reserves.reserveStock)
-	//require.Equal(t, 1000100, reserves.reserveMoney)
+	require.Equal(t, 10002, reserves.reserveStock)   // oneswap 10001, because the more fee to pool due to charging mechanism.
+	require.Equal(t, 1000000, reserves.reserveMoney) // oneswap 1000100, because no deal with pool.
 	booked = pair.getBooked()
 	require.Equal(t, 404, booked.bookedStock)
-	//require.Equal(t, 0, booked.bookedMoney) // todo. will check
-	//require.Equal(t, 9989900, usd.balanceOf(taker))
-	//require.Equal(t, 99, btc.balanceOf(taker))
+	require.Equal(t, 100, booked.bookedMoney)       // oneswap 0, because left 100 money no deal with orderBook and pool.
+	require.Equal(t, 9995000, usd.balanceOf(taker)) // oneswap 9989900, because only deal with orderBook amount = 50, left 1.
+	require.Equal(t, 98, btc.balanceOf(taker))      // because sub 1 fee in dealOrderBook
 
 	// it("insert buy order with 7 complete deal with orderbook and 4 swap", async () => {
 	usd.transfer(taker, 99000, boss)
-	pair.addLimitOrder(true, taker, 900, 110, 12)
+	fmt.Println("before usd : ", usd.balanceOf(taker))
+	pair.addLimitOrder(true, taker, 900, 110, 13)
 	reserves = pair.getReserves()
-	require.Equal(t, 9538, reserves.reserveStock)
-	require.Equal(t, 1049020, reserves.reserveMoney)
+	require.Equal(t, 9546, reserves.reserveStock)    // oneswap 9538, because more precision, dealInfos[-99, -48, -48, -47, -46, -45, -45, -44, -44], +10 fee
+	require.Equal(t, 1048913, reserves.reserveMoney) // oneswap 1049020, dealInfos[+10051, +4939, +4915, +4892, +4868, +4846, +4823, +4801, +4778]
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
-	require.Equal(t, 7260, booked.bookedMoney)
-	require.Equal(t, 9890900, usd.balanceOf(taker))
-	require.Equal(t, 966, btc.balanceOf(taker))
+	require.Equal(t, 7367, booked.bookedMoney)      // oneswap 7260. before + order.ActualAmount - amountInToPool
+	require.Equal(t, 9995000, usd.balanceOf(taker)) // oneswap 9890900, because freeze user money, but freeze amount is not as useful token.
+	require.Equal(t, 958, btc.balanceOf(taker))     // oneswap 966, because charging mechanism: 12 fee stock
 
 	// it("remove sell order", async () => {
-	pair.removeOrder("12", taker) // todo. will modify orderID
+	order := types.Order{
+		Sender:   taker,
+		Sequence: 0,
+		Identify: 13,
+	}
+	pair.removeOrder(order.GetOrderID(), taker)
 	reserves = pair.getReserves()
-	require.Equal(t, 9538, reserves.reserveStock)
-	require.Equal(t, 1049020, reserves.reserveMoney)
+	require.Equal(t, 9546, reserves.reserveStock)    // oneswap 9538,
+	require.Equal(t, 1048913, reserves.reserveMoney) // oneswap 1049020,
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
-	require.Equal(t, 0, booked.bookedMoney)
-	require.Equal(t, 9898160, usd.balanceOf(taker))
-	require.Equal(t, 966, btc.balanceOf(taker))
+	require.Equal(t, 4067, booked.bookedMoney)      //
+	require.Equal(t, 9998300, usd.balanceOf(taker)) // oneswap 9898160, before + leftStock * 110 = 9998300
+	require.Equal(t, 958, btc.balanceOf(taker))     // oneswap 966, same before.
 }
 
 // contract("insert & delete order", async (accounts) => {
@@ -132,7 +137,6 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 	taker := sdk.AccAddress("taker")
 	shareReceiver := sdk.AccAddress("shareReceiver")
 	th := newTestHelper(t)
-	fmt.Println(boss.String(), maker.String(), taker.String(), shareReceiver.String())
 
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
@@ -160,10 +164,6 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 	btc.transfer(maker, 100, boss)
 	pair.addLimitOrder(false, maker, 100, 105, 3)
 	require.EqualValues(t, 3, len(th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0")))
-	for _, v := range th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0") {
-		fmt.Println(v.GetOrderID(), "; ", v.Sequence, "; ", v.Identify)
-	}
-	fmt.Println()
 
 	// it("insert buy order with invalid price", async () => {
 	// "OneSwap: INVALID_PRICE"
