@@ -71,6 +71,12 @@ func TestOrderKeeper_AddOrder_GetOrder_DelOrder(t *testing.T) {
 	// check index in keeper
 	require.EqualValues(t, 4, orderKeeper.ordersIndexInOneBlock)
 
+	queryOrders := orderKeeper.GetAllOrdersInMarket(ctx, tradingPair)
+	for _, v := range queryOrders {
+		fmt.Println(v.GetOrderID())
+	}
+	require.EqualValues(t, 4, len(queryOrders))
+
 	// get orders
 	for i, id := range orderIDs {
 		queryOrder := orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: id})

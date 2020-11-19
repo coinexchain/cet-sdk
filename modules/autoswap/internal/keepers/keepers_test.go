@@ -114,7 +114,7 @@ func TestPair(t *testing.T) {
 	require.Equal(t, 966, btc.balanceOf(taker))
 
 	// it("remove sell order", async () => {
-	pair.removeOrder(true, 12, taker)
+	pair.removeOrder("12", taker) // todo. will modify orderID
 	reserves = pair.getReserves()
 	require.Equal(t, 9538, reserves.reserveStock)
 	require.Equal(t, 1049020, reserves.reserveMoney)
@@ -132,6 +132,7 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 	taker := sdk.AccAddress("taker")
 	shareReceiver := sdk.AccAddress("shareReceiver")
 	th := newTestHelper(t)
+	fmt.Println(boss.String(), maker.String(), taker.String(), shareReceiver.String())
 
 	// it("initialize pair with btc/usd", async () => {
 	btc := th.issueToken("btc0", 100000000000000, boss)
@@ -140,22 +141,29 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 
 	// it("mint", async () => {
 	pair.mint(10000, 1000000, shareReceiver)
+	btc.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 10000, boss)
+	usd.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 1000000, boss)
 	reserves := pair.getReserves()
 	require.Equal(t, 10000, reserves.reserveStock)
 	require.Equal(t, 1000000, reserves.reserveMoney)
 
 	// it("insert sell order with duplicated id", async () => {
 	btc.transfer(maker, 100, boss)
-	require.NoError(t, pair.addLimitOrderWithoutCheck(false, maker, 100, 110, 1))
+	pair.addLimitOrder(false, maker, 100, 110, 1)
+	require.EqualValues(t, 1, len(th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0")))
 	btc.transfer(maker, 50, boss)
-	err := pair.addLimitOrderWithoutCheck(false, maker, 50, 120, 1)
-	require.NotNil(t, err)
-	require.EqualValues(t, types.CodeOrderAlreadyExist, err.Code())
-
+	pair.addLimitOrder(false, maker, 50, 120, 2)
+	require.EqualValues(t, 2, len(th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0")))
 	// The test case is remove, because there is no prevKey in the current design.
+	// so now only insert orders.
 	// it("insert sell order with invalid prevkey", async () => {
-	//btc.transfer(maker, 100, boss)
-	//pair.addLimitOrder(false, maker, 100, 105, 1)
+	btc.transfer(maker, 100, boss)
+	pair.addLimitOrder(false, maker, 100, 105, 3)
+	require.EqualValues(t, 3, len(th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0")))
+	for _, v := range th.app.AutoSwapKeeper.GetAllOrders(th.ctx, "btc0/usd0") {
+		fmt.Println(v.GetOrderID(), "; ", v.Sequence, "; ", v.Identify)
+	}
+	fmt.Println()
 
 	// it("insert buy order with invalid price", async () => {
 	// "OneSwap: INVALID_PRICE"
@@ -166,53 +174,89 @@ func TestInsertAndDeleteOrder(t *testing.T) {
 	// it("insert buy order with unenough usd", async () => {
 	usd.transfer(taker, 500, boss)
 	// "OneSwap: DEPOSIT_NOT_ENOUGH"
-	pair.addLimitOrder(true, taker, 50, 100, 1)
+	err := pair.addLimitOrderWithoutCheck(true, taker, 50, 100, 1)
+	require.NotNil(t, err)
+	require.EqualValues(t, sdk.CodeInsufficientCoins, err.Code())
 
 	// it("remove buy order with non existed id", async () => {
 	// "OneSwap: NO_SUCH_ORDER"
-	pair.removeOrder(true, 1, taker)
+	order := types.Order{
+		Sequence: int64(th.app.AccountKeeper.GetAccount(th.ctx, taker).GetSequence()),
+		Identify: 1,
+		Sender:   taker,
+	}
+	err = pair.removeOrderWithoutCheck(order.GetOrderID(), taker)
+	require.NotNil(t, err)
+	require.EqualValues(t, types.CodeInvalidOrderID, err.Code())
 
+	//  The test case is remove, because there is no prevKey in the current design.
 	// it("remove sell order with invalid prevKey", async () => {
 	// "OneSwap: REACH_END"
-	pair.removeOrder(false, 1, maker)
+	//order.Sender = maker
+	//order.Sequence = int64(th.app.AccountKeeper.GetAccount(th.ctx, maker).GetSequence())
+	//pair.removeOrder(order.GetOrderID(), maker)
 
 	// it("only order sender can remove order", async () => {
 	// "OneSwap: NOT_OWNER"
-	pair.removeOrder(false, 3, boss)
+	order = types.Order{
+		Sequence: 0,
+		Identify: 3,
+		Sender:   maker,
+	}
+	err = pair.removeOrderWithoutCheck(order.GetOrderID(), boss)
+	require.NotNil(t, err)
+	require.EqualValues(t, types.CodeInvalidOrderSender, err.Code())
 
 	// it("remove sell order successfully", async () => {
 	// remove first sell id emits sync event at first
-	pair.removeOrder(false, 3, maker)
-	pair.removeOrder(false, 2, maker)
-	pair.removeOrder(false, 1, maker)
+	order = types.Order{
+		Sequence: 0,
+		Identify: 3,
+		Sender:   maker,
+	}
+	order.Sequence = int64(th.app.AccountKeeper.GetAccount(th.ctx, maker).GetSequence())
+	pair.removeOrder(order.GetOrderID(), maker)
+	order = types.Order{
+		Sequence: 0,
+		Identify: 2,
+		Sender:   maker,
+	}
+	pair.removeOrder(order.GetOrderID(), maker)
+	order = types.Order{
+		Sequence: 0,
+		Identify: 1,
+		Sender:   maker,
+	}
+	pair.removeOrder(order.GetOrderID(), maker)
 }
 
+// Delete the test case. because no market order.
 // contract("swap on low liquidity", async (accounts) => {
-func TestSwapOnLowLiquidity(t *testing.T) {
-	boss := sdk.AccAddress("boss")
-	maker := sdk.AccAddress("maker")
-	//taker := sdk.AccAddress("taker")
-	shareReceiver := sdk.AccAddress("shareReceiver")
-	//lp := sdk.AccAddress("lp")
-	th := newTestHelper(t)
-
-	// it("initialize pair with btc/usd", async () => {
-	btc := th.issueToken("btc0", 100000000000000, boss)
-	usd := th.issueToken("usd0", 100000000000000, boss)
-	pair := th.createPair(maker, btc.sym, usd.sym, 0)
-
-	// it("mint only 1000 shares", async () => {
-	btc.transfer(shareReceiver, 10000, boss)
-	usd.transfer(shareReceiver, 1000000, boss)
-	pair.mint(10000, 1000000, shareReceiver)
-	//balance := pair.balanceOf(shareReceiver)
-	// TODO
-
-	// it("swap with pool", async () => {
-	btc.transfer(maker, 90000000000000, boss)
-	pair.addMarketOrder(false, maker, 90000000000000)
-	// TODO
-}
+//func TestSwapOnLowLiquidity(t *testing.T) {
+//	boss := sdk.AccAddress("boss")
+//	maker := sdk.AccAddress("maker")
+//	//taker := sdk.AccAddress("taker")
+//	shareReceiver := sdk.AccAddress("shareReceiver")
+//	//lp := sdk.AccAddress("lp")
+//	th := newTestHelper(t)
+//
+//	// it("initialize pair with btc/usd", async () => {
+//	btc := th.issueToken("btc0", 100000000000000, boss)
+//	usd := th.issueToken("usd0", 100000000000000, boss)
+//	pair := th.createPair(maker, btc.sym, usd.sym, 0)
+//
+//	// it("mint only 1000 shares", async () => {
+//	btc.transfer(shareReceiver, 10000, boss)
+//	usd.transfer(shareReceiver, 1000000, boss)
+//	pair.mint(10000, 1000000, shareReceiver)
+//	//balance := pair.balanceOf(shareReceiver)
+//	// TODO
+//
+//	// it("swap with pool", async () => {
+//	btc.transfer(maker, 90000000000000, boss)
+//	pair.addMarketOrder(false, maker, 90000000000000)
+//	// TODO
+//}
 
 // contract("big deal on low liquidity", async (accounts) => {
 func TestBigDealOnLowLiquidity(t *testing.T) {
@@ -232,13 +276,15 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	btc.transfer(shareReceiver, 10000, boss)
 	usd.transfer(shareReceiver, 1000000, boss)
 	pair.mint(10000, 1000000, shareReceiver)
+	btc.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 10000, boss)
+	usd.transfer(supply.NewModuleAddress(types.PoolModuleAcc), 1000000, boss)
 	//balance := pair.balanceOf(shareReceiver)
 	// TODO
 
 	// it("insert sell order at pool current price", async () => {
 	btc.transfer(maker, 90000000000000, boss)
 	pair.addLimitOrder(false, maker, 10, 100, 1)
-	require.Equal(t, 1, usd.balanceOf(maker))
+	require.Equal(t, 0, usd.balanceOf(maker))
 	booked := pair.getBooked()
 	require.Equal(t, 0, booked.bookedMoney)
 	require.Equal(t, 10, booked.bookedStock)
@@ -246,18 +292,22 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	// it("insert three small buy order at lower price", async () => {
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, 2, 1)
+	usd.transfer(maker, 20, boss)
+	pair.addLimitOrder(true, maker, 10, 2, 2)
 	booked = pair.getBooked()
 	require.Equal(t, 20, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, 3, 1)
+	usd.transfer(maker, 30, boss)
+	pair.addLimitOrder(true, maker, 10, 3, 3)
 	booked = pair.getBooked()
 	require.Equal(t, 50, booked.bookedMoney)
-	pair.addLimitOrder(true, maker, 10, 4, 1)
+	usd.transfer(maker, 40, boss)
+	pair.addLimitOrder(true, maker, 10, 4, 4)
 	booked = pair.getBooked()
 	require.Equal(t, 90, booked.bookedMoney)
 
 	// it("insert big sell order not deal", async () => {
-	pair.addLimitOrder(false, maker, 1000000000, 101, 2)
+	//btc.transfer(pair, 1000000000, maker)
+	pair.addLimitOrder(false, maker, 1000000000, 101, 5)
 	require.Equal(t, 0, usd.balanceOf(maker))
 	booked = pair.getBooked()
 	require.Equal(t, 90, booked.bookedMoney)
@@ -265,7 +315,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 
 	// it("insert big order deal with biggest sell order ", async () => {
 	usd.transfer(taker, 100000_0000_0000, boss)
-	pair.addLimitOrder(true, taker, 10_0000_0000, 101, 1)
+	pair.addLimitOrder(true, taker, 10_0000_0000, 101, 6)
 	balance := btc.balanceOf(taker)
 	require.Equal(t, 9_9700_0000, balance)
 

@@ -74,17 +74,20 @@ type PairBooked struct {
 func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
 	mint(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, sdk.NewInt(stockIn), sdk.NewInt(moneyIn), to)
 }
-func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
-	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
+func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price int64, identify byte) {
+	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, identify)
 }
-func (p Pair) addLimitOrderWithoutCheck(isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) sdk.Error {
-	return addLimitOrderWithoutCheck(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
+func (p Pair) addLimitOrderWithoutCheck(isBuy bool, sender sdk.AccAddress, amt, price int64, identify byte) sdk.Error {
+	return addLimitOrderWithoutCheck(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, identify)
 }
 func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
 	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt)
 }
-func (p Pair) removeOrder(isBuy bool, id int64, sender sdk.AccAddress) {
-	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, id, sender)
+func (p Pair) removeOrder(id string, sender sdk.AccAddress) {
+	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, id, sender)
+}
+func (p Pair) removeOrderWithoutCheck(id string, sender sdk.AccAddress) sdk.Error {
+	return removeOrderWithoutCheck(p.th.t, p.th.ctx, p.th.app.AutoSwapKeeper, id, sender)
 }
 func (p Pair) getLiquidity(addr sdk.AccAddress) sdk.Int {
 	return p.th.app.AutoSwapKeeper.GetLiquidity(p.th.ctx, p.sym, addr)
@@ -127,9 +130,9 @@ func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
 	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
 	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
 	app.AutoSwapKeeper.SetParams(ctx, types.Params{
-		TakerFeeRateRate:    50,
+		TakerFeeRateRate:    30,
 		MakerFeeRateRate:    0,
-		DealWithPoolFeeRate: 50,
+		DealWithPoolFeeRate: 30,
 		FeeToPool:           1,
 		FeeToValidator:      0,
 	})
@@ -197,12 +200,17 @@ func addMarketOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func removeOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, id int64, sender sdk.AccAddress) {
-	err := ask.DeleteOrder(ctx, types.MsgCancelOrder{
-		Sender: sender,
-		//OrderID: id,
+func removeOrderWithoutCheck(t *testing.T, ctx sdk.Context,
+	ask *autoswap.Keeper, id string, sender sdk.AccAddress) sdk.Error {
+	return ask.DeleteOrder(ctx, types.MsgCancelOrder{
+		Sender:  sender,
+		OrderID: id,
 	})
+}
+
+func removeOrder(t *testing.T,
+	ask *autoswap.Keeper, ctx sdk.Context, id string, sender sdk.AccAddress) {
+	err := removeOrderWithoutCheck(t, ctx, ask, id, sender)
 	require.NoError(t, err)
 }
 

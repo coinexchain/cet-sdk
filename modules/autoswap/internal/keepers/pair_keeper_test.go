@@ -328,7 +328,7 @@ func TestPairKeeper_IntoPoolAmountTillPrice(t *testing.T) {
 	require.EqualValues(t, 0,
 		keepers.IntoPoolAmountTillPrice(sdk.NewDec(100), false,
 			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
-	require.EqualValues(t, 48797,
+	require.EqualValues(t, 48808,
 		keepers.IntoPoolAmountTillPrice(sdk.NewDec(110), true,
 			&keepers.PoolInfo{MoneyAmmReserve: sdk.NewInt(1000_000), StockAmmReserve: sdk.NewInt(10_000)}).Int64())
 	require.EqualValues(t, 540,
