@@ -151,6 +151,9 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 		return types.ErrInvalidPricePrecision(order.PricePrecision, poolInfo.PricePrecision)
 	}
 	order.Sequence = int64(pk.GetAccount(ctx, order.Sender).GetSequence())
+	if pk.GetOrder(ctx, order.GetOrderID()) != nil {
+		return types.ErrOrderAlreadyExist(order.GetOrderID())
+	}
 	actualAmount, err := pk.freezeOrderCoin(ctx, order)
 	if err != nil {
 		return err
@@ -266,7 +269,7 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 }
 
 func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
-	fmt.Println("reserveMoney: ", info.MoneyAmmReserve, "; reserveStock: ", info.StockAmmReserve, "; price: ", dealPrice, "; isBuy: ", isBuy)
+	//fmt.Println("reserveMoney: ", info.MoneyAmmReserve, "; reserveStock: ", info.StockAmmReserve, "; price: ", dealPrice, "; isBuy: ", isBuy)
 	if isBuy {
 		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve))
 		fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
@@ -394,10 +397,10 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 			}
 		}
 	}
-	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(), takerFee.Int64(), makerFee.Int64())
+	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(), takerFee.Int64(), makerFee.Int64(), poolInfo)
 }
 
-func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock, dealMoney int64, takerFee, makerFee int64) {
+func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock, dealMoney int64, takerFee, makerFee int64, poolInfo *PoolInfo) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
@@ -439,6 +442,7 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 		MakerOrderID:    dealOrder.GetOrderID(),
 		DealStockAmount: dealStock,
 		DealHeight:      ctx.BlockHeight(),
+		DealPrice:       dealOrder.Price,
 	}
 	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, taker)
 	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, maker)
@@ -450,6 +454,9 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 	if dealOrder.LeftStock == 0 {
 		pk.sendDelOrderInfo(ctx, dealOrder, types.CancelOrderByAllFilled)
 	}
+
+	// update last execute price in pool
+	poolInfo.LastExecutedPrice = dealOrder.Price
 }
 
 func getSide(isBuy bool) byte {
@@ -482,7 +489,7 @@ func (pk PairKeeper) sendDelOrderInfo(ctx sdk.Context, order *types.Order, delRe
 func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
 	_, fee, poolToUser := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if dealInfo.AmountInToPool.IsPositive() {
-		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64())
+		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64(), poolInfo)
 	}
 }
 
@@ -537,7 +544,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	return amountToTaker, fee, outAmount
 }
 
-func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo, order *types.Order, commission, poolAmount int64) {
+func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo, order *types.Order, commission, poolAmount int64, poolInfo *PoolInfo) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
@@ -568,9 +575,12 @@ func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealI
 		TakerOrderID:    types.ReservePoolID,
 		DealStockAmount: currStock,
 		DealHeight:      ctx.BlockHeight(),
+		DealPrice:       dealOrderInfo.FillPrice,
 	}
 	msgqueue.FillMsgs(ctx, types.FillOrderInfoKey, dealOrderInfo)
 	msgqueue.FillMsgs(ctx, types.DealMarketInfoKey, dealMarketInfo)
+	// update pool last execute price
+	poolInfo.LastExecutedPrice = dealOrderInfo.FillPrice
 }
 
 func (pk PairKeeper) storeOrderIfNeed(ctx sdk.Context, order *types.Order, poolInfo *PoolInfo) {

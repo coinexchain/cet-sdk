@@ -66,6 +66,7 @@ type MarketDealInfoMq struct {
 	TakerOrderID    string
 	DealStockAmount int64
 	DealHeight      int64
+	DealPrice       sdk.Dec
 }
 
 type CancelOrderInfoMq struct {

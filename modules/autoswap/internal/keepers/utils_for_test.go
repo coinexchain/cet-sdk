@@ -77,6 +77,9 @@ func (p Pair) mint(stockIn, moneyIn int64, to sdk.AccAddress) {
 func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
 	addLimitOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
 }
+func (p Pair) addLimitOrderWithoutCheck(isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) sdk.Error {
+	return addLimitOrderWithoutCheck(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, id)
+}
 func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
 	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt)
 }
@@ -165,9 +168,8 @@ func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	require.NoError(t, err)
 }
 
-func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
-
+func addLimitOrderWithoutCheck(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
+	pair string, isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) sdk.Error {
 	msg := types.MsgCreateOrder{
 		TradingPair: pair,
 		Price:       price,
@@ -181,7 +183,12 @@ func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 		msg.Side = types.ASK
 	}
 
-	err := ask.AddLimitOrder(ctx, msg.GetOrder())
+	return ask.AddLimitOrder(ctx, msg.GetOrder())
+}
+
+func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
+	pair string, isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) {
+	err := addLimitOrderWithoutCheck(t, ask, ctx, pair, isBuy, sender, amt, price, id)
 	require.NoError(t, err)
 }
 

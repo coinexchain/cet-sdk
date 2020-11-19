@@ -185,6 +185,7 @@ type PoolInfo struct {
 	MoneyOrderBookReserve sdk.Int        `json:"money_order_book_reserve"`
 	TotalSupply           sdk.Int        `json:"total_supply"`
 	PricePrecision        byte           `json:"price_precision"`
+	LastExecutedPrice     sdk.Dec        `json:"last_executed_price"`
 }
 
 func (p PoolInfo) GetLiquidityAmountIn(amountStockIn, amountMoneyIn sdk.Int) (amountStockOut, amountMoneyOut sdk.Int) {
