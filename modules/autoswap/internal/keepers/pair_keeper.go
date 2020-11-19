@@ -166,9 +166,8 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 				return err
 			}
 		}
-	} else {
-		pk.tryDealInPool(dealInfo, order.Price, order, poolInfo)
 	}
+	pk.tryDealInPool(dealInfo, order.Price, order, poolInfo)
 
 	// 3. update poolInfo with new order
 	if dealInfo.AmountInToPool.IsPositive() {
@@ -328,7 +327,6 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
 		moneyFee = makeFeeRate.MulInt(moneyTrans).Add(
 			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
-		//moneyFee = pk.GetMakerFee(ctx).MulInt(moneyTrans).Add(sdk.NewDec(1)).TruncateInt()
 		stockFee = takerFeeRate.MulInt(stockTrans).Add(
 			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
 	} else {

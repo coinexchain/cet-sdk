@@ -1,6 +1,7 @@
 package keepers_test
 
 import (
+	"math"
 	"testing"
 
 	dex "github.com/coinexchain/cet-sdk/types"
@@ -80,8 +81,8 @@ func (p Pair) addLimitOrder(isBuy bool, sender sdk.AccAddress, amt, price int64,
 func (p Pair) addLimitOrderWithoutCheck(isBuy bool, sender sdk.AccAddress, amt, price int64, identify byte) sdk.Error {
 	return addLimitOrderWithoutCheck(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, price, identify)
 }
-func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64) {
-	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt)
+func (p Pair) addMarketOrder(isBuy bool, sender sdk.AccAddress, amt int64, identify byte) {
+	addMarketOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, p.sym, isBuy, sender, amt, identify)
 }
 func (p Pair) removeOrder(id string, sender sdk.AccAddress) {
 	removeOrder(p.th.t, p.th.app.AutoSwapKeeper, p.th.ctx, id, sender)
@@ -188,14 +189,19 @@ func addLimitOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 
 // TODO
 func addMarketOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
-	pair string, isBuy bool, sender sdk.AccAddress, amt int64) {
-
+	pair string, isBuy bool, sender sdk.AccAddress, amt int64, identify byte) {
+	price := sdk.NewDec(1)
+	if isBuy {
+		price = sdk.NewDec(math.MaxInt64)
+	}
 	err := ask.AddLimitOrder(ctx, &types.Order{
 		Sender:      sender,
 		TradingPair: pair,
 		IsBuy:       isBuy,
 		Quantity:    amt,
-		// TODO
+		Price:       price,
+		Identify:    identify,
+		LeftStock:   amt,
 	})
 	require.NoError(t, err)
 }
