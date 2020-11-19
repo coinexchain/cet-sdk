@@ -93,15 +93,6 @@ func (p Pair) getPoolInfo() *autoswap.PoolInfo {
 	return p.th.app.AutoSwapKeeper.GetPoolInfo(p.th.ctx, p.sym)
 }
 
-func (p Pair) getFirstBuyID() int64 {
-	return 0 // TODO
-	//return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, true)
-}
-func (p Pair) getFirstSellID() int64 {
-	return 0 // TODO
-	//return p.th.app.AutoSwapKeeper.GetFirstOrderID(p.th.ctx, p.sym, false)
-}
-
 func (p Pair) getReserves() PairReserves {
 	pi := p.getPoolInfo()
 	return PairReserves{

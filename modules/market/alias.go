@@ -62,5 +62,6 @@ type (
 	QueryMarketParam        = keepers.QueryMarketParam
 	QueryOrderParam         = keepers.QueryOrderParam
 	QueryMarketInfo         = keepers.QueryMarketInfo
+	QueryUserOrderList      = keepers.QueryUserOrderList
 	ResOrder                = keepers.ResOrder
 )

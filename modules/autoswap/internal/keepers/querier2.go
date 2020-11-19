@@ -37,7 +37,7 @@ func NewQuerier2(mk Keeper) sdk.Querier {
 	}
 }
 
-// TODO
+// TODO: merge market.Params & autoswap.Params ?
 func queryParameters2(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	params := k.GetParams(ctx)
 
@@ -115,10 +115,27 @@ func queryOrder(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.E
 	return bz, nil
 }
 func queryUserOrderList(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
-	panic("TODO")
+	var param market.QueryUserOrderList
+	if err := k.cdc.UnmarshalJSON(req.Data, &param); err != nil {
+		return nil, types.ErrMarshalFailed()
+	}
+
+	var orders []string // TODO
+	bz, err := codec.MarshalJSONIndent(k.cdc, orders)
+	if err != nil {
+		return nil, types.ErrMarshalFailed()
+	}
+
+	return bz, nil
 }
 func queryWaitCancelMarkets(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byte, sdk.Error) {
-	panic("TODO")
+	// unsupported, return empty list
+	var markets []string
+	bz, err := codec.MarshalJSONIndent(k.cdc, markets)
+	if err != nil {
+		return nil, types.ErrMarshalFailed()
+	}
+	return bz, nil
 }
 
 func toMarketQueryInfo(info *PoolInfo) market.QueryMarketInfo {
@@ -132,7 +149,6 @@ func toMarketQueryInfo(info *PoolInfo) market.QueryMarketInfo {
 	return queryInfo
 }
 
-// TODO
 func toResOrder(order *types.Order) *market.ResOrder {
 	return &market.ResOrder{
 		OrderID:     order.GetOrderID(),

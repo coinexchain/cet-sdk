@@ -18,15 +18,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) 
 }
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
-	r.HandleFunc("/autoswap/add-liquidity", addLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
-	r.HandleFunc("/autoswap/remove-liquidity", removeLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
+	r.HandleFunc("/market/add-liquidity", addLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
+	r.HandleFunc("/market/remove-liquidity", removeLiquidityHandlerFn(cdc, cliCtx)).Methods("POST")
 }
 
 func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec) {
-	r.HandleFunc("/autoswap/parameters", queryParamsHandlerFn(cliCtx)).Methods("GET")
-	//r.HandleFunc("/autoswap/pools/{stock}/{money}", queryMarketHandlerFn(cdc, cliCtx)).Methods("GET")
-	//r.HandleFunc("/autoswap/orderbook/{stock}/{money}", queryOrdersInMarketHandlerFn(cdc, cliCtx)).Methods("GET")
-	//r.HandleFunc("/autoswap/exist-trading-pairs", queryMarketsHandlerFn(cdc, cliCtx)).Methods("GET")
-	//r.HandleFunc("/autoswap/orders/{order-id}", queryOrderInfoHandlerFn(cdc, cliCtx)).Methods("GET")
-	//r.HandleFunc("/autoswap/orders/account/{address}", queryUserOrderListHandlerFn(cdc, cliCtx)).Methods("GET")
+	r.HandleFunc("/market/pool-list", queryPoolListHandlerFn(cdc, cliCtx)).Methods("GET")
+	r.HandleFunc("/market/pool-info", queryPoolInfoHandlerFn(cdc, cliCtx)).Methods("GET")
 }

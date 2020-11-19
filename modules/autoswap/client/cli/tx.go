@@ -27,7 +27,7 @@ const (
 
 // get the root tx command of this module
 func GetTxCmd(cdc *codec.Codec) *cobra.Command {
-	txCmd := mktcli.GetTxCmd(cdc)
+	txCmd := getMarketTxCmd(cdc)
 
 	// add new commands
 	txCmd.AddCommand(client.PostCommands(
@@ -38,15 +38,33 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 	return txCmd
 }
 
+func getMarketTxCmd(cdc *codec.Codec) *cobra.Command {
+	mktTxCmd := &cobra.Command{
+		Use:   types.StoreKey,
+		Short: "market transactions subcommands",
+	}
+
+	mktTxCmd.AddCommand(client.PostCommands(
+		mktcli.CreateMarketCmd(cdc),
+		mktcli.CreateGTEOrderTxCmd(cdc),
+		//mktcli.CreateIOCOrderTxCmd(cdc), // not supported
+		mktcli.CancelOrder(cdc),
+		//mktcli.CancelMarket(cdc),        // not supported
+		mktcli.ModifyTradingPairPricePrecision(cdc),
+	)...)
+
+	return mktTxCmd
+}
+
 func GetAddLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-liquidity",
-		Short: "generate tx to add liquidity into autoswap pair",
+		Short: "generate tx to add liquidity into trading pair",
 		Long: strings.TrimSpace(
-			`generate a tx and sign it to add liquidity into autoswap pair in Dex blockchain. 
+			`generate a tx and sign it to add liquidity into trading pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
+$ cetcli tx market add-liquidity --stock="foo" --money="bar" \
 	--stock-in=100000000 --money-in=100000000 \
 	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
@@ -64,7 +82,7 @@ $ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
 	cmd.Flags().String(flagStockIn, "", "the amount of stock to put into the pool")
 	cmd.Flags().String(flagMoneyIn, "", "the amount of money to put into the pool")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney,
+	_ = markRequiredFlags(cmd, flagStock, flagMoney,
 		flagStockIn, flagMoneyIn, flagTo)
 
 	return cmd
@@ -73,12 +91,12 @@ $ cetcli tx autoswap add-liquidity --stock="foo" --money="bar" \
 func GetRemoveLiquidityCmd(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remove-liquidity",
-		Short: "generate tx to remove liquidity from autoswap pair",
+		Short: "generate tx to remove liquidity from trading pair",
 		Long: strings.TrimSpace(
-			`generate a tx and sign it to remove liquidity from autoswap pair in Dex blockchain. 
+			`generate a tx and sign it to remove liquidity from trading pair in Dex blockchain. 
 
 Example:
-$ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" \
+$ cetcli tx market remove-liquidity --stock="foo" --money="bar" \
 	--amount=12345 \
 	--to=coinex1px8alypku5j84qlwzdpynhn4nyrkagaytu5u4a \
 	--from=bob --chain-id=coinexdex --gas=1000000 --fees=1000cet
@@ -95,7 +113,7 @@ $ cetcli tx autoswap remove-liquidity --stock="foo" --money="bar" \
 	addBasicPairFlags(cmd)
 	cmd.Flags().String(flagAmount, "", "the amount of liquidity to be removed")
 	cmd.Flags().String(flagTo, "", "mint to")
-	markRequiredFlags(cmd, flagStock, flagMoney, flagAmount, flagTo)
+	_ = markRequiredFlags(cmd, flagStock, flagMoney, flagAmount, flagTo)
 
 	return cmd
 }

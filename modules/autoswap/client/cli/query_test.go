@@ -14,6 +14,6 @@ func TestQueryParams(t *testing.T) {
 	cmd.SetArgs(args)
 	err := cmd.Execute()
 	assert.Equal(t, nil, err)
-	assert.Equal(t, "custom/autoswap/parameters", resultPath)
+	assert.Equal(t, "custom/market/parameters", resultPath)
 	assert.Equal(t, nil, resultParam)
 }
