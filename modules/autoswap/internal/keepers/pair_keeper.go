@@ -1,7 +1,6 @@
 package keepers
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
@@ -131,12 +130,10 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 			err = sdk.NewError(types.RouterKey, types.CodeUnKnownError, r.(error).Error())
 		}
 	}()
-	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	poolInfo := pk.GetPoolInfo(ctx, order.TradingPair)
 	if poolInfo == nil {
 		return types.ErrInvalidMarket(order.TradingPair)
 	}
-	fmt.Println(poolInfo)
 	if order.PricePrecision > poolInfo.PricePrecision {
 		return types.ErrInvalidPricePrecision(order.PricePrecision, poolInfo.PricePrecision)
 	}
@@ -148,7 +145,6 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 	if err != nil {
 		return err
 	}
-	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	dealInfo := &types.DealInfo{
 		RemainAmount:      actualAmount,
 		AmountInToPool:    sdk.ZeroInt(),
@@ -171,7 +167,6 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 		}
 	}
 	pk.tryDealInPool(dealInfo, order.Price, order, poolInfo)
-	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	// 3. update poolInfo with new order
 	if dealInfo.AmountInToPool.IsPositive() {
 		if order.IsBuy {
@@ -189,7 +184,6 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 
 	// 3. final deal with pool and order
 	pk.finalDealWithPool(ctx, order, dealInfo, poolInfo)
-	fmt.Println(order.Money(), pk.GetAccount(ctx, order.Sender).GetCoins().AmountOf(order.Money()))
 	// 4. store order in keeper if need
 	pk.storeOrderIfNeed(ctx, order, poolInfo)
 	pk.SetPoolInfo(ctx, order.TradingPair, poolInfo)
@@ -252,7 +246,6 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 		if allDeal {
 			diffTokenTradeWithPool = dealInfo.RemainAmount
 		}
-		fmt.Println(diffTokenTradeWithPool)
 		before := GetAmountOutInPool(dealInfo.AmountInToPool, info, order.IsBuy)
 		after := GetAmountOutInPool(currTokenCanTradeWithPool, info, order.IsBuy)
 		if after.Sub(before).IsZero() {
