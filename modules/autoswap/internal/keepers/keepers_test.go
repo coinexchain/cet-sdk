@@ -125,9 +125,10 @@ func TestPair(t *testing.T) {
 	require.Equal(t, 1048913, reserves.reserveMoney) // oneswap 1049020,
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
-	require.Equal(t, 4067, booked.bookedMoney)      //
+	require.Equal(t, 100, booked.bookedMoney)       // left order.Price = 100, amount = 100.
 	require.Equal(t, 9998300, usd.balanceOf(taker)) // oneswap 9898160, before + leftStock * 110 = 9998300
 	require.Equal(t, 958, btc.balanceOf(taker))     // oneswap 966, same before.
+	fmt.Println(th.app.AccountKeeper.GetAccount(th.ctx, supply.NewModuleAddress(types.PoolModuleAcc)).GetCoins())
 }
 
 // contract("insert & delete order", async (accounts) => {

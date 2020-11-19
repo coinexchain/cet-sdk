@@ -648,14 +648,13 @@ func (pk *PairKeeper) DeleteOrder(ctx sdk.Context, msg types.MsgCancelOrder) sdk
 func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder *types.Order) sdk.Error {
 	info := pk.GetPoolInfo(ctx, delOrder.TradingPair)
 	if delOrder.IsBuy {
-		amount := delOrder.ActualAmount()
-		info.MoneyOrderBookReserve = info.MoneyOrderBookReserve.Sub(amount)
-		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Money(), amount)); err != nil {
+		info.MoneyOrderBookReserve = info.MoneyOrderBookReserve.Sub(sdk.NewInt(delOrder.Freeze))
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Money(), sdk.NewInt(delOrder.Freeze))); err != nil {
 			return err
 		}
 	} else {
-		info.StockOrderBookReserve = info.StockOrderBookReserve.Sub(sdk.NewInt(delOrder.LeftStock))
-		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Stock(), sdk.NewInt(delOrder.LeftStock))); err != nil {
+		info.StockOrderBookReserve = info.StockOrderBookReserve.Sub(sdk.NewInt(delOrder.Freeze))
+		if err := pk.UnFreezeCoins(ctx, delOrder.Sender, newCoins(delOrder.Stock(), sdk.NewInt(delOrder.Freeze))); err != nil {
 			return err
 		}
 	}
