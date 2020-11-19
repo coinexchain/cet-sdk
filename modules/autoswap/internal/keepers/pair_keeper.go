@@ -1,9 +1,7 @@
 package keepers
 
 import (
-	"fmt"
 	"math"
-	"math/big"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
@@ -226,6 +224,17 @@ func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order, oppos
 	pk.dealInOrderBook(ctx, order, oppositeOrder, poolInfo, dealInfo, !poolInfo.IsNoReservePool())
 	if oppositeOrder.LeftStock == 0 {
 		pk.DelOrder(ctx, oppositeOrder)
+		if oppositeOrder.Freeze > 0 {
+			if oppositeOrder.IsBuy {
+				if err := pk.UnFreezeCoins(ctx, oppositeOrder.Sender, newCoins(oppositeOrder.Money(), sdk.NewInt(oppositeOrder.Freeze))); err != nil {
+					return false, err
+				}
+			} else {
+				if err := pk.UnFreezeCoins(ctx, oppositeOrder.Sender, newCoins(oppositeOrder.Stock(), sdk.NewInt(oppositeOrder.Freeze))); err != nil {
+					return false, err
+				}
+			}
+		}
 	} else {
 		pk.StoreToOrderBook(ctx, oppositeOrder)
 	}
@@ -234,7 +243,7 @@ func (pk PairKeeper) dealOrderWithOrderBookAndPool(ctx sdk.Context, order, oppos
 
 func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, order *types.Order, info *PoolInfo) bool {
 	currTokenCanTradeWithPool := IntoPoolAmountTillPrice(dealPrice, order.IsBuy, info)
-	if currTokenCanTradeWithPool.GT(dealInfo.AmountInToPool) {
+	if currTokenCanTradeWithPool.GT(dealInfo.AmountInToPool) && dealInfo.RemainAmount.IsPositive() {
 		diffTokenTradeWithPool := currTokenCanTradeWithPool.Sub(dealInfo.AmountInToPool)
 		allDeal := diffTokenTradeWithPool.GT(dealInfo.RemainAmount)
 		if allDeal {
@@ -275,7 +284,7 @@ func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.
 		return sdk.ZeroInt()
 	}
 	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Mul(sdk.NewDecFromInt(info.StockAmmReserve)).MulInt64(int64(math.Pow10(16))).Quo(dealPrice)
-	fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
+	//fmt.Println("root: ", root, "; sqrt(root): ", big.NewInt(0).Sqrt(root.TruncateInt().BigInt()))
 	root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
 	if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
 		return sdk.ZeroInt()
