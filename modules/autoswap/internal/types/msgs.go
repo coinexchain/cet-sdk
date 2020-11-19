@@ -1,8 +1,10 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"math"
+	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var _ sdk.Msg = MsgCreateTradingPair{}
@@ -91,23 +93,39 @@ type MsgCreateOrder struct {
 }
 
 func (m MsgCreateOrder) Route() string {
-	panic("implement me")
+	return ModuleName
 }
 
 func (m MsgCreateOrder) Type() string {
-	panic("implement me")
+	return "create_order"
 }
 
 func (m MsgCreateOrder) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Sender.Empty() {
+		return ErrInvalidOrderSender(m.Sender)
+	}
+	if len(strings.Split(m.TradingPair, "/")) != 2 {
+		return ErrInvalidMarket(m.TradingPair)
+	}
+	if m.Price <= 0 {
+		return ErrInvalidPrice(m.Price)
+	}
+	actualAmount := m.GetOrder().ActualAmount()
+	if actualAmount.GT(sdk.NewInt(math.MaxInt64)) || actualAmount.LTE(sdk.NewInt(0)) {
+		return ErrInvalidOrderAmount(actualAmount)
+	}
+	if m.Side != BID && m.Side != ASK {
+		return ErrInvalidOrderSide(m.Side)
+	}
+	return nil
 }
 
 func (m MsgCreateOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgCreateOrder) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Sender}
 }
 
 func (m MsgCreateOrder) GetOrder() *Order {
@@ -131,23 +149,29 @@ type MsgCancelOrder struct {
 }
 
 func (m MsgCancelOrder) Route() string {
-	panic("implement me")
+	return ModuleName
 }
 
 func (m MsgCancelOrder) Type() string {
-	panic("implement me")
+	return "cancel_order"
 }
 
 func (m MsgCancelOrder) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Sender.Empty() {
+		return ErrInvalidOrderSender(m.Sender)
+	}
+	if len(m.OrderID) == 0 {
+		return ErrInvalidOrderID(m.OrderID)
+	}
+	return nil
 }
 
 func (m MsgCancelOrder) GetSignBytes() []byte {
-	panic("implement me")
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
 func (m MsgCancelOrder) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Sender}
 }
 
 type MsgAddLiquidity struct {

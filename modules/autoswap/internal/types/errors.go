@@ -19,7 +19,7 @@ const (
 	CodeInvalidOrderID         = 1207
 	CodeMarshalFailed          = 1208
 	CodeUnMarshalFailed        = 1209
-	CodeInvalidPrevKey         = 1210
+	CodeInvalidOrderAmount     = 1210
 	CodeInvalidOrderNews       = 1211
 	CodeInvalidToken           = 1212
 	CodeInvalidPairSymbol      = 1213
@@ -30,10 +30,12 @@ const (
 	CodeInvalidSwap            = 1218
 	CodeInvalidEffectTime      = 1219
 	CodeInvalidPricePrecision  = 1220
+	CodeOrderAlreadyExist      = 1221
+	CodeInvalidOrderSide       = 1222
 )
 
-func ErrInvalidPrice(price string) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %s", price))
+func ErrInvalidPrice(price int64) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrice, fmt.Sprintf("Invalid order price: %d", price))
 }
 
 func ErrInvalidPricePrecision(pricePrecision byte, marketPricePrecision byte) sdk.Error {
@@ -46,9 +48,9 @@ func ErrInvalidAmount(amount sdk.Int) sdk.Error {
 		"amount: %s, expected: [0: %s]", amount.String(), MaxAmount.String()))
 }
 
-func ErrInvalidOutputAmount(amount sdk.Int) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidAmount, fmt.Sprintf("Invalid order "+
-		"MinOutputAmount: %s, expected: [0: +∞]", amount.String()))
+func ErrInvalidOrderSender(sender sdk.AccAddress) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderSender, fmt.Sprintf("Invalid order "+
+		"sender: %s", sender.String()))
 }
 
 func ErrInvalidSender(sender, expected sdk.AccAddress) sdk.Error {
@@ -61,9 +63,9 @@ func ErrInvalidMarket(market string) sdk.Error {
 		"Invalid market: %s", market))
 }
 
-func ErrInvalidPrevKey(prevKey [3]int64) sdk.Error {
-	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidPrevKey, fmt.Sprintf(""+
-		"prevKey: [%d, %d, %d]", prevKey[0], prevKey[1], prevKey[2]))
+func ErrInvalidOrderAmount(amount sdk.Int) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderAmount, fmt.Sprintf(
+		"Invalid order amount: %s", amount.String()))
 }
 
 func ErrInvalidOrderID(orderID string) sdk.Error {
@@ -110,4 +112,12 @@ func ErrAmountOutIsSmallerThanExpected(expected, actual sdk.Int) sdk.Error {
 
 func ErrInvalidEffectiveTime() sdk.Error {
 	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidEffectTime, "invalid cancel trading pair effectTime")
+}
+
+func ErrOrderAlreadyExist(orderID string) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeOrderAlreadyExist, fmt.Sprintf("the order already exist: %s", orderID))
+}
+
+func ErrInvalidOrderSide(side byte) sdk.Error {
+	return sdk.NewError(CodeSpaceAutoSwap, CodeInvalidOrderSide, fmt.Sprintf("invalid order side: %d, expected BUY: %d, SELL: %d", side, BID, ASK))
 }
