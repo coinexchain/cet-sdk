@@ -138,7 +138,7 @@ func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sd
 		return types.ErrInvalidPricePrecision(order.PricePrecision, poolInfo.PricePrecision)
 	}
 	order.Sequence = int64(pk.GetAccount(ctx, order.Sender).GetSequence())
-	if pk.GetOrder(ctx, order.GetOrderID()) != nil {
+	if tmp := pk.GetOrder(ctx, order.GetOrderID()); tmp != nil {
 		return types.ErrOrderAlreadyExist(order.GetOrderID())
 	}
 	actualAmount, err := pk.freezeOrderCoin(ctx, order)
@@ -270,22 +270,22 @@ func (pk PairKeeper) tryDealInPool(dealInfo *types.DealInfo, dealPrice sdk.Dec, 
 
 func IntoPoolAmountTillPrice(dealPrice sdk.Dec, isBuy bool, info *PoolInfo) sdk.Int {
 	if isBuy {
-		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve)).MulInt64(int64(math.Pow10(16)))
+		root := dealPrice.Mul(sdk.NewDecFromInt(info.StockAmmReserve)).Mul(sdk.NewDecFromInt(info.MoneyAmmReserve)).MulInt64(int64(math.Pow10(10)))
 		root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
-		if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
+		if root.LTE(sdk.NewDec(int64(math.Pow10(5)))) {
 			return sdk.ZeroInt()
 		}
-		if ret := root.Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
+		if ret := root.Quo(sdk.NewDec(int64(math.Pow10(5)))).Sub(sdk.NewDecFromInt(info.MoneyAmmReserve)).TruncateInt(); ret.IsPositive() {
 			return ret
 		}
 		return sdk.ZeroInt()
 	}
-	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Mul(sdk.NewDecFromInt(info.StockAmmReserve)).MulInt64(int64(math.Pow10(16))).Quo(dealPrice)
+	root := sdk.NewDecFromInt(info.MoneyAmmReserve).Mul(sdk.NewDecFromInt(info.StockAmmReserve)).MulInt64(int64(math.Pow10(10))).Quo(dealPrice)
 	root = sdk.NewDecFromBigInt(sdk.NewDec(0).Sqrt(root.TruncateInt().BigInt()))
-	if root.LTE(sdk.NewDec(int64(math.Pow10(8)))) {
+	if root.LTE(sdk.NewDec(int64(math.Pow10(5)))) {
 		return sdk.ZeroInt()
 	}
-	if ret := root.Quo(sdk.NewDec(int64(math.Pow10(8)))).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt(); ret.IsPositive() {
+	if ret := root.Quo(sdk.NewDec(int64(math.Pow10(5)))).Sub(sdk.NewDecFromInt(info.StockAmmReserve)).TruncateInt(); ret.IsPositive() {
 		return ret
 	}
 	return sdk.ZeroInt()
