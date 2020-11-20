@@ -1,6 +1,10 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 type DealInfo struct {
 	// The user will pay amount of token in the order.
@@ -11,4 +15,10 @@ type DealInfo struct {
 	DealStockInBook   sdk.Int
 	FeeToMoneyReserve sdk.Int
 	FeeToStockReserve sdk.Int
+}
+
+func (d DealInfo) String() string {
+	return fmt.Sprintf("RemainAmount: %s, AmountInToPool: %s, DealMoneyInBook: %s,"+
+		" DealStockInBook: %s, FeeToMoneyReserve: %s, FeeToStockReserve: %s", d.RemainAmount,
+		d.AmountInToPool, d.DealMoneyInBook, d.DealStockInBook, d.FeeToMoneyReserve, d.FeeToStockReserve)
 }

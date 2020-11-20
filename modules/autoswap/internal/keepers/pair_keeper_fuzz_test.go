@@ -83,18 +83,18 @@ func newCoins(token string, amount sdk.Int) sdk.Coins {
 	return sdk.NewCoins(sdk.NewCoin(token, amount))
 }
 
-func TestLiquidity(t *testing.T) {
-	var (
-		market          = fmt.Sprintf("%s/%s", stock, money)
-		isOpenSwap      = true
-		isOpenOrderBook = true
-	)
-	app := prepareTestApp(t)
-	app.AutoSwapKeeper.SetPoolInfo(app.ctx, market, &keepers.PoolInfo{Symbol: market})
-	mintLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
-	burnLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
-	addLimitOrderTest(t, app, market, isOpenSwap, isOpenOrderBook)
-}
+//func TestLiquidity(t *testing.T) {
+//	var (
+//		market          = fmt.Sprintf("%s/%s", stock, money)
+//		isOpenSwap      = true
+//		isOpenOrderBook = true
+//	)
+//	app := prepareTestApp(t)
+//	app.AutoSwapKeeper.SetPoolInfo(app.ctx, market, &keepers.PoolInfo{Symbol: market})
+//	mintLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
+//	burnLiquidityTest(t, app, market, isOpenSwap, isOpenOrderBook)
+//	addLimitOrderTest(t, app, market, isOpenSwap, isOpenOrderBook)
+//}
 
 func mintLiquidityTest(t *testing.T, app *App, market string, isOpenSwap, isOpenOrderBook bool) {
 	stockAmount := getRandom(maxTokenAmount).Mul(sdk.NewInt(1e18))

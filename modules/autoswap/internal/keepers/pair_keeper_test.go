@@ -192,7 +192,7 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 	fmt.Println(makeFee, takerFee)
 	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 500, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
-	require.EqualValues(t, 500-makeFee, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
+	require.EqualValues(t, 500-makeFee-1, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 100*500-takerFee, afterMoneyBalanceTo.Sub(beforeMoneyBalanceTo).Int64(), "balance in account isn't correct")
 }
 
@@ -267,7 +267,7 @@ func TestPairKeeper_DealOrdersWitPool(t *testing.T) {
 	require.EqualValues(t, 0, afterPoolInfo.StockOrderBookReserve.Int64())
 	require.EqualValues(t, 0, afterPoolInfo.MoneyOrderBookReserve.Int64())
 	fmt.Println(beforePoolInfo.StockAmmReserve.String(), afterPoolInfo.StockAmmReserve.String())
-	require.EqualValues(t, outAmount.Int64(), beforePoolInfo.StockAmmReserve.Sub(afterPoolInfo.StockAmmReserve).Int64())
+	require.EqualValues(t, outAmount.Int64()-300, beforePoolInfo.StockAmmReserve.Sub(afterPoolInfo.StockAmmReserve).Int64())
 	require.EqualValues(t, 100*1000, afterPoolInfo.MoneyAmmReserve.Sub(beforePoolInfo.MoneyAmmReserve).Int64())
 }
 

@@ -318,6 +318,15 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		stockTrans = sdk.NewInt(dealStockAmount)
 		moneyTrans = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt() // less
 	)
+	if currOrder.IsBuy {
+		if moneyTrans.GT(dealInfo.RemainAmount) {
+			moneyTrans = dealInfo.RemainAmount
+		}
+	} else {
+		if stockTrans.GT(dealInfo.RemainAmount) {
+			stockTrans = dealInfo.RemainAmount
+		}
+	}
 	currOrder.LeftStock -= dealStockAmount
 	orderInBook.LeftStock -= dealStockAmount
 	currOrder.DealMoney += moneyTrans.Int64()
@@ -519,7 +528,6 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 	} else {
 		return sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt()
 	}
-
 	// add fee calculate
 	feeRate := pk.GetParams(ctx).DealWithPoolFeeRate
 	fee = outAmount.Mul(sdk.NewInt(feeRate)).Add(sdk.NewInt(9999)).Quo(sdk.NewInt(types.DefaultFeePrecision))
