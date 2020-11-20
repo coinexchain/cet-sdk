@@ -125,9 +125,9 @@ func TestPair(t *testing.T) {
 	require.Equal(t, 1048913, reserves.reserveMoney) // oneswap 1049020,
 	booked = pair.getBooked()
 	require.Equal(t, 0, booked.bookedStock)
-	require.Equal(t, 100, booked.bookedMoney)       // left order.Price = 100, amount = 100.
-	require.Equal(t, 9998300, usd.balanceOf(taker)) // oneswap 9898160, before + leftStock * 110 = 9998300
-	require.Equal(t, 958, btc.balanceOf(taker))     // oneswap 966, same before.
+	require.Equal(t, 100, booked.bookedMoney)        // left order.Price = 100, amount = 100.
+	require.Equal(t, 10002267, usd.balanceOf(taker)) // oneswap 9898160, before(9995000) + leftFreeze(7267) = 10002267
+	require.Equal(t, 958, btc.balanceOf(taker))      // oneswap 966, same before.
 	fmt.Println(th.app.AccountKeeper.GetAccount(th.ctx, supply.NewModuleAddress(types.PoolModuleAcc)).GetCoins())
 }
 
@@ -318,7 +318,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	usd.transfer(taker, 100000_0000_0000, boss)
 	pair.addLimitOrder(true, taker, 10_0000_0000, 101, 6)
 	balance := btc.balanceOf(taker)
-	require.Equal(t, 9_9699_9999, balance)
+	require.Equal(t, 997000057, balance) //  oneswap: 9_9699_9999
 
 	// it("insert big buy order to hao yang mao", async () => {
 	//pair.addMarketOrder(true, taker, 10_0000, 7)
