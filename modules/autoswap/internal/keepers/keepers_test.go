@@ -318,11 +318,7 @@ func TestBigDealOnLowLiquidity(t *testing.T) {
 	usd.transfer(taker, 100000_0000_0000, boss)
 	pair.addLimitOrder(true, taker, 10_0000_0000, 101, 6)
 	balance := btc.balanceOf(taker)
-<<<<<<< HEAD
-	require.Equal(t, 997000057, balance) //  oneswap: 9_9699_9999
-=======
 	require.Equal(t, 996999998, balance) //  oneswap: 9_9699_9999
->>>>>>> c73774b4... Pass all test;
 
 	// it("insert big buy order to hao yang mao", async () => {
 	//pair.addMarketOrder(true, taker, 10_0000, 7)

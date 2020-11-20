@@ -338,12 +338,6 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 	makeFeeRate := sdk.NewDec(pk.GetParams(ctx).MakerFeeRateRate)
 	takerFeeRate := sdk.NewDec(pk.GetParams(ctx).TakerFeeRateRate)
 	if currOrder.IsBuy {
-		if moneyTrans.GT(sdk.NewInt(currOrder.Freeze)) {
-			moneyTrans = sdk.NewInt(currOrder.Freeze)
-		}
-		if stockTrans.LT(sdk.NewInt(orderInBook.Freeze)) {
-			stockTrans = sdk.NewInt(orderInBook.Freeze)
-		}
 		currOrder.Freeze -= moneyTrans.Int64()
 		orderInBook.Freeze -= stockTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(moneyTrans)
@@ -352,12 +346,6 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		stockFee = takerFeeRate.MulInt(stockTrans).Add(
 			sdk.NewDec(9999)).Quo(sdk.NewDec(types.DefaultFeePrecision)).TruncateInt()
 	} else {
-		if moneyTrans.GT(sdk.NewInt(orderInBook.Freeze)) {
-			moneyTrans = sdk.NewInt(orderInBook.Freeze)
-		}
-		if stockTrans.LT(sdk.NewInt(currOrder.Freeze)) {
-			stockTrans = sdk.NewInt(currOrder.Freeze)
-		}
 		currOrder.Freeze -= stockTrans.Int64()
 		orderInBook.Freeze -= moneyTrans.Int64()
 		dealInfo.RemainAmount = dealInfo.RemainAmount.Sub(stockTrans)
