@@ -76,7 +76,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.blKeeper)
+	return NewHandler2(am.blKeeper)
 }
 
 func (am AppModule) QuerierRoute() string {
