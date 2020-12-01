@@ -38,14 +38,18 @@ type FillOrderInfoMq struct {
 	Price       sdk.Dec `json:"price"`
 
 	// These fields will change when order was filled/canceled.
-	LeftStock          int64   `json:"left_stock"`
-	Freeze             int64   `json:"freeze"`
-	DealStock          int64   `json:"deal_stock"`
-	DealMoney          int64   `json:"deal_money"`
-	CurrStock          int64   `json:"curr_stock"`
-	CurrMoney          int64   `json:"curr_money"`
-	FillPrice          sdk.Dec `json:"fill_price"`
-	CurrUsedCommission int64   `json:"curr_used_commission"`
+	LeftStock              int64   `json:"left_stock"`
+	Freeze                 int64   `json:"freeze"`
+	DealStock              int64   `json:"deal_stock"`
+	DealMoney              int64   `json:"deal_money"`
+	CurrStock              int64   `json:"curr_stock"`
+	CurrMoney              int64   `json:"curr_money"`
+	FillPrice              sdk.Dec `json:"fill_price"`
+	CurrUsedCommission     int64   `json:"curr_used_commission"`
+	TakerRebateAmount      int64   `json:"taker_rebate_amount"`
+	TakerRebateRefereeAddr string  `json:"taker_rebate_referee_addr"`
+	MakerRebateAmount      int64   `json:"maker_rebate_amount"`
+	MakerRebateRefereeAddr string  `json:"maker_rebate_referee_addr"`
 }
 
 type FillOrderInfoWithPoolMq struct {
@@ -53,11 +57,14 @@ type FillOrderInfoWithPoolMq struct {
 	TradingPair        string  `json:"trading_pair"`
 	Height             int64   `json:"height"`
 	Side               byte    `json:"side"`
+	Price              sdk.Dec `json:"price"`
 	FillPrice          sdk.Dec `json:"fill_price"`
 	LeftStock          int64   `json:"left_stock"`
 	Freeze             int64   `json:"freeze"`
 	DealAmountWithPool int64   `json:"deal_amount_with_pool"`
 	CurrUsedCommission int64   `json:"curr_used_commission"`
+	RebateAmount       int64   `json:"rebate_amount"`
+	RebateRefereeAddr  string  `json:"rebate_referee_addr"`
 }
 
 type MarketDealInfoMq struct {

@@ -40,6 +40,7 @@ type FeeFunc func(sdk.Context) sdk.Dec
 type PairKeeper struct {
 	IPoolKeeper
 	IOrderBookKeeper
+	types.ExpectedAuthXKeeper
 	types.ExpectedAccountKeeper
 	types.SupplyKeeper
 	types.ExpectedBankKeeper
@@ -50,7 +51,7 @@ type PairKeeper struct {
 }
 
 func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types.ExpectedBankKeeper,
-	accK types.ExpectedAccountKeeper, codec *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace) *PairKeeper {
+	accK types.ExpectedAccountKeeper, accxK types.ExpectedAuthXKeeper, codec *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace) *PairKeeper {
 	return &PairKeeper{
 		codec:                 codec,
 		storeKey:              storeKey,
@@ -58,6 +59,7 @@ func NewPairKeeper(poolKeeper IPoolKeeper, supplyK types.SupplyKeeper, bnk types
 		SupplyKeeper:          supplyK,
 		ExpectedBankKeeper:    bnk,
 		ExpectedAccountKeeper: accK,
+		ExpectedAuthXKeeper:   accxK,
 		subspace:              paramSubspace.WithKeyTable(types.ParamKeyTable()),
 		IOrderBookKeeper: &OrderKeeper{
 			codec:    codec,
@@ -92,30 +94,65 @@ func (pk *PairKeeper) GetFeeToValidator(ctx sdk.Context) sdk.Dec {
 	return sdk.NewDec(param.FeeToValidator).QuoInt64(param.FeeToValidator + param.FeeToPool)
 }
 
-func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) (sdk.Int, sdk.Error) {
+func (pk *PairKeeper) AllocateFeeToValidatorAndPool(ctx sdk.Context, denom string, totalAmount sdk.Int, sender sdk.AccAddress) (sdk.Int, sdk.Int, sdk.AccAddress, sdk.Error) {
+	var (
+		reference    sdk.AccAddress
+		rebateAmount sdk.Int
+	)
+	rebateAmount, reference, err := pk.sendRebateAmount(ctx, denom, totalAmount, sender)
+	if err != nil {
+		return sdk.ZeroInt(), sdk.ZeroInt(), nil, err
+	}
+	totalAmount = totalAmount.Sub(rebateAmount)
 	feeToVal := pk.GetFeeToValidator(ctx).MulInt(totalAmount).TruncateInt()
 	feeToPool := totalAmount.Sub(feeToVal)
-	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
+	err = pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, sdk.NewCoins(sdk.NewCoin(denom, feeToVal)))
 	if err != nil {
-		return sdk.ZeroInt(), err
+		return sdk.ZeroInt(), sdk.ZeroInt(), nil, err
 	}
 	err = pk.SendCoinsFromAccountToModule(ctx, sender, types.PoolModuleAcc, sdk.NewCoins(sdk.NewCoin(denom, feeToPool)))
 	if err != nil {
-		return sdk.ZeroInt(), err
+		return sdk.ZeroInt(), sdk.ZeroInt(), nil, err
 	}
-
-	return feeToPool, nil
+	return feeToPool, rebateAmount, reference, nil
 }
 
-func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, fee sdk.Coins, sender sdk.AccAddress) sdk.Error {
-	if err := pk.UnFreezeCoins(ctx, sender, fee); err != nil {
+func (pk *PairKeeper) AllocateFeeToValidator(ctx sdk.Context, denom string, fee sdk.Int, sender sdk.AccAddress) (sdk.Int, sdk.AccAddress, sdk.Error) {
+	if err := pk.UnFreezeCoins(ctx, sender, newCoins(denom, fee)); err != nil {
 		panic(err)
 	}
-	err := pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, fee)
+	rebateAmount, reference, err := pk.sendRebateAmount(ctx, denom, fee, sender)
 	if err != nil {
-		return err
+		return sdk.ZeroInt(), nil, err
 	}
-	return nil
+	fee = fee.Sub(rebateAmount)
+	if err = pk.SendCoinsFromAccountToModule(ctx, sender, auth.FeeCollectorName, newCoins(denom, fee)); err != nil {
+		return sdk.ZeroInt(), nil, err
+	}
+	return rebateAmount, reference, nil
+}
+
+func (pk PairKeeper) sendRebateAmount(ctx sdk.Context, denom string, totalFee sdk.Int, sender sdk.AccAddress) (sdk.Int, sdk.AccAddress, sdk.Error) {
+	var (
+		reference    sdk.AccAddress
+		rebateAmount sdk.Int
+	)
+	if reference = pk.GetRefereeAddr(ctx, sender); reference == nil {
+		return sdk.ZeroInt(), nil, nil
+	}
+	rebateAmount = pk.calRebateAmount(ctx, totalFee)
+	if err := pk.SendCoins(ctx, sender, reference,
+		sdk.NewCoins(sdk.NewCoin(denom, rebateAmount))); err != nil {
+		return sdk.ZeroInt(), reference, err
+	}
+	return rebateAmount, reference, nil
+}
+
+func (pk PairKeeper) calRebateAmount(ctx sdk.Context, fee sdk.Int) sdk.Int {
+	ratio := pk.GetRebateRatio(ctx)
+	ratioBase := pk.GetRebateRatioBase(ctx)
+	rebateAmount := fee.MulRaw(ratio).QuoRaw(ratioBase)
+	return rebateAmount
 }
 
 func (pk *PairKeeper) AddLimitOrder(ctx sdk.Context, order *types.Order) (err sdk.Error) {
@@ -311,12 +348,19 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 	}
 
 	var (
-		stockFee   sdk.Int
-		moneyFee   sdk.Int
-		takerFee   sdk.Int
-		makerFee   sdk.Int
-		stockTrans = sdk.NewInt(dealStockAmount)
-		moneyTrans = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt() // less
+		stockFee                sdk.Int
+		moneyFee                sdk.Int
+		takerFee                sdk.Int
+		makerFee                sdk.Int
+		moneyToPool             sdk.Int
+		stockToPool             sdk.Int
+		err                     sdk.Error
+		stockTrans              = sdk.NewInt(dealStockAmount)
+		moneyTrans              = sdk.NewDec(dealStockAmount).Mul(orderInBook.Price).TruncateInt() // less
+		takerRebateAmount       sdk.Int
+		makerRebateAmount       sdk.Int
+		takerOrderReferenceAddr sdk.AccAddress
+		makerOrderReferenceAddr sdk.AccAddress
 	)
 	if currOrder.IsBuy {
 		if moneyTrans.GT(dealInfo.RemainAmount) {
@@ -364,21 +408,21 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		if isPoolExists {
-			moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender)
+			moneyToPool, takerRebateAmount, takerOrderReferenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, currOrder.Sender)
 			if err != nil {
 				panic(err)
 			}
-			stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender)
+			stockToPool, makerRebateAmount, makerOrderReferenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, orderInBook.Sender)
 			if err != nil {
 				panic(err)
 			}
 			dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
 			dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
 		} else {
-			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee)), currOrder.Sender); err != nil {
+			if takerRebateAmount, takerOrderReferenceAddr, err = pk.AllocateFeeToValidator(ctx, currOrder.Money(), moneyFee, currOrder.Sender); err != nil {
 				panic(err)
 			}
-			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Stock(), stockFee)), orderInBook.Sender); err != nil {
+			if makerRebateAmount, makerOrderReferenceAddr, err = pk.AllocateFeeToValidator(ctx, currOrder.Stock(), stockFee, orderInBook.Sender); err != nil {
 				panic(err)
 			}
 		}
@@ -388,29 +432,31 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 		pk.transferToken(ctx, currOrder.Sender, orderInBook.Sender, currOrder.Stock(), stockTrans.Sub(stockFee))
 		pk.transferToken(ctx, orderInBook.Sender, currOrder.Sender, currOrder.Money(), moneyTrans.Sub(moneyFee))
 		if isPoolExists {
-			stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender)
+			stockToPool, takerRebateAmount, takerOrderReferenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Stock(), stockFee, currOrder.Sender)
 			if err != nil {
 				panic(err)
 			}
-			moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, orderInBook.Sender)
+			moneyToPool, makerRebateAmount, makerOrderReferenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, currOrder.Money(), moneyFee, orderInBook.Sender)
 			if err != nil {
 				panic(err)
 			}
 			dealInfo.FeeToMoneyReserve = dealInfo.FeeToMoneyReserve.Add(moneyToPool)
 			dealInfo.FeeToStockReserve = dealInfo.FeeToStockReserve.Add(stockToPool)
 		} else {
-			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Stock(), stockFee)), currOrder.Sender); err != nil {
+			if takerRebateAmount, takerOrderReferenceAddr, err = pk.AllocateFeeToValidator(ctx, currOrder.Stock(), stockFee, currOrder.Sender); err != nil {
 				panic(err)
 			}
-			if err := pk.AllocateFeeToValidator(ctx, sdk.NewCoins(sdk.NewCoin(currOrder.Money(), moneyFee)), orderInBook.Sender); err != nil {
+			if makerRebateAmount, makerOrderReferenceAddr, err = pk.AllocateFeeToValidator(ctx, currOrder.Money(), moneyFee, orderInBook.Sender); err != nil {
 				panic(err)
 			}
 		}
 	}
-	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(), takerFee.Int64(), makerFee.Int64(), poolInfo)
+	pk.sendDealOrderMsg(ctx, currOrder, orderInBook, dealStockAmount, moneyTrans.Int64(),
+		takerFee.Int64(), makerFee.Int64(), poolInfo, takerRebateAmount, makerRebateAmount, takerOrderReferenceAddr, makerOrderReferenceAddr)
 }
 
-func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock, dealMoney int64, takerFee, makerFee int64, poolInfo *PoolInfo) {
+func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.Order, dealStock, dealMoney int64,
+	takerFee, makerFee int64, poolInfo *PoolInfo, takerRebateAmount, makerRebateAmount sdk.Int, takerRebateReferenceAddr, makerRebateReferenceAddr sdk.AccAddress) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
@@ -421,14 +467,18 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 		Price:       order.Price,
 		Side:        getSide(order.IsBuy),
 
-		LeftStock:          order.LeftStock,
-		Freeze:             order.Freeze,
-		DealStock:          order.DealStock,
-		DealMoney:          order.DealMoney,
-		CurrMoney:          dealMoney,
-		CurrStock:          dealStock,
-		FillPrice:          dealOrder.Price,
-		CurrUsedCommission: takerFee,
+		LeftStock:              order.LeftStock,
+		Freeze:                 order.Freeze,
+		DealStock:              order.DealStock,
+		DealMoney:              order.DealMoney,
+		CurrMoney:              dealMoney,
+		CurrStock:              dealStock,
+		FillPrice:              dealOrder.Price,
+		CurrUsedCommission:     takerFee,
+		TakerRebateAmount:      takerRebateAmount.Int64(),
+		MakerRebateAmount:      makerRebateAmount.Int64(),
+		TakerRebateRefereeAddr: takerRebateReferenceAddr.String(),
+		MakerRebateRefereeAddr: makerRebateReferenceAddr.String(),
 	}
 	maker := types.FillOrderInfoMq{
 		OrderID:     dealOrder.GetOrderID(),
@@ -437,14 +487,18 @@ func (pk PairKeeper) sendDealOrderMsg(ctx sdk.Context, order, dealOrder *types.O
 		Price:       dealOrder.Price,
 		Side:        getSide(dealOrder.IsBuy),
 
-		LeftStock:          dealOrder.LeftStock,
-		Freeze:             dealOrder.Freeze,
-		DealStock:          dealOrder.DealStock,
-		DealMoney:          dealOrder.DealMoney,
-		CurrMoney:          dealMoney,
-		CurrStock:          dealStock,
-		FillPrice:          dealOrder.Price,
-		CurrUsedCommission: makerFee,
+		LeftStock:              dealOrder.LeftStock,
+		Freeze:                 dealOrder.Freeze,
+		DealStock:              dealOrder.DealStock,
+		DealMoney:              dealOrder.DealMoney,
+		CurrMoney:              dealMoney,
+		CurrStock:              dealStock,
+		FillPrice:              dealOrder.Price,
+		CurrUsedCommission:     makerFee,
+		TakerRebateAmount:      takerRebateAmount.Int64(),
+		MakerRebateAmount:      makerRebateAmount.Int64(),
+		TakerRebateRefereeAddr: takerRebateReferenceAddr.String(),
+		MakerRebateRefereeAddr: makerRebateReferenceAddr.String(),
 	}
 	dealMarketInfo := types.MarketDealInfoMq{
 		TradingPair:     order.TradingPair,
@@ -497,29 +551,24 @@ func (pk PairKeeper) sendDelOrderInfo(ctx sdk.Context, order *types.Order, delRe
 }
 
 func (pk PairKeeper) finalDealWithPool(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) {
-	_, fee, poolToUser := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
+	rebateAmount, referenceAddr, fee, poolToUser := pk.dealWithPoolAndCollectFee(ctx, order, dealInfo, poolInfo)
 	if dealInfo.AmountInToPool.IsPositive() {
-		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64(), poolInfo)
+		pk.sendDealInfoWithPool(ctx, dealInfo, order, fee.Int64(), poolToUser.Int64(), poolInfo, rebateAmount, referenceAddr)
 	}
 	poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(dealInfo.FeeToMoneyReserve)
 	poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.FeeToStockReserve)
 }
 
-func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (totalAmountToTaker sdk.Int, fee sdk.Int, poolToUser sdk.Int) {
-	otherToTaker := dealInfo.DealMoneyInBook
-	if order.IsBuy {
-		otherToTaker = dealInfo.DealStockInBook
-	}
+func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Order, dealInfo *types.DealInfo, poolInfo *PoolInfo) (rebateAmount sdk.Int, referenceAddr sdk.AccAddress, fee sdk.Int, poolToUser sdk.Int) {
 	outAmount := sdk.ZeroInt()
 	if dealInfo.AmountInToPool.IsPositive() {
 		outAmount = GetAmountOutInPool(dealInfo.AmountInToPool, poolInfo, order.IsBuy)
 	} else {
-		return sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt()
+		return sdk.ZeroInt(), nil, sdk.ZeroInt(), sdk.ZeroInt()
 	}
 	// add fee calculate
 	feeRate := pk.GetParams(ctx).DealWithPoolFeeRate
 	fee = outAmount.Mul(sdk.NewInt(feeRate)).Add(sdk.NewInt(9999)).Quo(sdk.NewInt(types.DefaultFeePrecision))
-	amountToTaker := outAmount.Add(otherToTaker).Sub(fee)
 	if order.IsBuy {
 		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Add(dealInfo.AmountInToPool)
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Sub(outAmount)
@@ -527,11 +576,16 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		poolInfo.StockAmmReserve = poolInfo.StockAmmReserve.Add(dealInfo.AmountInToPool)
 		poolInfo.MoneyAmmReserve = poolInfo.MoneyAmmReserve.Sub(outAmount)
 	}
+	var (
+		err         sdk.Error
+		stockToPool sdk.Int
+		moneyToPool sdk.Int
+	)
 	if order.IsBuy {
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Stock(), outAmount)); err != nil {
 			panic(err)
 		}
-		stockToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), fee, order.Sender)
+		stockToPool, rebateAmount, referenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, order.Stock(), fee, order.Sender)
 		if err != nil {
 			panic(err)
 		}
@@ -546,7 +600,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 		if err := pk.SendCoinsFromModuleToAccount(ctx, types.PoolModuleAcc, order.Sender, newCoins(order.Money(), outAmount)); err != nil {
 			panic(err)
 		}
-		moneyToPool, err := pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), fee, order.Sender)
+		moneyToPool, rebateAmount, referenceAddr, err = pk.AllocateFeeToValidatorAndPool(ctx, order.Money(), fee, order.Sender)
 		if err != nil {
 			panic(err)
 		}
@@ -558,10 +612,11 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 	}
-	return amountToTaker, fee, outAmount
+	return rebateAmount, referenceAddr, fee.Sub(rebateAmount), outAmount
 }
 
-func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo, order *types.Order, commission, poolAmount int64, poolInfo *PoolInfo) {
+func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo,
+	order *types.Order, commission, poolAmount int64, poolInfo *PoolInfo, rebateAmount sdk.Int, referenceAddr sdk.AccAddress) {
 	if pk.msgProducer == nil || pk.msgProducer.IsSubscribed(types.ModuleName) {
 		return
 	}
@@ -571,7 +626,7 @@ func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealI
 		currStock = dealInfo.AmountInToPool.Int64()
 		currMoney = poolAmount
 	}
-	dealOrderInfo := types.FillOrderInfoMq{
+	dealOrderInfo := types.FillOrderInfoWithPoolMq{
 		OrderID:            order.GetOrderID(),
 		TradingPair:        order.TradingPair,
 		Height:             ctx.BlockHeight(),
@@ -579,13 +634,13 @@ func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealI
 		Price:              order.Price,
 		Freeze:             order.Freeze,
 		LeftStock:          order.LeftStock,
-		DealMoney:          order.DealMoney,
-		DealStock:          order.DealStock,
-		CurrStock:          currStock,
-		CurrMoney:          currMoney,
 		FillPrice:          sdk.NewDec(currMoney).Quo(sdk.NewDec(currStock)),
+		DealAmountWithPool: poolAmount,
 		CurrUsedCommission: commission,
+		RebateAmount:       rebateAmount.Int64(),
+		RebateRefereeAddr:  referenceAddr.String(),
 	}
+
 	dealMarketInfo := types.MarketDealInfoMq{
 		TradingPair:     order.TradingPair,
 		MakerOrderID:    order.GetOrderID(),

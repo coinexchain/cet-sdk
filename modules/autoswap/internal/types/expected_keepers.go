@@ -22,3 +22,9 @@ type SupplyKeeper interface {
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
 	GetModuleAddress(moduleName string) sdk.AccAddress
 }
+
+type ExpectedAuthXKeeper interface {
+	GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress
+	GetRebateRatio(ctx sdk.Context) int64
+	GetRebateRatioBase(ctx sdk.Context) int64
+}
