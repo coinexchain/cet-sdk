@@ -24,6 +24,7 @@ type IPairKeeper interface {
 	HasOrder(ctx sdk.Context, orderID string) bool
 	GetOrder(ctx sdk.Context, orderID string) *types.Order
 	GetAllOrders(ctx sdk.Context, market string) []*types.Order
+	GetOrdersFromUser(ctx sdk.Context, user string) []string
 
 	SetParams(ctx sdk.Context, params types.Params)
 	GetParams(ctx sdk.Context) types.Params
@@ -720,4 +721,8 @@ func (pk PairKeeper) updateOrderBookReserveByOrderDel(ctx sdk.Context, delOrder 
 
 func (pk *PairKeeper) GetAllOrders(ctx sdk.Context, market string) []*types.Order {
 	return pk.GetAllOrdersInMarket(ctx, market)
+}
+
+func (pk *PairKeeper) GetOrdersFromUser(ctx sdk.Context, user string) []string {
+	return pk.IOrderBookKeeper.GetOrdersFromUser(ctx, user)
 }

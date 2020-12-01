@@ -85,8 +85,8 @@ func queryOrdersInMarket(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]by
 		return nil, sdk.ErrInternal(fmt.Sprintf("failed to parse param: %s", err))
 	}
 
-	//orders := k.GetOrder(ctx, math.MaxInt64)
 	var orders []*types.Order // TODO
+	orders = k.GetAllOrders(ctx, param.TradingPair)
 	rs := make([]*market.ResOrder, len(orders))
 	for i, order := range orders {
 		rs[i] = toResOrder(order)
@@ -121,6 +121,7 @@ func queryUserOrderList(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([]byt
 	}
 
 	var orders []string // TODO
+	orders = k.GetOrdersFromUser(ctx, param.User)
 	bz, err := codec.MarshalJSONIndent(k.cdc, orders)
 	if err != nil {
 		return nil, types.ErrMarshalFailed()

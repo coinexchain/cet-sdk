@@ -17,6 +17,7 @@ type IOrderBookKeeper interface {
 	AddOrder(sdk.Context, *types.Order)
 	DelOrder(sdk.Context, *types.Order)
 	GetAllOrdersInMarket(ctx sdk.Context, market string) []*types.Order
+	GetOrdersFromUser(ctx sdk.Context, user string) []string
 	StoreToOrderBook(ctx sdk.Context, order *types.Order)
 	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
 	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
@@ -294,4 +295,18 @@ func (o *OrderKeeper) GetAllOrdersInMarket(ctx sdk.Context, market string) []*ty
 		ret = append(ret, order)
 	}
 	return ret
+}
+
+func (o *OrderKeeper) GetOrdersFromUser(ctx sdk.Context, user string) []string {
+	store := ctx.KVStore(o.storeKey)
+	beginKey := append(OrderBookKey, []byte(user+"-")...)
+	endKey := append(append(OrderBookKey, []byte(user)...), []byte{0xff}...)
+	var result []string
+	iter := store.Iterator(beginKey, endKey)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		result = append(result, string(k[1:]))
+	}
+	return result
 }

@@ -2,6 +2,7 @@ package autoswap
 
 import (
 	"encoding/json"
+
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -75,7 +76,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler2(am.blKeeper)
+	return NewHandler(am.blKeeper)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -90,6 +91,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+	EndBlocker(ctx, am.blKeeper)
 	return nil
 }
 

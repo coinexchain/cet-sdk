@@ -76,6 +76,7 @@ func TestOrderKeeper_AddOrder_GetOrder_DelOrder(t *testing.T) {
 		fmt.Println(v.GetOrderID())
 	}
 	require.EqualValues(t, 4, len(queryOrders))
+	require.EqualValues(t, 4, len(orderKeeper.GetOrdersFromUser(ctx, supply.NewModuleAddress("aass").String())))
 
 	// get orders
 	for i, id := range orderIDs {
@@ -88,6 +89,7 @@ func TestOrderKeeper_AddOrder_GetOrder_DelOrder(t *testing.T) {
 	require.Nil(t, orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: orderIDs[1]}))
 	orderKeeper.DelOrder(ctx, &orders[3])
 	require.Nil(t, orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: orderIDs[3]}))
+	require.EqualValues(t, 2, len(orderKeeper.GetOrdersFromUser(ctx, supply.NewModuleAddress("aass").String())))
 }
 
 func TestOrderKeeper_GetBestSellPrice(t *testing.T) {
