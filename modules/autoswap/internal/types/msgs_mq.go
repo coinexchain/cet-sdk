@@ -87,10 +87,8 @@ type CancelOrderInfoMq struct {
 	DelReason string `json:"del_reason"`
 
 	// Fields of amount
-	RebateAmount      int64  `json:"rebate_amount"`
-	RebateRefereeAddr string `json:"rebate_referee_addr"`
-	LeftStock         int64  `json:"left_stock"`
-	RemainAmount      int64  `json:"remain_amount"`
-	DealStock         int64  `json:"deal_stock"`
-	DealMoney         int64  `json:"deal_money"`
+	LeftStock    int64 `json:"left_stock"`
+	RemainAmount int64 `json:"remain_amount"`
+	DealStock    int64 `json:"deal_stock"`
+	DealMoney    int64 `json:"deal_money"`
 }

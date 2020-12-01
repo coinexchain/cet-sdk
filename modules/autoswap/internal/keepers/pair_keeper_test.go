@@ -209,10 +209,10 @@ func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {
 		sdk.NewCoin("stock", sdk.NewInt(100))), nil, 0, 0)
 	app.AccountKeeper.SetAccount(ctx, baseAcc)
 
-	_, err := keeper.AllocateFeeToValidatorAndPool(ctx, "money", sdk.NewInt(5), sender)
+	_, _, _, err := keeper.AllocateFeeToValidatorAndPool(ctx, "money", sdk.NewInt(5), sender)
 	require.Nil(t, err)
 
-	_, err = keeper.AllocateFeeToValidatorAndPool(ctx, "stock", sdk.NewInt(10), sender)
+	_, _, _, err = keeper.AllocateFeeToValidatorAndPool(ctx, "stock", sdk.NewInt(10), sender)
 	require.Nil(t, err)
 
 	poolCoins := app.AccountKeeper.GetAccount(ctx, supply.NewModuleAddress(types.PoolModuleAcc)).GetCoins()

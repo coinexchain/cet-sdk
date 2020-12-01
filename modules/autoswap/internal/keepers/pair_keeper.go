@@ -612,7 +612,7 @@ func (pk PairKeeper) dealWithPoolAndCollectFee(ctx sdk.Context, order *types.Ord
 			panic(err)
 		}
 	}
-	return rebateAmount, referenceAddr, fee.Sub(rebateAmount), outAmount
+	return rebateAmount, referenceAddr, fee, outAmount
 }
 
 func (pk PairKeeper) sendDealInfoWithPool(ctx sdk.Context, dealInfo *types.DealInfo,
