@@ -25,11 +25,11 @@ var (
 )
 
 type Params struct {
-	TakerFeeRateRate    int64
-	MakerFeeRateRate    int64
-	DealWithPoolFeeRate int64
-	FeeToPool           int64
-	FeeToValidator      int64
+	TakerFeeRateRate    int64 `json:"taker_fee_rate_rate"`
+	MakerFeeRateRate    int64 `json:"maker_fee_fate_fate"`
+	DealWithPoolFeeRate int64 `json:"deal_with_pool_fee_rate"`
+	FeeToPool           int64 `json:"fee_to_pool"`
+	FeeToValidator      int64 `json:"fee_to_validator"`
 }
 
 func ParamKeyTable() params.KeyTable {
