@@ -37,7 +37,7 @@ func GetQueryPoolCmd(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			route := fmt.Sprintf("custom/%s/%s", market.StoreKey, keepers.QueryPoolInfo)
 			symbol := dex.GetSymbol(args[0], args[1])
-			p := keepers.QueryPoolInfoParam{Symbol: symbol}
+			p := market.QueryMarketParam{TradingPair: symbol}
 			return cliutil.CliQuery(cdc, route, p)
 		},
 	}

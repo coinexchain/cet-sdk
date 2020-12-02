@@ -31,7 +31,7 @@ func queryPoolInfoHandlerFn(cdc *codec.Codec, cliCtx context.CLIContext) http.Ha
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "Invalid Trading pair")
 			return
 		}
-		param := keepers.QueryPoolInfoParam{Symbol: dex.GetSymbol(vars["stock"], vars["money"])}
+		param := market.QueryMarketParam{TradingPair: dex.GetSymbol(vars["stock"], vars["money"])}
 		restutil.RestQuery(cdc, cliCtx, w, r, route, param, nil)
 	}
 }

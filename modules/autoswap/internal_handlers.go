@@ -9,7 +9,7 @@ import (
 	dex "github.com/coinexchain/cet-sdk/types"
 )
 
-func NewHandler(k keepers.Keeper) sdk.Handler {
+func NewInternalHandler(k keepers.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 

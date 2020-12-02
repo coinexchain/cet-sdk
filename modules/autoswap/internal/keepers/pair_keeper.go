@@ -3,6 +3,8 @@ package keepers
 import (
 	"math"
 
+	"github.com/coinexchain/cet-sdk/modules/market"
+
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/msgqueue"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -681,7 +683,7 @@ func (pk PairKeeper) HasOrder(ctx sdk.Context, orderID string) bool {
 }
 
 func (pk PairKeeper) GetOrder(ctx sdk.Context, orderID string) *types.Order {
-	return pk.IOrderBookKeeper.GetOrder(ctx, &QueryOrderInfo{
+	return pk.IOrderBookKeeper.GetOrder(ctx, &market.QueryOrderParam{
 		OrderID: orderID,
 	})
 }

@@ -19,7 +19,7 @@ type IOrderBookKeeper interface {
 	GetAllOrdersInMarket(ctx sdk.Context, market string) []*types.Order
 	GetOrdersFromUser(ctx sdk.Context, user string) []string
 	StoreToOrderBook(ctx sdk.Context, order *types.Order)
-	GetOrder(sdk.Context, *QueryOrderInfo) *types.Order
+	GetOrder(sdk.Context, *market.QueryOrderParam) *types.Order
 	GetBestPrice(ctx sdk.Context, market string, isBuy bool) sdk.Dec
 	GetMatchedOrder(ctx sdk.Context, order *types.Order) []*types.Order
 	OrderIndexInOneBlock() int32
@@ -109,7 +109,7 @@ func (o *OrderKeeper) delOrderInMarket(ctx sdk.Context, order *types.Order) {
 	store.Delete(key)
 }
 
-func (o OrderKeeper) GetOrder(ctx sdk.Context, info *QueryOrderInfo) *types.Order {
+func (o OrderKeeper) GetOrder(ctx sdk.Context, info *market.QueryOrderParam) *types.Order {
 	var (
 		order = types.Order{}
 		store = ctx.KVStore(o.storeKey)
@@ -142,7 +142,7 @@ func (o OrderKeeper) GetBestPrice(ctx sdk.Context, tradingPair string, isBuy boo
 		panic("invalid iterator")
 	}
 	pos := getOrderIDPos(tradingPair)
-	if order := o.GetOrder(ctx, &QueryOrderInfo{OrderID: string(key[pos:])}); order != nil {
+	if order := o.GetOrder(ctx, &market.QueryOrderParam{OrderID: string(key[pos:])}); order != nil {
 		return order.Price
 	}
 	panic(types.ErrInvalidOrderID(string(key[pos:])))

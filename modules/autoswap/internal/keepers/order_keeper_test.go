@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/coinexchain/cet-sdk/modules/market"
+
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
@@ -80,15 +82,15 @@ func TestOrderKeeper_AddOrder_GetOrder_DelOrder(t *testing.T) {
 
 	// get orders
 	for i, id := range orderIDs {
-		queryOrder := orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: id})
+		queryOrder := orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: id})
 		require.EqualValues(t, orders[i], *queryOrder)
 	}
 
 	// del orders [0, 1, 2, 3]
 	orderKeeper.DelOrder(ctx, &orders[1])
-	require.Nil(t, orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: orderIDs[1]}))
+	require.Nil(t, orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: orderIDs[1]}))
 	orderKeeper.DelOrder(ctx, &orders[3])
-	require.Nil(t, orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: orderIDs[3]}))
+	require.Nil(t, orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: orderIDs[3]}))
 	require.EqualValues(t, 2, len(orderKeeper.GetOrdersFromUser(ctx, supply.NewModuleAddress("aass").String())))
 }
 
@@ -130,13 +132,13 @@ func TestOrderKeeper_GetBestSellPrice(t *testing.T) {
 		orderKeeper.AddOrder(ctx, &order)
 	}
 	// sell order prices: [30, 20, 90, 40, 150, 60]
-	bestOrder := orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: sellOrderIDs[1]})
+	bestOrder := orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: sellOrderIDs[1]})
 	bestPrice := orderKeeper.GetBestPrice(ctx, tradingPair, false)
 	require.EqualValues(t, sdk.NewDec(20), bestPrice)
 	require.EqualValues(t, sdk.NewDec(20), bestOrder.Price)
 
 	orderKeeper.DelOrder(ctx, &sellOrders[1])
-	bestOrder = orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: sellOrderIDs[0]})
+	bestOrder = orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: sellOrderIDs[0]})
 	bestPrice = orderKeeper.GetBestPrice(ctx, tradingPair, false)
 	require.EqualValues(t, sdk.NewDec(30), bestPrice)
 	require.EqualValues(t, sdk.NewDec(30), bestOrder.Price)
@@ -188,7 +190,7 @@ func TestOrderKeeper_GetBestBuyPrice(t *testing.T) {
 	}
 
 	// buy order prices: [30, 20, 90, 40, 150, 60]
-	bestOrder := orderKeeper.GetOrder(ctx, &QueryOrderInfo{OrderID: buyOrderIDs[4]})
+	bestOrder := orderKeeper.GetOrder(ctx, &market.QueryOrderParam{OrderID: buyOrderIDs[4]})
 	bestPrice := orderKeeper.GetBestPrice(ctx, tradingPair, true)
 	require.EqualValues(t, sdk.NewDec(150), bestPrice)
 	require.EqualValues(t, sdk.NewDec(150), bestOrder.Price)
