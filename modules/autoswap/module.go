@@ -23,7 +23,7 @@ type AppModuleBasic struct{}
 
 // old "market" module will be replaced by new "autoswap" module
 func (AppModuleBasic) Name() string {
-	return market.ModuleName
+	return types.ModuleName
 }
 
 func (AppModuleBasic) RegisterCodec(cdc *codec.Codec) {
@@ -88,6 +88,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
+	BeginBlocker(ctx, am.blKeeper)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
