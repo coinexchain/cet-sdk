@@ -131,8 +131,8 @@ func newTestApp() (app *testapp.TestApp, ctx sdk.Context) {
 	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.Coins{}})
 	app.AssetKeeper.SetParams(ctx, asset.DefaultParams())
 	app.AutoSwapKeeper.SetParams(ctx, types.Params{
-		TakerFeeRateRate:    30,
-		MakerFeeRateRate:    0,
+		TakerFeeRate:        30,
+		MakerFeeRate:        0,
 		DealWithPoolFeeRate: 30,
 		FeeToPool:           1,
 		FeeToValidator:      0,

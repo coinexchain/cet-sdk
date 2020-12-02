@@ -81,11 +81,11 @@ func (pk *PairKeeper) GetParams(ctx sdk.Context) (param types.Params) {
 }
 
 func (pk *PairKeeper) GetTakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(pk.GetParams(ctx).TakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+	return sdk.NewDec(pk.GetParams(ctx).TakerFeeRate).QuoInt64(types.DefaultFeePrecision)
 }
 
 func (pk *PairKeeper) GetMakerFee(ctx sdk.Context) sdk.Dec {
-	return sdk.NewDec(pk.GetParams(ctx).MakerFeeRateRate).QuoInt64(types.DefaultFeePrecision)
+	return sdk.NewDec(pk.GetParams(ctx).MakerFeeRate).QuoInt64(types.DefaultFeePrecision)
 }
 
 func (pk *PairKeeper) GetDealWithPoolFee(ctx sdk.Context) sdk.Dec {
@@ -382,8 +382,8 @@ func (pk PairKeeper) dealInOrderBook(ctx sdk.Context, currOrder,
 	orderInBook.DealMoney += moneyTrans.Int64()
 	poolInfo.StockOrderBookReserve = poolInfo.StockOrderBookReserve.Sub(stockTrans)
 	poolInfo.MoneyOrderBookReserve = poolInfo.MoneyOrderBookReserve.Sub(moneyTrans)
-	makeFeeRate := sdk.NewDec(pk.GetParams(ctx).MakerFeeRateRate)
-	takerFeeRate := sdk.NewDec(pk.GetParams(ctx).TakerFeeRateRate)
+	makeFeeRate := sdk.NewDec(pk.GetParams(ctx).MakerFeeRate)
+	takerFeeRate := sdk.NewDec(pk.GetParams(ctx).TakerFeeRate)
 	if currOrder.IsBuy {
 		currOrder.Freeze -= moneyTrans.Int64()
 		orderInBook.Freeze -= stockTrans.Int64()

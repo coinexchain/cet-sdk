@@ -25,8 +25,8 @@ var (
 )
 
 type Params struct {
-	TakerFeeRateRate    int64 `json:"taker_fee_rate_rate"`
-	MakerFeeRateRate    int64 `json:"maker_fee_fate_fate"`
+	TakerFeeRate        int64 `json:"taker_fee_rate"`
+	MakerFeeRate        int64 `json:"maker_fee_rate"`
 	DealWithPoolFeeRate int64 `json:"deal_with_pool_fee_rate"`
 	FeeToPool           int64 `json:"fee_to_pool"`
 	FeeToValidator      int64 `json:"fee_to_validator"`
@@ -38,8 +38,8 @@ func ParamKeyTable() params.KeyTable {
 
 func DefaultParams() Params {
 	return Params{
-		TakerFeeRateRate:    DefaultTakerFeeRate,
-		MakerFeeRateRate:    DefaultMakerFeeRate,
+		TakerFeeRate:        DefaultTakerFeeRate,
+		MakerFeeRate:        DefaultMakerFeeRate,
 		DealWithPoolFeeRate: DefaultDealWithPoolFeeRate,
 		FeeToPool:           DefaultFeeToPool,
 		FeeToValidator:      DefaultFeeToValidator,
@@ -48,8 +48,8 @@ func DefaultParams() Params {
 
 func (p *Params) ParamSetPairs() params.ParamSetPairs {
 	return params.ParamSetPairs{
-		{Key: keyTakerFeeRateRate, Value: &p.TakerFeeRateRate},
-		{Key: keyMakerFeeRate, Value: &p.MakerFeeRateRate},
+		{Key: keyTakerFeeRateRate, Value: &p.TakerFeeRate},
+		{Key: keyMakerFeeRate, Value: &p.MakerFeeRate},
 		{Key: keyDealWithPoolFeeRate, Value: &p.DealWithPoolFeeRate},
 		{Key: keyFeeToPool, Value: &p.FeeToPool},
 		{Key: keyFeeToValidator, Value: &p.FeeToValidator},
@@ -57,13 +57,13 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 }
 
 func (p *Params) ValidateGenesis() error {
-	if p.TakerFeeRateRate <= 0 || p.MakerFeeRateRate <= 0 || p.DealWithPoolFeeRate <= 0 || p.FeeToPool <= 0 || p.FeeToValidator <= 0 {
+	if p.TakerFeeRate <= 0 || p.MakerFeeRate <= 0 || p.DealWithPoolFeeRate <= 0 || p.FeeToPool <= 0 || p.FeeToValidator <= 0 {
 		return fmt.Errorf("parameter can not be a negative number: TakerFeeRate: %d, "+
-			"MakerFeeRate: %d, DealWithPoolFeeRate: %d, FeeToPool: %d, FeeToValidator: %d", p.TakerFeeRateRate, p.MakerFeeRateRate, p.DealWithPoolFeeRate, p.FeeToPool, p.FeeToValidator)
+			"MakerFeeRate: %d, DealWithPoolFeeRate: %d, FeeToPool: %d, FeeToValidator: %d", p.TakerFeeRate, p.MakerFeeRate, p.DealWithPoolFeeRate, p.FeeToPool, p.FeeToValidator)
 	}
-	if p.TakerFeeRateRate >= DefaultFeePrecision || p.MakerFeeRateRate >= DefaultFeePrecision || p.DealWithPoolFeeRate >= DefaultFeePrecision {
+	if p.TakerFeeRate >= DefaultFeePrecision || p.MakerFeeRate >= DefaultFeePrecision || p.DealWithPoolFeeRate >= DefaultFeePrecision {
 		return fmt.Errorf("FeeRate should be less than 1. TakerFeeRate: %d, MakerFeeRate: %d, DealWithPoolFeeRate: %d",
-			p.TakerFeeRateRate, p.MakerFeeRateRate, p.DealWithPoolFeeRate)
+			p.TakerFeeRate, p.MakerFeeRate, p.DealWithPoolFeeRate)
 	}
 	return nil
 }
@@ -81,8 +81,8 @@ func (p Params) String() string {
 	DealWithPoolFeeRate: %d,
 	FeeToPool: %d,
 	FeeToValidator: %d`,
-		p.TakerFeeRateRate,
-		p.MakerFeeRateRate,
+		p.TakerFeeRate,
+		p.MakerFeeRate,
 		p.DealWithPoolFeeRate,
 		p.FeeToPool,
 		p.FeeToValidator)

@@ -152,8 +152,8 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 	afterStockBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
 	fmt.Println(beforeStockBalanceFrom, beforeMoneyBalanceFrom, afterStockBalanceFrom, afterMoneyBalanceFrom)
 	fmt.Println(beforeStockBalanceTo, beforeMoneyBalanceTo, afterStockBalanceTo, afterMoneyBalanceTo)
-	makeFee := buyOrderMsg.Quantity * param.MakerFeeRateRate / types.DefaultFeePrecision                        // will charge stock
-	takerFee := sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRateRate / types.DefaultFeePrecision // will charge money
+	makeFee := buyOrderMsg.Quantity * param.MakerFeeRate / types.DefaultFeePrecision                        // will charge stock
+	takerFee := sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRate / types.DefaultFeePrecision // will charge money
 	fmt.Println(makeFee, takerFee)
 	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 1000-makeFee, afterStockBalanceFrom.Sub(beforeStockBalanceFrom).Int64(), "balance in account isn't correct")
@@ -187,8 +187,8 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 	afterStockBalanceTo = app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
 	fmt.Println(beforeStockBalanceFrom, beforeMoneyBalanceFrom, afterStockBalanceFrom, afterMoneyBalanceFrom)
 	fmt.Println(beforeStockBalanceTo, beforeMoneyBalanceTo, afterStockBalanceTo, afterMoneyBalanceTo)
-	makeFee = buyOrderMsg.Quantity / 2 * param.MakerFeeRateRate / types.DefaultFeePrecision                    // will charge stock
-	takerFee = sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRateRate / types.DefaultFeePrecision // will charge money
+	makeFee = buyOrderMsg.Quantity / 2 * param.MakerFeeRate / types.DefaultFeePrecision                    // will charge stock
+	takerFee = sellOrderMsg.Quantity * sellOrderMsg.Price * param.TakerFeeRate / types.DefaultFeePrecision // will charge money
 	fmt.Println(makeFee, takerFee)
 	require.EqualValues(t, 100*1000, beforeMoneyBalanceFrom.Sub(afterMoneyBalanceFrom).Int64(), "balance in account isn't correct")
 	require.EqualValues(t, 500, beforeStockBalanceTo.Sub(afterStockBalanceTo).Int64(), "balance in account isn't correct")
