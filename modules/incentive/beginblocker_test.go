@@ -1,6 +1,7 @@
 package incentive_test
 
 import (
+	"github.com/coinexchain/cet-sdk/modules/asset"
 	"os"
 	"testing"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 
 	"github.com/coinexchain/cet-sdk/modules/incentive"
-	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
 	"github.com/coinexchain/cet-sdk/testapp"
 	dex "github.com/coinexchain/cet-sdk/types"
 )
@@ -30,6 +30,15 @@ type TestInput struct {
 func SetupTestInput() TestInput {
 	app := testapp.NewTestApp()
 	ctx := sdk.NewContext(app.Cms, abci.Header{ChainID: "test-chain-id"}, false, log.NewNopLogger())
+	cet := asset.BaseToken{
+		Name:        "cet",
+		Symbol:      "cet",
+		Mintable:    true,
+		Burnable:    true,
+		TotalSupply: sdk.NewInt(1000),
+	}
+	_ = app.AssetKeeper.SetToken(ctx, &cet)
+	app.SupplyKeeper.SetSupply(ctx, supply.Supply{Total: sdk.NewCoins(sdk.NewCoin(cet.Symbol, cet.TotalSupply))})
 	return TestInput{ctx: ctx, cdc: app.Cdc, keeper: app.IncentiveKeeper, ak: app.AccountKeeper, sk: app.SupplyKeeper}
 }
 
@@ -44,70 +53,6 @@ func TestBeginBlockerInvalidCoin(t *testing.T) {
 
 	// no coins in pool
 	require.Equal(t, int64(0), feeBalanceAfter-feeBalanceBefore)
-}
-
-func TestBeginBlockerInPlan(t *testing.T) {
-	input := SetupTestInput()
-	plans := types.Params{
-		DefaultRewardPerBlock: 2e8,
-		Plans: []types.Plan{
-			{
-				StartHeight:    0,
-				EndHeight:      10,
-				RewardPerBlock: 10e8,
-				TotalIncentive: 100e8,
-			},
-		},
-	}
-	_ = input.keeper.SetState(input.ctx, incentive.State{HeightAdjustment: 10})
-	input.keeper.SetParams(input.ctx, plans)
-	acc := input.ak.NewAccountWithAddress(input.ctx, incentive.PoolAddr)
-	_ = acc.SetCoins(dex.NewCetCoins(10000 * 1e8))
-	input.ak.SetAccount(input.ctx, acc)
-
-	poolBalanceBefore := input.ak.GetAccount(input.ctx, incentive.PoolAddr).GetCoins().AmountOf(dex.CET).Int64()
-	feeBalanceBefore := input.sk.GetModuleAccount(input.ctx, auth.FeeCollectorName).GetCoins().AmountOf(dex.CET).Int64()
-
-	incentive.BeginBlocker(input.ctx, input.keeper)
-
-	poolBalanceAfter := input.ak.GetAccount(input.ctx, incentive.PoolAddr).GetCoins().AmountOf(dex.CET).Int64()
-	feeBalanceAfter := input.sk.GetModuleAccount(input.ctx, auth.FeeCollectorName).GetCoins().AmountOf(dex.CET).Int64()
-
-	reward := plans.Plans[0].RewardPerBlock
-	require.Equal(t, -reward, poolBalanceAfter-poolBalanceBefore)
-	require.Equal(t, reward, feeBalanceAfter-feeBalanceBefore)
-}
-
-func TestBeginBlockerNotInPlan(t *testing.T) {
-	input := SetupTestInput()
-	plans := types.Params{
-		DefaultRewardPerBlock: 2e8,
-		Plans: []types.Plan{
-			{
-				StartHeight:    0,
-				EndHeight:      10,
-				RewardPerBlock: 10e8,
-				TotalIncentive: 100e8,
-			},
-		},
-	}
-	_ = input.keeper.SetState(input.ctx, incentive.State{HeightAdjustment: 20})
-	input.keeper.SetParams(input.ctx, plans)
-	acc := input.ak.NewAccountWithAddress(input.ctx, incentive.PoolAddr)
-	_ = acc.SetCoins(dex.NewCetCoins(10000 * 1e8))
-	input.ak.SetAccount(input.ctx, acc)
-
-	poolBalanceBefore := input.ak.GetAccount(input.ctx, incentive.PoolAddr).GetCoins().AmountOf(dex.CET).Int64()
-	feeBalanceBefore := input.sk.GetModuleAccount(input.ctx, auth.FeeCollectorName).GetCoins().AmountOf(dex.CET).Int64()
-
-	incentive.BeginBlocker(input.ctx, input.keeper)
-
-	poolBalanceAfter := input.ak.GetAccount(input.ctx, incentive.PoolAddr).GetCoins().AmountOf(dex.CET).Int64()
-	feeBalanceAfter := input.sk.GetModuleAccount(input.ctx, auth.FeeCollectorName).GetCoins().AmountOf(dex.CET).Int64()
-
-	reward := plans.DefaultRewardPerBlock
-	require.Equal(t, -reward, poolBalanceAfter-poolBalanceBefore)
-	require.Equal(t, reward, feeBalanceAfter-feeBalanceBefore)
 }
 
 func TestIncentiveCoinsAddress(t *testing.T) {

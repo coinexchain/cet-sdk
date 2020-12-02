@@ -20,7 +20,9 @@ func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
 	if ctx.BlockHeight() == Dex3StartHeight {
 		clearIncentiveState(ctx, k)
 	}
-	collectRewardsFromPool(ctx, k)
+	if ctx.BlockHeight() >= Dex3StartHeight {
+		collectRewardsFromPool(ctx, k)
+	}
 }
 
 func collectRewardsFromPool(ctx sdk.Context, k Keeper) {

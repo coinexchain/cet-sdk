@@ -23,5 +23,5 @@ func TestQueryParams(t *testing.T) {
 
 	var params2 types.Params
 	testApp.Cdc.MustUnmarshalJSON(res, &params2)
-	require.Equal(t, params, params2)
+	require.Equal(t, params.DefaultRewardPerBlock, params2.DefaultRewardPerBlock)
 }

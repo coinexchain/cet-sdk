@@ -52,6 +52,7 @@ var (
 		authx.ModuleName:          nil,
 		asset.ModuleName:          {supply.Burner, supply.Minter},
 		autoswap.PoolModuleAcc:    nil,
+		incentive.ModuleName:      {supply.Minter},
 	}
 )
 
