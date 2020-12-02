@@ -10,7 +10,7 @@ import (
 )
 
 // convert msg and redirect to NewHandler()
-func NewHandler(k keepers.Keeper) sdk.Handler {
+func NewHandler(k *keepers.Keeper) sdk.Handler {
 	h1 := NewInternalHandler(k)
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())

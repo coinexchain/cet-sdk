@@ -9,7 +9,7 @@ import (
 	dex "github.com/coinexchain/cet-sdk/types"
 )
 
-func NewInternalHandler(k keepers.Keeper) sdk.Handler {
+func NewInternalHandler(k *keepers.Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
@@ -32,7 +32,7 @@ func NewInternalHandler(k keepers.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgCreateTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateTradingPair) sdk.Result {
+func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCreateTradingPair) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info != nil {
@@ -42,11 +42,11 @@ func handleMsgCreateTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.Msg
 	return sdk.Result{}
 }
 
-func handleMsgCancelTradingPair(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelTradingPair) sdk.Result {
+func handleMsgCancelTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCancelTradingPair) sdk.Result {
 	panic("not impl")
 }
 
-func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
+func handleMsgAddLiquidity(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.GetPoolInfo(ctx, marKey)
 	if info == nil {
@@ -85,7 +85,7 @@ func handleMsgAddLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgAddLi
 	}
 }
 
-func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
+func handleMsgRemoveLiquidity(ctx sdk.Context, k *keepers.Keeper, msg types.MsgRemoveLiquidity) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	//todo: get trading pair, if not exist, return;
 	stockOut, moneyOut, err := k.Burn(ctx, marKey, msg.Sender, msg.Amount)
@@ -118,20 +118,20 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k keepers.Keeper, msg types.MsgRe
 	}
 }
 
-func handleMsgCreateOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCreateOrder) sdk.Result {
+func handleMsgCreateOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCreateOrder) sdk.Result {
 	if err := k.AddLimitOrder(ctx, msg.GetOrder()); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{}
 }
-func handleMsgCancelOrder(ctx sdk.Context, k keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
+func handleMsgCancelOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
 	if err := k.DeleteOrder(ctx, msg); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{}
 }
 
-func fillMsgQueue(ctx sdk.Context, keeper Keeper, key string, msg interface{}) {
+func fillMsgQueue(ctx sdk.Context, keeper *Keeper, key string, msg interface{}) {
 	if keeper.IsSubscribed(types.Topic) {
 		msgqueue.FillMsgs(ctx, key, msg)
 	}

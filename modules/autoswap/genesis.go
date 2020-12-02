@@ -2,6 +2,7 @@ package autoswap
 
 import (
 	"errors"
+
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -28,7 +29,7 @@ func DefaultGenesisState() GenesisState {
 	return NewGenesisState(types.DefaultParams(), []types.Order{}, []keepers.PoolInfo{}, []keepers.LiquidityInfo{})
 }
 
-func InitGenesis(ctx sdk.Context, k keepers.Keeper, data GenesisState) {
+func InitGenesis(ctx sdk.Context, k *keepers.Keeper, data GenesisState) {
 	k.SetParams(ctx, data.Params)
 	for _ = range data.Orders {
 		//todo: setOrders

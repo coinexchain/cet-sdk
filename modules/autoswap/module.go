@@ -58,10 +58,10 @@ func (amb AppModuleBasic) GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	blKeeper keepers.Keeper
+	blKeeper *keepers.Keeper
 }
 
-func NewAppModule(blKeeper keepers.Keeper) AppModule {
+func NewAppModule(blKeeper *keepers.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		blKeeper:       blKeeper,
@@ -84,7 +84,7 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return keepers.NewQuerier(am.blKeeper)
+	return keepers.NewQuerier(*am.blKeeper)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
@@ -103,6 +103,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.Va
 }
 
 func (am AppModule) ExportGenesis(ctx sdk.Context) json.RawMessage {
-	gs := ExportGenesis(ctx, am.blKeeper)
+	gs := ExportGenesis(ctx, *am.blKeeper)
 	return types.ModuleCdc.MustMarshalJSON(gs)
 }
