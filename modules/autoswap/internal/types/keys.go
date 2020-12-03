@@ -1,17 +1,12 @@
 package types
 
-import (
-	"github.com/coinexchain/cet-sdk/modules/market"
-)
-
 const (
 	// Query
 	// ModuleName is the name of the module
-	//ModuleName = "autoswap"
-	ModuleName = market.ModuleName
+	ModuleName = "autoswap"
 
 	// StoreKey is string representation of the store key for autoswap
-	StoreKey = "autoswap"
+	StoreKey = ModuleName
 
 	// RouterKey is the message route for autoswap
 	RouterKey = ModuleName
