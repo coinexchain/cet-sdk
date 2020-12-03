@@ -16,7 +16,6 @@ import (
 	"github.com/coinexchain/cet-sdk/modules/autoswap/client/rest"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
-	"github.com/coinexchain/cet-sdk/modules/market"
 )
 
 type AppModuleBasic struct{}
@@ -72,7 +71,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 }
 
 func (am AppModule) Route() string {
-	return market.RouterKey
+	return types.RouterKey
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
@@ -80,7 +79,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 func (am AppModule) QuerierRoute() string {
-	return market.QuerierRoute
+	return types.QuerierRoute
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {

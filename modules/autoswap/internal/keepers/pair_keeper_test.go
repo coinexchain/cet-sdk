@@ -32,7 +32,7 @@ func TestPairKeeper_AddLimitOrder(t *testing.T) {
 	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
 	beforeMoneyBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(moneySymbol)
 	beforeStockBalance := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
-	msgCreateOrder := types.MsgCreateOrder{
+	msgCreateOrder := types.MsgAutoSwapCreateOrder{
 		TradingPair: market,
 		Price:       100,
 		Quantity:    1000,
@@ -118,7 +118,7 @@ func TestPairKeeper_DealOrders(t *testing.T) {
 	beforeStockBalanceFrom := app.AccountKeeper.GetAccount(ctx, from).GetCoins().AmountOf(stockSymbol)
 	beforeMoneyBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(moneySymbol)
 	beforeStockBalanceTo := app.AccountKeeper.GetAccount(ctx, to).GetCoins().AmountOf(stockSymbol)
-	msgCreateOrder := types.MsgCreateOrder{
+	msgCreateOrder := types.MsgAutoSwapCreateOrder{
 		TradingPair: market,
 		Price:       100,
 		Quantity:    1000,
@@ -242,7 +242,7 @@ func TestPairKeeper_DealOrdersWitPool(t *testing.T) {
 	})
 
 	// 2. add order to deal with pool
-	msgCreateOrder := types.MsgCreateOrder{
+	msgCreateOrder := types.MsgAutoSwapCreateOrder{
 		TradingPair: market,
 		Price:       100,
 		Quantity:    1000,
@@ -281,7 +281,7 @@ func TestPairKeeper_DealOrdersWitPoolAndOrderBook(t *testing.T) {
 
 	// 1. add orders
 	market := fmt.Sprintf("%s/%s", stockSymbol, moneySymbol)
-	msgCreateOrder := types.MsgCreateOrder{
+	msgCreateOrder := types.MsgAutoSwapCreateOrder{
 		TradingPair: market,
 		Price:       1,
 		Quantity:    10000,

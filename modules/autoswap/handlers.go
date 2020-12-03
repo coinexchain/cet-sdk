@@ -47,8 +47,8 @@ func convertMarketMsg(msg sdk.Msg) (msg2 sdk.Msg, ok bool) {
 	return
 }
 
-func convertMsgCreateTP(msg market.MsgCreateTradingPair) types.MsgCreateTradingPair {
-	return types.MsgCreateTradingPair{
+func convertMsgCreateTP(msg market.MsgCreateTradingPair) types.MsgAutoSwapCreateTradingPair {
+	return types.MsgAutoSwapCreateTradingPair{
 		Creator:        msg.Creator,
 		Stock:          msg.Stock,
 		Money:          msg.Money,
@@ -64,8 +64,8 @@ func convertMsgCancelTP(msg market.MsgCancelTradingPair) types.MsgCancelTradingP
 	}
 }
 
-func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgCreateOrder {
-	return types.MsgCreateOrder{
+func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgAutoSwapCreateOrder {
+	return types.MsgAutoSwapCreateOrder{
 		Sender:         msg.Sender,
 		Identify:       msg.Identify,
 		TradingPair:    msg.TradingPair,
@@ -75,8 +75,8 @@ func convertMsgCreateOrder(msg market.MsgCreateOrder) types.MsgCreateOrder {
 		Side:           msg.Side,
 	}
 }
-func convertMsgCancelOrder(msg market.MsgCancelOrder) types.MsgCancelOrder {
-	return types.MsgCancelOrder{
+func convertMsgCancelOrder(msg market.MsgCancelOrder) types.MsgAutoSwapCancelOrder {
+	return types.MsgAutoSwapCancelOrder{
 		Sender:  msg.Sender,
 		OrderID: msg.OrderID,
 	}

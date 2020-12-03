@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
+	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/modules/market"
 	mktcli "github.com/coinexchain/cet-sdk/modules/market/client/cli"
 	dex "github.com/coinexchain/cet-sdk/types"
@@ -17,16 +18,31 @@ import (
 
 // get the root query command of this module
 func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
-	queryCmd := mktcli.GetQueryCmd(cdc)
+	mktCmd := getMarketQueryCmd(cdc)
 	// TODO: remove unsupported commands
 
 	// add new commands
-	queryCmd.AddCommand(client.GetCommands(
+	mktCmd.AddCommand(client.GetCommands(
 		GetQueryPoolCmd(cdc),
 		GetQueryPoolListCmd(cdc),
 	)...)
+	return mktCmd
+}
 
-	return queryCmd
+func getMarketQueryCmd(cdc *codec.Codec) *cobra.Command {
+	mktTxCmd := &cobra.Command{
+		Use:   types.StoreKey,
+		Short: "Querying commands for the autoswap module",
+	}
+	mktTxCmd.AddCommand(client.PostCommands(
+		mktcli.QueryParamsCmd(cdc),
+		mktcli.QueryMarketCmd(cdc),
+		mktcli.QueryMarketListCmd(cdc),
+		mktcli.QueryOrderbookCmd(cdc),
+		mktcli.QueryOrderCmd(cdc),
+		mktcli.QueryUserOrderList(cdc),
+	)...)
+	return mktTxCmd
 }
 
 func GetQueryPoolCmd(cdc *codec.Codec) *cobra.Command {

@@ -165,7 +165,7 @@ func mint(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 
 func addLimitOrderWithoutCheck(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 	pair string, isBuy bool, sender sdk.AccAddress, amt, price int64, id byte) sdk.Error {
-	msg := types.MsgCreateOrder{
+	msg := types.MsgAutoSwapCreateOrder{
 		TradingPair: pair,
 		Price:       price,
 		Quantity:    amt,
@@ -208,7 +208,7 @@ func addMarketOrder(t *testing.T, ask *autoswap.Keeper, ctx sdk.Context,
 
 func removeOrderWithoutCheck(t *testing.T, ctx sdk.Context,
 	ask *autoswap.Keeper, id string, sender sdk.AccAddress) sdk.Error {
-	return ask.DeleteOrder(ctx, types.MsgCancelOrder{
+	return ask.DeleteOrder(ctx, types.MsgAutoSwapCancelOrder{
 		Sender:  sender,
 		OrderID: id,
 	})

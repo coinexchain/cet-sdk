@@ -21,6 +21,6 @@ type (
 	PoolInfo           = keepers.PoolInfo
 	MsgAddLiquidity    = types.MsgAddLiquidity
 	MsgRemoveLiquidity = types.MsgRemoveLiquidity
-	MsgCreateOrder     = types.MsgCreateOrder
-	MsgCancelOrder     = types.MsgCancelOrder
+	MsgCreateOrder     = types.MsgAutoSwapCreateOrder
+	MsgCancelOrder     = types.MsgAutoSwapCancelOrder
 )

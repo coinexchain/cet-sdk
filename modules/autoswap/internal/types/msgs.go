@@ -7,29 +7,29 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = MsgCreateTradingPair{}
-var _ sdk.Msg = MsgCreateOrder{}
-var _ sdk.Msg = MsgCancelOrder{}
+var _ sdk.Msg = MsgAutoSwapCreateTradingPair{}
+var _ sdk.Msg = MsgAutoSwapCreateOrder{}
+var _ sdk.Msg = MsgAutoSwapCancelOrder{}
 var _ sdk.Msg = MsgAddLiquidity{}
 var _ sdk.Msg = MsgRemoveLiquidity{}
 var _ sdk.Msg = MsgCancelTradingPair{}
 
-type MsgCreateTradingPair struct {
+type MsgAutoSwapCreateTradingPair struct {
 	Stock          string         `json:"stock"`
 	Money          string         `json:"money"`
 	Creator        sdk.AccAddress `json:"creator"`
 	PricePrecision byte           `json:"price_precision"`
 }
 
-func (m MsgCreateTradingPair) Route() string {
+func (m MsgAutoSwapCreateTradingPair) Route() string {
 	return ModuleName
 }
 
-func (m MsgCreateTradingPair) Type() string {
+func (m MsgAutoSwapCreateTradingPair) Type() string {
 	return "create_pair"
 }
 
-func (m MsgCreateTradingPair) ValidateBasic() sdk.Error {
+func (m MsgAutoSwapCreateTradingPair) ValidateBasic() sdk.Error {
 	if m.Creator.Empty() {
 		return sdk.ErrInvalidAddress("missing creator address")
 	}
@@ -39,11 +39,11 @@ func (m MsgCreateTradingPair) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (m MsgCreateTradingPair) GetSignBytes() []byte {
+func (m MsgAutoSwapCreateTradingPair) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgCreateTradingPair) GetSigners() []sdk.AccAddress {
+func (m MsgAutoSwapCreateTradingPair) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Creator}
 }
 
@@ -82,7 +82,7 @@ func (m MsgCancelTradingPair) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
-type MsgCreateOrder struct {
+type MsgAutoSwapCreateOrder struct {
 	Sender         sdk.AccAddress `json:"sender"`
 	Identify       byte           `json:"identify"`
 	TradingPair    string         `json:"trading_pair"`
@@ -92,15 +92,15 @@ type MsgCreateOrder struct {
 	Side           byte           `json:"side"`
 }
 
-func (m MsgCreateOrder) Route() string {
+func (m MsgAutoSwapCreateOrder) Route() string {
 	return ModuleName
 }
 
-func (m MsgCreateOrder) Type() string {
+func (m MsgAutoSwapCreateOrder) Type() string {
 	return "create_order"
 }
 
-func (m MsgCreateOrder) ValidateBasic() sdk.Error {
+func (m MsgAutoSwapCreateOrder) ValidateBasic() sdk.Error {
 	if m.Sender.Empty() {
 		return ErrInvalidOrderSender(m.Sender)
 	}
@@ -120,15 +120,15 @@ func (m MsgCreateOrder) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (m MsgCreateOrder) GetSignBytes() []byte {
+func (m MsgAutoSwapCreateOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgCreateOrder) GetSigners() []sdk.AccAddress {
+func (m MsgAutoSwapCreateOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 
-func (m MsgCreateOrder) GetOrder() *Order {
+func (m MsgAutoSwapCreateOrder) GetOrder() *Order {
 	or := &Order{
 		TradingPair:    m.TradingPair,
 		Identify:       m.Identify,
@@ -143,20 +143,20 @@ func (m MsgCreateOrder) GetOrder() *Order {
 	return or
 }
 
-type MsgCancelOrder struct {
+type MsgAutoSwapCancelOrder struct {
 	Sender  sdk.AccAddress `json:"sender"`
 	OrderID string         `json:"order_id"`
 }
 
-func (m MsgCancelOrder) Route() string {
+func (m MsgAutoSwapCancelOrder) Route() string {
 	return ModuleName
 }
 
-func (m MsgCancelOrder) Type() string {
+func (m MsgAutoSwapCancelOrder) Type() string {
 	return "cancel_order"
 }
 
-func (m MsgCancelOrder) ValidateBasic() sdk.Error {
+func (m MsgAutoSwapCancelOrder) ValidateBasic() sdk.Error {
 	if m.Sender.Empty() {
 		return ErrInvalidOrderSender(m.Sender)
 	}
@@ -166,11 +166,11 @@ func (m MsgCancelOrder) ValidateBasic() sdk.Error {
 	return nil
 }
 
-func (m MsgCancelOrder) GetSignBytes() []byte {
+func (m MsgAutoSwapCancelOrder) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(m))
 }
 
-func (m MsgCancelOrder) GetSigners() []sdk.AccAddress {
+func (m MsgAutoSwapCancelOrder) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Sender}
 }
 

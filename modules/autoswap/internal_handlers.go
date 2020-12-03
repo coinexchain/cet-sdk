@@ -14,7 +14,7 @@ func NewInternalHandler(k *keepers.Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case types.MsgCreateTradingPair:
+		case types.MsgAutoSwapCreateTradingPair:
 			return handleMsgCreateTradingPair(ctx, k, msg)
 		case types.MsgCancelTradingPair:
 			return handleMsgCancelTradingPair(ctx, k, msg)
@@ -22,9 +22,9 @@ func NewInternalHandler(k *keepers.Keeper) sdk.Handler {
 			return handleMsgAddLiquidity(ctx, k, msg)
 		case types.MsgRemoveLiquidity:
 			return handleMsgRemoveLiquidity(ctx, k, msg)
-		case types.MsgCreateOrder:
+		case types.MsgAutoSwapCreateOrder:
 			return handleMsgCreateOrder(ctx, k, msg)
-		case types.MsgCancelOrder:
+		case types.MsgAutoSwapCancelOrder:
 			return handleMsgCancelOrder(ctx, k, msg)
 		default:
 			return dex.ErrUnknownRequest(types.ModuleName, msg)
@@ -32,7 +32,7 @@ func NewInternalHandler(k *keepers.Keeper) sdk.Handler {
 	}
 }
 
-func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCreateTradingPair) sdk.Result {
+func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoSwapCreateTradingPair) sdk.Result {
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info != nil {
@@ -118,13 +118,13 @@ func handleMsgRemoveLiquidity(ctx sdk.Context, k *keepers.Keeper, msg types.MsgR
 	}
 }
 
-func handleMsgCreateOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCreateOrder) sdk.Result {
+func handleMsgCreateOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoSwapCreateOrder) sdk.Result {
 	if err := k.AddLimitOrder(ctx, msg.GetOrder()); err != nil {
 		return err.Result()
 	}
 	return sdk.Result{}
 }
-func handleMsgCancelOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCancelOrder) sdk.Result {
+func handleMsgCancelOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoSwapCancelOrder) sdk.Result {
 	if err := k.DeleteOrder(ctx, msg); err != nil {
 		return err.Result()
 	}
