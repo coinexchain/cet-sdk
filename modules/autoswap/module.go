@@ -3,6 +3,8 @@ package autoswap
 import (
 	"encoding/json"
 
+	"github.com/coinexchain/cet-sdk/modules/market"
+
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
@@ -71,7 +73,7 @@ func (am AppModule) RegisterInvariants(ir sdk.InvariantRegistry) {
 }
 
 func (am AppModule) Route() string {
-	return types.RouterKey
+	return market.RouterKey
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
@@ -79,7 +81,7 @@ func (am AppModule) NewHandler() sdk.Handler {
 }
 
 func (am AppModule) QuerierRoute() string {
-	return types.QuerierRoute
+	return market.QuerierRoute
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
