@@ -13,6 +13,7 @@ import (
 func NewHandler(k *keepers.Keeper) sdk.Handler {
 	h1 := NewInternalHandler(k)
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		//println("autoswap handler ...")
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		msg2, ok := convertMarketMsg(msg)

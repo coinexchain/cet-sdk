@@ -9,7 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/keepers"
-	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
 	"github.com/coinexchain/cet-sdk/modules/market"
 	mktcli "github.com/coinexchain/cet-sdk/modules/market/client/cli"
 	dex "github.com/coinexchain/cet-sdk/types"
@@ -31,7 +30,7 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 func getMarketQueryCmd(cdc *codec.Codec) *cobra.Command {
 	mktTxCmd := &cobra.Command{
-		Use:   types.ModuleName,
+		Use:   market.ModuleName,
 		Short: "Querying commands for the market module",
 	}
 	mktTxCmd.AddCommand(client.PostCommands(

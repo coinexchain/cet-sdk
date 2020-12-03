@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/coinexchain/cet-sdk/modules/autoswap/internal/types"
+	"github.com/coinexchain/cet-sdk/modules/market"
 	mktcli "github.com/coinexchain/cet-sdk/modules/market/client/cli"
 	"github.com/coinexchain/cosmos-utils/client/cliutil"
 )
@@ -40,7 +41,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func getMarketTxCmd(cdc *codec.Codec) *cobra.Command {
 	mktTxCmd := &cobra.Command{
-		Use:   types.ModuleName,
+		Use:   market.ModuleName,
 		Short: "market transactions subcommands",
 	}
 
