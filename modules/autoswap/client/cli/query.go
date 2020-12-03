@@ -31,8 +31,8 @@ func GetQueryCmd(cdc *codec.Codec) *cobra.Command {
 
 func getMarketQueryCmd(cdc *codec.Codec) *cobra.Command {
 	mktTxCmd := &cobra.Command{
-		Use:   types.StoreKey,
-		Short: "Querying commands for the autoswap module",
+		Use:   types.ModuleName,
+		Short: "Querying commands for the market module",
 	}
 	mktTxCmd.AddCommand(client.PostCommands(
 		mktcli.QueryParamsCmd(cdc),

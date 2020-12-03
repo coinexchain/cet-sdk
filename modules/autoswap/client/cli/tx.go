@@ -40,7 +40,7 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func getMarketTxCmd(cdc *codec.Codec) *cobra.Command {
 	mktTxCmd := &cobra.Command{
-		Use:   types.StoreKey,
+		Use:   types.ModuleName,
 		Short: "market transactions subcommands",
 	}
 
