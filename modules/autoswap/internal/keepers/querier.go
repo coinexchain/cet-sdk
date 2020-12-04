@@ -143,8 +143,8 @@ func toMarketQueryInfo(info *PoolInfo) market.QueryMarketInfo {
 	queryInfo := market.QueryMarketInfo{
 		Creator:               info.Owner,
 		PricePrecision:        strconv.Itoa(int(info.PricePrecision)),
-		LastExecutedPrice:     sdk.NewDec(0), // TODO
-		OrderPrecision:        "0",           // not used
+		LastExecutedPrice:     info.LastExecutedPrice,
+		OrderPrecision:        "0", // not used
 		StockAmmReserve:       info.StockAmmReserve,
 		MoneyAmmReserve:       info.MoneyAmmReserve,
 		StockOrderBookReserve: info.StockOrderBookReserve,
