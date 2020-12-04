@@ -132,7 +132,7 @@ func (axk AccountXKeeper) RemoveFromUnlockedCoinsQueueByKey(ctx sdk.Context, key
 func (axk AccountXKeeper) GetRefereeAddr(ctx sdk.Context, addr sdk.AccAddress) sdk.AccAddress {
 	accx, exist := axk.GetAccountX(ctx, addr)
 	if !exist {
-		return sdk.AccAddress{}
+		return nil
 	}
 	return accx.Referee
 }

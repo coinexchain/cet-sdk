@@ -121,7 +121,6 @@ func makeCodec() *codec.Codec {
 		bancorlite.AppModuleBasic{},
 		comment.AppModuleBasic{},
 		incentive.AppModuleBasic{},
-		market.AppModuleBasic{},
 		autoswap.AppModuleBasic{},
 
 		//modules wraps those of cosmos

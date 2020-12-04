@@ -2,6 +2,7 @@ package keepers_test
 
 import (
 	"fmt"
+	"github.com/coinexchain/cet-sdk/modules/authx"
 	"testing"
 
 	"github.com/coinexchain/cet-sdk/testutil"
@@ -200,6 +201,7 @@ func TestPairKeeper_AllocateFeeToValidatorAndPool(t *testing.T) {
 	app := testapp.NewTestApp()
 	ctx := app.NewCtx()
 	app.AutoSwapKeeper.SetParams(ctx, types.DefaultParams())
+	app.AccountXKeeper.SetParams(ctx, authx.DefaultParams())
 	keeper := app.AutoSwapKeeper.IPairKeeper.(*keepers.PairKeeper)
 
 	//setup accounts

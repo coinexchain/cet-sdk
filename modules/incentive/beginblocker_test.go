@@ -2,6 +2,7 @@ package incentive_test
 
 import (
 	"github.com/coinexchain/cet-sdk/modules/asset"
+	"github.com/coinexchain/cet-sdk/modules/incentive/internal/keepers"
 	"os"
 	"testing"
 
@@ -56,14 +57,14 @@ func TestBeginBlockerInvalidCoin(t *testing.T) {
 }
 
 func TestIncentiveCoinsAddress(t *testing.T) {
-	require.Equal(t, "coinex1gc5t98jap4zyhmhmyq5af5s7pyv57w5694el97", incentive.PoolAddr.String())
+	require.Equal(t, "coinex1gc5t98jap4zyhmhmyq5af5s7pyv57w5694el97", keepers.PoolAddr.String())
 }
 
 func TestIncentiveCoinsAddressInTestNet(t *testing.T) {
 	config := sdk.GetConfig()
 	testnetAddrPrefix := "cettest"
 	config.SetBech32PrefixForAccount(testnetAddrPrefix, testnetAddrPrefix+sdk.PrefixPublic)
-	require.Equal(t, "cettest1gc5t98jap4zyhmhmyq5af5s7pyv57w566ewmx0", incentive.PoolAddr.String())
+	require.Equal(t, "cettest1gc5t98jap4zyhmhmyq5af5s7pyv57w566ewmx0", keepers.PoolAddr.String())
 }
 
 func TestMain(m *testing.M) {

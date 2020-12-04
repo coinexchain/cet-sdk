@@ -24,4 +24,5 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	DefaultParams       = types.DefaultParams
 	NewKeeper           = keepers.NewKeeper
+	PoolAddr            = keepers.PoolAddr
 )

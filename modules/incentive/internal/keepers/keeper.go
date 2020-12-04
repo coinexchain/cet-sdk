@@ -4,13 +4,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/tendermint/tendermint/crypto"
 	"reflect"
 
 	"github.com/coinexchain/cet-sdk/modules/incentive/internal/types"
+	dex "github.com/coinexchain/cet-sdk/types"
 )
 
 var (
 	StateKey = []byte{0x01}
+	PoolAddr = sdk.AccAddress(crypto.AddressHash([]byte("incentive_pool")))
 )
 
 type Keeper struct {
@@ -80,4 +83,28 @@ func (k Keeper) AddNewPlan(ctx sdk.Context, plan types.Plan) sdk.Error {
 	param.Plans = append(param.Plans, plan)
 	k.SetParams(ctx, param)
 	return nil
+}
+func (k Keeper) ClearIncentiveState(ctx sdk.Context) {
+	// clear unused plans & params
+	k.SetParams(ctx, types.DefaultParams())
+
+	// burn pool's cet token
+	allCoins := k.GetCoins(ctx, PoolAddr)
+	for _, coin := range allCoins {
+		if coin.Denom == dex.DefaultBondDenom {
+			err := k.SendCoinsFromAccountToModule(ctx, PoolAddr, types.ModuleName, sdk.NewCoins(coin))
+			if err != nil {
+				panic(err)
+			}
+			err = k.BurnTokenByModule(ctx, coin.Denom, coin.Amount, types.ModuleName)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	// update cet to be mintable
+	err := k.UpdateCETMintable(ctx)
+	if err != nil {
+		panic(err)
+	}
 }
