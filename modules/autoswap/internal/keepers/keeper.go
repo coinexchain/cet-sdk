@@ -59,5 +59,8 @@ func (keeper Keeper) SendCoinsFromPoolToUser(ctx sdk.Context, receiver sdk.AccAd
 }
 
 func (keeper Keeper) IsSubscribed(topic string) bool {
+	if keeper.msgProducer == nil {
+		return false
+	}
 	return keeper.msgProducer.IsSubscribed(topic)
 }
