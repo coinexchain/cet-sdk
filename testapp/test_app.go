@@ -355,7 +355,8 @@ func (app *TestApp) initKeepers(invCheckPeriod uint) {
 
 	app.AutoSwapKeeper = autoswap.NewKeeper(app.Cdc, app.keyAutoSwap,
 		app.ParamsKeeper.Subspace(autoswap.StoreKey),
-		app.BankxKeeper, app.AccountKeeper, app.AccountXKeeper, app.SupplyKeeper,
+		app.BankxKeeper, app.AccountKeeper, app.AccountXKeeper,
+		app.SupplyKeeper, app.AssetKeeper,
 	)
 }
 

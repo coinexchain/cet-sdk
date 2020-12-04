@@ -1,6 +1,8 @@
 package autoswap
 
 import (
+	"fmt"
+
 	"github.com/coinexchain/cet-sdk/msgqueue"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -33,6 +35,12 @@ func NewInternalHandler(k *keepers.Keeper) sdk.Handler {
 }
 
 func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoSwapCreateTradingPair) sdk.Result {
+	if k.ExpectedAssetKeeper.GetToken(ctx, msg.Stock) == nil {
+		return types.ErrInvalidToken(fmt.Sprintf("token: %s not exist", msg.Stock)).Result()
+	}
+	if k.ExpectedAssetKeeper.GetToken(ctx, msg.Money) == nil {
+		return types.ErrInvalidToken(fmt.Sprintf("token: %s not exist", msg.Money)).Result()
+	}
 	marKey := dex.GetSymbol(msg.Stock, msg.Money)
 	info := k.IPairKeeper.GetPoolInfo(ctx, marKey)
 	if info != nil {
@@ -43,7 +51,7 @@ func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.Ms
 }
 
 func handleMsgCancelTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCancelTradingPair) sdk.Result {
-	panic("not impl")
+	return sdk.Result{}
 }
 
 func handleMsgAddLiquidity(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAddLiquidity) sdk.Result {

@@ -16,11 +16,13 @@ type Keeper struct {
 	sk       types.SupplyKeeper
 	FactoryInterface
 	IPairKeeper
+	types.ExpectedAssetKeeper
 	msgProducer msgqueue.MsgSender
 }
 
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Subspace,
-	bk types.ExpectedBankKeeper, accK types.ExpectedAccountKeeper, accxK types.ExpectedAuthXKeeper, sk types.SupplyKeeper) *Keeper {
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey,
+	paramSubspace params.Subspace, bk types.ExpectedBankKeeper, accK types.ExpectedAccountKeeper,
+	accxK types.ExpectedAuthXKeeper, sk types.SupplyKeeper, assetK types.ExpectedAssetKeeper) *Keeper {
 
 	poolK := PoolKeeper{
 		key:          storeKey,
@@ -34,10 +36,11 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, paramSubspace params.Sub
 	}
 
 	k := Keeper{
-		cdc:              cdc,
-		storeKey:         storeKey,
-		sk:               sk,
-		FactoryInterface: factoryK,
+		cdc:                 cdc,
+		storeKey:            storeKey,
+		sk:                  sk,
+		FactoryInterface:    factoryK,
+		ExpectedAssetKeeper: assetK,
 	}
 	k.IPairKeeper = NewPairKeeper(poolK, sk, bk, accK, accxK, cdc, storeKey, paramSubspace)
 	return &k

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/coinexchain/cet-sdk/modules/asset"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 )
@@ -27,4 +28,8 @@ type ExpectedAuthXKeeper interface {
 	GetRefereeAddr(ctx sdk.Context, accAddr sdk.AccAddress) sdk.AccAddress
 	GetRebateRatio(ctx sdk.Context) int64
 	GetRebateRatioBase(ctx sdk.Context) int64
+}
+
+type ExpectedAssetKeeper interface {
+	GetToken(ctx sdk.Context, symbol string) asset.Token
 }
