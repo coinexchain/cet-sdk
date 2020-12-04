@@ -82,6 +82,7 @@ func (o *OrderKeeper) storeOrderToMarket(ctx sdk.Context, order *types.Order) {
 func (o *OrderKeeper) DelOrder(ctx sdk.Context, order *types.Order) {
 	o.delOrderBook(ctx, order)
 	o.delBidOrAskQueue(ctx, order)
+	o.delOrderInMarket(ctx, order)
 }
 
 func (o *OrderKeeper) delOrderBook(ctx sdk.Context, order *types.Order) {
