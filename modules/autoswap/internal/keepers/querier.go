@@ -14,11 +14,6 @@ import (
 	dex "github.com/coinexchain/cet-sdk/types"
 )
 
-const (
-	QueryPoolInfo = "pool-info"
-	QueryPools    = "pool-list"
-)
-
 func NewQuerier(mk Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
@@ -146,10 +141,15 @@ func queryWaitCancelMarkets(ctx sdk.Context, req abci.RequestQuery, k Keeper) ([
 
 func toMarketQueryInfo(info *PoolInfo) market.QueryMarketInfo {
 	queryInfo := market.QueryMarketInfo{
-		Creator:           info.Owner,
-		PricePrecision:    strconv.Itoa(int(info.PricePrecision)),
-		LastExecutedPrice: sdk.NewDec(0), // TODO
-		OrderPrecision:    "0",           // not used
+		Creator:               info.Owner,
+		PricePrecision:        strconv.Itoa(int(info.PricePrecision)),
+		LastExecutedPrice:     sdk.NewDec(0), // TODO
+		OrderPrecision:        "0",           // not used
+		StockAmmReserve:       info.StockAmmReserve,
+		MoneyAmmReserve:       info.MoneyAmmReserve,
+		StockOrderBookReserve: info.StockOrderBookReserve,
+		MoneyOrderBookReserve: info.MoneyOrderBookReserve,
+		TotalSupply:           info.TotalSupply,
 	}
 	queryInfo.Stock, queryInfo.Money = dex.SplitSymbol(info.Symbol)
 	return queryInfo

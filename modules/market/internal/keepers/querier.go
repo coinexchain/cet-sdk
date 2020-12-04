@@ -75,6 +75,12 @@ type QueryMarketInfo struct {
 	PricePrecision    string         `json:"price_precision"`
 	LastExecutedPrice sdk.Dec        `json:"last_executed_price"`
 	OrderPrecision    string         `json:"order_precision"`
+	// AutoSwap fields
+	StockAmmReserve       sdk.Int `json:"stock_amm_reserve"`
+	MoneyAmmReserve       sdk.Int `json:"money_amm_reserve"`
+	StockOrderBookReserve sdk.Int `json:"stock_order_book_reserve"`
+	MoneyOrderBookReserve sdk.Int `json:"money_order_book_reserve"`
+	TotalSupply           sdk.Int `json:"total_supply"`
 }
 
 func queryMarket(ctx sdk.Context, req abci.RequestQuery, mk Keeper) ([]byte, sdk.Error) {
