@@ -4,6 +4,8 @@ import (
 	"math"
 	"strings"
 
+	"github.com/coinexchain/cet-sdk/modules/market"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -22,7 +24,7 @@ type MsgAutoSwapCreateTradingPair struct {
 }
 
 func (m MsgAutoSwapCreateTradingPair) Route() string {
-	return ModuleName
+	return market.ModuleName
 }
 
 func (m MsgAutoSwapCreateTradingPair) Type() string {
@@ -54,7 +56,7 @@ type MsgCancelTradingPair struct {
 }
 
 func (m MsgCancelTradingPair) Route() string {
-	return ModuleName
+	return market.ModuleName
 }
 
 func (m MsgCancelTradingPair) Type() string {
@@ -93,7 +95,7 @@ type MsgAutoSwapCreateOrder struct {
 }
 
 func (m MsgAutoSwapCreateOrder) Route() string {
-	return ModuleName
+	return market.ModuleName
 }
 
 func (m MsgAutoSwapCreateOrder) Type() string {
@@ -149,7 +151,7 @@ type MsgAutoSwapCancelOrder struct {
 }
 
 func (m MsgAutoSwapCancelOrder) Route() string {
-	return ModuleName
+	return market.ModuleName
 }
 
 func (m MsgAutoSwapCancelOrder) Type() string {
@@ -184,7 +186,7 @@ type MsgAddLiquidity struct {
 }
 
 func (m MsgAddLiquidity) Route() string {
-	return RouterKey
+	return market.ModuleName
 }
 
 func (m MsgAddLiquidity) Type() string {
@@ -229,7 +231,7 @@ type MsgRemoveLiquidity struct {
 }
 
 func (m MsgRemoveLiquidity) Route() string {
-	return RouterKey
+	return market.ModuleName
 }
 
 func (m MsgRemoveLiquidity) Type() string {
