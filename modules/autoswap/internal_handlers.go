@@ -47,7 +47,9 @@ func handleMsgCreateTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.Ms
 		return types.ErrPairAlreadyExist().Result()
 	}
 	k.CreatePair(ctx, msg.Creator, marKey, msg.PricePrecision)
-	return sdk.Result{}
+	return sdk.Result{
+		Events: ctx.EventManager().Events(),
+	}
 }
 
 func handleMsgCancelTradingPair(ctx sdk.Context, k *keepers.Keeper, msg types.MsgCancelTradingPair) sdk.Result {
@@ -130,13 +132,17 @@ func handleMsgCreateOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoS
 	if err := k.AddLimitOrder(ctx, msg.GetOrder()); err != nil {
 		return err.Result()
 	}
-	return sdk.Result{}
+	return sdk.Result{
+		Events: ctx.EventManager().Events(),
+	}
 }
 func handleMsgCancelOrder(ctx sdk.Context, k *keepers.Keeper, msg types.MsgAutoSwapCancelOrder) sdk.Result {
 	if err := k.DeleteOrder(ctx, msg); err != nil {
 		return err.Result()
 	}
-	return sdk.Result{}
+	return sdk.Result{
+		Events: ctx.EventManager().Events(),
+	}
 }
 
 func fillMsgQueue(ctx sdk.Context, keeper *Keeper, key string, msg interface{}) {
