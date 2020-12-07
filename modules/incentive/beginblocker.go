@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Dex3StartHeight = int64(100000000) // TODO
+	Dex3StartHeight = int64(1) // TODO
 )
 
 func BeginBlocker(ctx sdk.Context, k keepers.Keeper) {
